@@ -1,6 +1,8 @@
-const x = () => {
-	console.log('code in ES5');
-};
-{
-	let y = 8;
+import Config from "./config";
+
+class CognitiveVRAnalyticsCore {
+	constructor(settings) {
+		Config.settings = settings
+	}
 }
+export default { CognitiveVRAnalyticsCore };
