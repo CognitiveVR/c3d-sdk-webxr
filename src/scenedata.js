@@ -1,16 +1,17 @@
+
 class SceneData {
 	constructor() {
 		this.SceneName = '';
 		this.SceneId = '';
 		this.VersionNumber = '';
 	}
-	set sceneName(sceneName) {
+	set sceneName (sceneName) {
 		this.SceneName = sceneName;
 	}
-	set sceneId(sceneId) {
+	set sceneId (sceneId) {
 		this.SceneId = sceneId;
 	}
-	set versionNumber(versionNumber) {
+	set versionNumber (versionNumber) {
 		this.VersionNumber = versionNumber;
 	}
 

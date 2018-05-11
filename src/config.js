@@ -2,14 +2,14 @@ class Config {
 	constructor() {
 		this.LOG = false;
 		this.SdkVersion = '0.1'
-		this.networkHost = 'data.cognitive3d.com'
+		this.networkHost = 'data.c3ddev.com'
 		//added to the header of the requests
-		this.APIKey = 'asdf1234jhkl5678'
+		this.APIKey = ''
 		this.networkVersion = '0'
 		this.SensorDataLimit = 64
 		this.DynamicDataLimit = 64
 		this.CustomEventBatchSize = 64
-		this.GazeBatchSize = 64
+		this.GazeBatchSize = 3
 		this.GazeInterval = 0.1
 		this.HMDType = ''
 	}
@@ -50,5 +50,5 @@ class Config {
 		}
 	}
 }
-const defaultConfig = new Config();
-export default defaultConfig;
+// const defaultConfig = new Config();
+export default Config;
