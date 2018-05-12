@@ -1,9 +1,8 @@
 import Config from "./config";
 import SceneData from './scenedata';
 class Network {
-	constructor(config) {
-		this.c3d = config;
-		this.sd = SceneData;
+	constructor(core) {
+		this.core = core;
 	}
 
 

@@ -1,77 +1,74 @@
 import Config from "./config";
-import Network from './network';
-import SceneData from './scenedata';
+import CognitiveVRAnalyticsCore from './core'
 import GazeTracker from "./gazetracker";
+import Network from './network';
 //need another class ?
-class CognitiveVRAnalyticsCore {
-	constructor(settings) {
-		this.config = new Config();
-		this.isSessionActive = false;
-		this.sceneData = SceneData;
-		this.userId = '';
-		this.deviceId = '';
-		this.sessionId = '';
-		this.sessionTimestamp = '';
-		this.sceneName = '';
-		// let core = {
-		// 	isSessionActive:this.isSessionActive1,
-		// 	userId:this.userId,
-		// 	deviceId:this.deviceId,
-		// 	sessionId:this.sessionId,
-		// 	sessionTimestamp:this.sessionTimestamp,
-		// 	sceneName:this.sceneName
-		// }
-		if (settings) {
-			this.config.settings = settings.config;
-		}
-		this.c3d = { config: this.config };
-		this.network = new Network(this.config);
-		this.gaze = new GazeTracker(this.c3d, this.network, this.isSessionActive);
-		// this.customEvent = new CustomEvent();
-		// gaze = new Gaze();
-		// sensor = new Sensor();
-		// dynamicobject = new DynamicObject();
-		// exitpoll = new Exitpoll();
-	}
-	removeSettings() {
-	}
-	getSessionTimestamp() {
-		if (!this.sessionTimestamp) {
-			this.sessionTimestamp = this.getTimestamp();
-		}
-		return this.sessionTimestamp
+class C3D {
+	constructor() {
+		this.core = CognitiveVRAnalyticsCore;
+		this.network = new Network(this.core);
+		this.gaze = new GazeTracker(this.core);
+		this.newDeviceProperties={};
 	}
 
-	getTimestamp() {
-		return Date.now()
-	}
-	isSessionActive1(){
-		return this.isSessionActive;
-	}
-
-	set setUserId(userId) {
-		this.userId = userId;
-	}
-	set setDeviceId(deviceId) {
-		this.deviceId = deviceId;
-	}
-	set setScene(sceneName) {
-		this.sceneName = sceneName
-	}
 	startSession() {
-		this.isSessionActive = true;
-		let ts = this.getSessionTimestamp();
-		this.getSessionId();
+		//set isSessionActive on core class to true. 
+		this.core.startSession();
+
+		//but why if gaze has access to config ?
+		this.gaze.setHMDType(this.core.config.HMDType);
+		this.gaze.setInterval(this.core.config.GazeInterval);
+
+		// const pos = [ 0,0,0 ];
+		// customevent->Send("Start Session", pos);
 	}
-	getSessionId(){
-		if(!this.sessionId){
-			if(!this.userId){
-				this.sessionId = `${this.getSessionTimestamp()}_${this.deviceId}`
-			} else {
-				this.sessionId = `${this.getSessionTimestamp()}_${this.userId}`
-			}
-		} 
-		return this.sessionId
+	set userId(userId) {
+		this.core.setUserId = userId;
+	}
+	set deviceId(deviceId) {
+		this.core.setDeviceId = deviceId;
+	}
+	set seneName(name) {
+		this.core.sceneData.sceneName = name;
+	}
+	set sceneId(id) {
+		this.core.sceneData.sceneId = id;
+	}
+	set versionNumber(versionNumber) {
+		this.core.sceneData.versionNumber = versionNumber;
+	}
+	get APIKey() {
+		return this.core.config.APIKey
+	}
+
+	setDeviceProperty = (property, value) => {
+		debugger;
+		this.newDeviceProperties[this.devicePropertyString(property)] = value;
+	};
+
+	devicePropertyString = (property, value) => {
+		return this.devicePropertyMap[property] ? this.devicePropertyMap[property] : "unknown.property";
+	}
+
+	devicePropertyMap = {
+		AppName: "cvr.app.name",
+		AppVersion: "cvr.app.version",
+		AppEngine: "cvr.app.engine",
+		AppEngineVersion: "cvr.app.engine.version",
+		DeviceType: "cvr.device.type",
+		DeviceModel: "cvr.device.model",
+		DeviceMemory: "cvr.device.memory",
+		DeviceOS: "cvr.device.os",
+		DeviceCPU: "cvr.device.cpu",
+		DeviceCPUCores: "cvr.device.cpu.cores",
+		DeviceCPUVendor: "cvr.device.cpu.vendor",
+		DeviceGPU: "cvr.device.gpu",
+		DeviceGPUDriver: "cvr.device.gpu.driver",
+		DeviceGPUVendor: "cvr.device.gpu.vendor",
+		DeviceGPUMemory: "cvr.device.gpu.memory",
+		VRModel: "cvr.vr.model",
+		VRVendor: "cvr.vr.vendor",
 	}
 }
-export default { CognitiveVRAnalyticsCore };
+
+export default C3D

@@ -1,37 +1,43 @@
-class GazeTracker {
-	constructor(cog, network) {
-		this.network = network
-		this.c3d = cog;
+class GazeTracker  {
+	constructor(core) {
+		this.core = core; 
+		// this.network = network
+		// this.c3d = cog;
 		this.PlayerSnapshotInterval;
 		this.HMDType;
 		this.batchedGaze = [];
+		// this.isSessionActive = isSessionActive
 	}
 	recordGaze(position, rotation, gaze) {
+		console.log('isSessionActive', this.core.isSessionActive)
+
 		let data = [{
-			//TODO: need milliseconds precision  
+			//TODO: need milliseconds precision ts 
 			time: Date.now(),
 			p: [...position],
 			g: [...gaze],
 			r: [...rotation],
 		}]
 		this.batchedGaze = this.batchedGaze.concat(data);
-		if (this.batchedGaze.length >= this.c3d.config.GazeBatchSize) {
+		if (this.batchedGaze.length >= this.core.config.GazeBatchSize) {
 			this.sendData()
-			this.batchedGaze = []
 		}
 	}
 
-	SetInterval(interval) {
+	setInterval(interval) {
 		this.PlayerSnapshotInterval = interval;
 	}
 
-	SetHMDType(hmdtype) {
+	setHMDType(hmdtype) {
 		this.HMDType = hmdtype;
 	}
 
 	sendData() {
-		if (!this.c3d.isSessionActive){
+		if (!this.core.isSessionActive){
 			console.log('GazeTracker.sendData failed: no session active')
+		} else {
+			console.warn('Sending Batch')
+			this.batchedGaze = []
 		}
 		// userid:this.c3d.userid,
 		// timestamp:this.,
@@ -39,7 +45,7 @@ class GazeTracker {
 		// part:'',
 		// hmdtype:'',
 		// interval:'',
-		// this.network.networkCall('gaze', content )
+		// this.network.networkCall('gaze', {d:2} )
 		// this.sendData()
 	}
 
