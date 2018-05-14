@@ -7,16 +7,18 @@ class Network {
 
 
 	networkCall(suburl, content) {
-		let options = {
-			method: 'post',
-			headers: new Headers({
-				'Authorization': "APIKEY:DATA " + this.c3d.APIKey,
-				'Content-Type': 'application/json'
-			}),
-			body: JSON.stringify(content)
-		}
-		let path = "https://" + this.c3d.networkHost + "/v" + this.c3d.networkVersion + "/" + suburl + "/" + this.sd.SceneId + "?version=" + this.sd.VersionNumber;
-		fetch(path, options)
+		return new Promise((resolve, reject) => {
+			let options = {
+				method: 'post',
+				headers: new Headers({
+					'Authorization': "APIKEY:DATA " + this.core.config.APIKey,
+					'Content-Type': 'application/json'
+				}),
+				body: JSON.stringify(content)
+			}
+			let path = "https://" + this.core.config.networkHost + "/v" + this.core.config.networkVersion + "/" + suburl + "/" + this.core.sceneData.SceneId + "?version=" + this.core.sceneData.VersionNumber;
+			fetch(path, options);
+		})
 	}
 }
 
