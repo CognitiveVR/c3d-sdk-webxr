@@ -9,15 +9,20 @@ class GazeTracker {
 		this.jsonPart = 1;
 		// this.isSessionActive = isSessionActive
 	}
-	recordGaze(position, rotation, gaze) {
-		let data = [{
-			//TODO: need milliseconds precision ts 
-			time: Date.now(),
+	recordGaze(position, rotation, gaze, objectId) {
+		let ts = this.core.getTimestamp();
+		let data = {
+			//TODO: need millidataconds precision ts 
+			time: ts,
 			p: [...position],
-			g: [...gaze],
 			r: [...rotation],
-		}]
-		this.batchedGaze = this.batchedGaze.concat(data);
+		};
+
+		if (gaze) { data['g'] = [...gaze]; }
+		if (objectId) { data['o'] = objectId; }
+
+		this.batchedGaze = this.batchedGaze.concat([data]);
+
 		if (this.batchedGaze.length >= this.core.config.GazeBatchSize) {
 			this.sendData()
 		}
@@ -42,26 +47,26 @@ class GazeTracker {
 			if (this.batchedGaze.length === 0 && dproperties.length === 0 && uproperties.length === 0) {
 				return;
 			}
-			console.warn('Sending Batch');
-			let se = {};
-	
-			se["userid"] = this.core.userId;
-			se["timestamp"] = this.core.getTimestamp();
-			se["sessionid"] = this.core.getSessionId();
-			se["part"] = this.jsonPart;
+
+			let payload = {};
+
+			payload["userid"] = this.core.userId;
+			payload["timestamp"] = this.core.getTimestamp();
+			payload["sessionid"] = this.core.getSessionId();
+			payload["part"] = this.jsonPart;
 			this.jsonPart++;
-			se["hmdtype"] = this.HMDType;
-			se["interval"] = this.playerSnapshotInterval;
-			se["data"] = this.batchedGaze;
-	
+			payload["hmdtype"] = this.HMDType;
+			payload["interval"] = this.playerSnapshotInterval;
+			payload["data"] = this.batchedGaze;
+
 			if (Object.keys(dproperties).length) {
-				se['device'] = dproperties;
+				payload['device'] = dproperties;
 			}
-	
+
 			if (Object.keys(uproperties).length) {
-				se['user'] = uproperties;
+				payload['user'] = uproperties;
 			}
-			this.network.networkCall('gaze', se)
+			this.network.networkCall('gaze', payload)
 			this.batchedGaze = [];
 		})
 

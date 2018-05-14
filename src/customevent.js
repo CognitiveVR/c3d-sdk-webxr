@@ -19,16 +19,15 @@ class CustomEvents {
 		if (this.batchedCustomEvents.length >= this.core.config.CustomEventBatchSize) {
 			this.sendData()
 		}
-		console.log(this.batchedCustomEvents)
+
 	}
 
 	sendData() {
 		if (!this.core.isSessionActive) {
 			console.log('CustomEvent.sendData failed: no session active');
 		} else {
-			console.warn('Sending Event Batch');
+			console.warn('network here, sending Event Batch');
 			this.batchedCustomEvents = [];
-			console.log(this.core.userId)
 		}
 		// userid:this.c3d.userid,
 		// timestamp:this.,

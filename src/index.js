@@ -10,8 +10,6 @@ class C3D {
 		this.network = new Network(this.core);
 		this.gaze = new GazeTracker(this.core);
 		this.customEvent = new CustomEvent(this.core);
-		// this.newDeviceProperties = {};
-		// this.newUserProperties = {};
 	}
 
 	startSession() {
@@ -40,7 +38,6 @@ class C3D {
 		let sessionLength = this.core.getTimestamp() - this.core.sessionTimestamp;
 		props['sessionLength'] = sessionLength;
 
-		//TODO:send data
 		this.customEvent.send('Session End', [0, 0, 0], props);
 
 		this.sendData();
@@ -54,6 +51,7 @@ class C3D {
 
 		this.gaze.endSession();
 		this.customEvent.endSession();
+		//-------------------------//
 		// this.dynamicObject.endSession();
 		// this.sensor.endSession();
 
@@ -65,6 +63,7 @@ class C3D {
 		}
 		this.gaze.sendData();
 		this.customEvent.sendData();
+		//-------------------------//
 		// this.dynamicObject.sendData();
 		// this.sensor.sendData();
 	}
@@ -92,37 +91,6 @@ class C3D {
 	get APIKey() {
 		return this.core.config.APIKey
 	}
-
-	// setDeviceProperty(property, value) {
-	// 	this.newDeviceProperties[this.devicePropertyString(property)] = value;
-	// };
-
-	// devicePropertyString(property, value) {
-	// 	return this.devicePropertyMap[property] ? this.devicePropertyMap[property] : "unknown.property";
-	// }
-	// setUserProperty(propertyType, value) {
-	// 	this.newUserProperties[propertyType] = value;
-	// }
-
-	// devicePropertyMap = {
-	// 	AppName: "cvr.app.name",
-	// 	AppVersion: "cvr.app.version",
-	// 	AppEngine: "cvr.app.engine",
-	// 	AppEngineVersion: "cvr.app.engine.version",
-	// 	DeviceType: "cvr.device.type",
-	// 	DeviceModel: "cvr.device.model",
-	// 	DeviceMemory: "cvr.device.memory",
-	// 	DeviceOS: "cvr.device.os",
-	// 	DeviceCPU: "cvr.device.cpu",
-	// 	DeviceCPUCores: "cvr.device.cpu.cores",
-	// 	DeviceCPUVendor: "cvr.device.cpu.vendor",
-	// 	DeviceGPU: "cvr.device.gpu",
-	// 	DeviceGPUDriver: "cvr.device.gpu.driver",
-	// 	DeviceGPUVendor: "cvr.device.gpu.vendor",
-	// 	DeviceGPUMemory: "cvr.device.gpu.memory",
-	// 	VRModel: "cvr.vr.model",
-	// 	VRVendor: "cvr.vr.vendor",
-	// }
 }
 
 export default C3D
