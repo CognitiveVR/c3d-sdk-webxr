@@ -79,7 +79,7 @@ class C3D {
 	set deviceId(deviceId) {
 		this.core.setDeviceId = deviceId;
 	}
-	set seneName(name) {
+	set sceneName(name) {
 		this.core.sceneData.sceneName = name;
 	}
 	set sceneId(id) {
@@ -88,8 +88,11 @@ class C3D {
 	set versionNumber(versionNumber) {
 		this.core.sceneData.versionNumber = versionNumber;
 	}
-	get APIKey() {
-		return this.core.config.APIKey
+	getApiKey() {
+		return this.core.getApiKey();
+	}
+	getSceneId(){
+		return this.core.sceneData.SceneId;
 	}
 }
 

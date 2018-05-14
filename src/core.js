@@ -69,6 +69,10 @@ class CognitiveVRAnalyticsCore {
 		this.newDeviceProperties[this.devicePropertyString(property)] = value;
 	};
 
+	getApiKey(){
+		return this.config.APIKey;
+	}
+
 	devicePropertyString(property, value) {
 		return this.devicePropertyMap[property] ? this.devicePropertyMap[property] : "unknown.property";
 	};
