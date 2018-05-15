@@ -8,6 +8,7 @@ class Network {
 
 	networkCall(suburl, content) {
 		return new Promise((resolve, reject) => {
+			let path = "https://" + this.core.config.networkHost + "/v" + this.core.config.networkVersion + "/" + suburl + "/" + this.core.sceneData.SceneId + "?version=" + this.core.sceneData.VersionNumber;
 			let options = {
 				method: 'post',
 				headers: new Headers({
@@ -16,9 +17,8 @@ class Network {
 				}),
 				body: JSON.stringify(content)
 			}
-			let path = "https://" + this.core.config.networkHost + "/v" + this.core.config.networkVersion + "/" + suburl + "/" + this.core.sceneData.SceneId + "?version=" + this.core.sceneData.VersionNumber;
 			fetch(path, options);
-		})
+		});
 	}
 }
 

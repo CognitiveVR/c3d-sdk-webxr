@@ -16,52 +16,77 @@ class CognitiveVRAnalyticsCore {
 		this.sessionTimestamp = '';
 		this.newDeviceProperties = {};
 		this.newUserProperties = {};
+		this.devicePropertyMap = {
+			AppName: "cvr.app.name",
+			AppVersion: "cvr.app.version",
+			AppEngine: "cvr.app.engine",
+			AppEngineVersion: "cvr.app.engine.version",
+			DeviceType: "cvr.device.type",
+			DeviceModel: "cvr.device.model",
+			DeviceMemory: "cvr.device.memory",
+			DeviceOS: "cvr.device.os",
+			DeviceCPU: "cvr.device.cpu",
+			DeviceCPUCores: "cvr.device.cpu.cores",
+			DeviceCPUVendor: "cvr.device.cpu.vendor",
+			DeviceGPU: "cvr.device.gpu",
+			DeviceGPUDriver: "cvr.device.gpu.driver",
+			DeviceGPUVendor: "cvr.device.gpu.vendor",
+			DeviceGPUMemory: "cvr.device.gpu.memory",
+			VRModel: "cvr.vr.model",
+			VRVendor: "cvr.vr.vendor",
+		};
 	}
 
 	removeSettings() {
 
-	}
+	};
 
 	getSessionTimestamp() {
 		if (!this.sessionTimestamp) {
 			this.sessionTimestamp = this.getTimestamp();
 		}
-		return this.sessionTimestamp
-	}
+		return this.sessionTimestamp;
+	};
 
 	getTimestamp() {
-		return Date.now()
-	}
+		return Date.now();
+	};
 
 	isSessionActive1() {
 		return this.isSessionActive;
-	}
+	};
 	getSessionId() {
 		if (!this.sessionId) {
 			if (!this.userId) {
-				this.sessionId = `${this.getSessionTimestamp()}_${this.deviceId}`
+				this.sessionId = `${this.getSessionTimestamp()}_${this.deviceId}`;
 			} else {
-				this.sessionId = `${this.getSessionTimestamp()}_${this.userId}`
+				this.sessionId = `${this.getSessionTimestamp()}_${this.userId}`;
 			}
 		}
-		return this.sessionId
-	}
-
+		return this.sessionId;
+	};
+	getSceneData(sceneName, sceneId, versionNumber) {
+		return {
+			SceneName: sceneName,
+			SceneId: sceneId,
+			VersionNumber: versionNumber
+		};
+	};
 	set setSessionId(id) {
 		this.sessionId = id;
-	}
+	};
 	set setUserId(id) {
 		this.userId = id;
-	}
+	};
 	set setDeviceId(id) {
 		this.deviceId = id;
-	}
+	};
 	set setSessionStatus(active) {
 		this.isSessionActive = active;
-	}
+	};
 	set setSessionTimestamp(value) {
 		this.sessionTimestamp = value;
-	}
+	};
 	setUserProperty(propertyType, value) {
 		this.newUserProperties[propertyType] = value;
 	};
@@ -69,31 +94,12 @@ class CognitiveVRAnalyticsCore {
 		this.newDeviceProperties[this.devicePropertyString(property)] = value;
 	};
 
-	getApiKey(){
+	getApiKey() {
 		return this.config.APIKey;
-	}
+	};
 
 	devicePropertyString(property, value) {
 		return this.devicePropertyMap[property] ? this.devicePropertyMap[property] : "unknown.property";
-	};
-	devicePropertyMap = {
-		AppName: "cvr.app.name",
-		AppVersion: "cvr.app.version",
-		AppEngine: "cvr.app.engine",
-		AppEngineVersion: "cvr.app.engine.version",
-		DeviceType: "cvr.device.type",
-		DeviceModel: "cvr.device.model",
-		DeviceMemory: "cvr.device.memory",
-		DeviceOS: "cvr.device.os",
-		DeviceCPU: "cvr.device.cpu",
-		DeviceCPUCores: "cvr.device.cpu.cores",
-		DeviceCPUVendor: "cvr.device.cpu.vendor",
-		DeviceGPU: "cvr.device.gpu",
-		DeviceGPUDriver: "cvr.device.gpu.driver",
-		DeviceGPUVendor: "cvr.device.gpu.vendor",
-		DeviceGPUMemory: "cvr.device.gpu.memory",
-		VRModel: "cvr.vr.model",
-		VRVendor: "cvr.vr.vendor",
 	};
 
 

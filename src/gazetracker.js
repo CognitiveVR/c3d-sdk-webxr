@@ -66,7 +66,7 @@ class GazeTracker {
 			if (Object.keys(uproperties).length) {
 				payload['user'] = uproperties;
 			}
-			this.network.networkCall('gaze', payload)
+			this.network.networkCall('gaze', payload);
 			this.batchedGaze = [];
 		})
 
@@ -74,6 +74,7 @@ class GazeTracker {
 
 	endSession() {
 		this.batchedGaze = [];
+		this.jsonPart = 1;
 	}
 }
 // const defaultConfig = new Config();

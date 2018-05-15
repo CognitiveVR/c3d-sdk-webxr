@@ -13,9 +13,7 @@ class C3D {
 	}
 
 	startSession() {
-		if (this.core.isSessionActive) {
-			return false;
-		}
+		if (this.core.isSessionActive) { return false; }
 
 		this.core.setSessionStatus = true;
 		this.core.getSessionTimestamp();
@@ -56,6 +54,13 @@ class C3D {
 		// this.sensor.endSession();
 
 	}
+	sceneData(name, id, version){
+		return this.core.getSceneData(name,id,version);
+	}
+	
+	set allSceneData(allSceneData){
+		this.core.allSceneData = allSceneData;
+	}
 	sendData() {
 		if (!this.core.isSessionActive) {
 			console.log("Cognitive3DAnalyticsCore::SendData failed: no session active");
@@ -91,9 +96,10 @@ class C3D {
 	getApiKey() {
 		return this.core.getApiKey();
 	}
-	getSceneId(){
+	getSceneId() {
 		return this.core.sceneData.SceneId;
 	}
+
 }
 
 export default C3D

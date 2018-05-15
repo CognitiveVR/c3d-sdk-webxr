@@ -1,46 +1,46 @@
+import Network from './network';
 class CustomEvents {
 	constructor(core) {
 		this.core = core;
+		this.network = new Network(core);
 		this.batchedCustomEvents = [];
-
+		this.jsonPart = 1;
 	}
 
 	send(category, position, properties) {
-		console.log('sending custom event');
-		let se = {};
-		se["name"] = category;
-		se["time"] = this.core.getTimestamp();
-		se["point"] = [position[0], position[1], position[2]];
+		let data = {};
+		data['name'] = category;
+		data['time'] = this.core.getTimestamp();
+		data['point'] = [position[0], position[1], position[2]];
 		if (properties) {
-			se['properties'] = properties;
+			data['properties'] = properties;
 		}
-		let data = [se];
-		this.batchedCustomEvents = this.batchedCustomEvents.concat(data);
+		this.batchedCustomEvents = this.batchedCustomEvents.concat([data]);
 		if (this.batchedCustomEvents.length >= this.core.config.CustomEventBatchSize) {
-			this.sendData()
+			this.sendData();
 		}
-
 	}
 
 	sendData() {
 		if (!this.core.isSessionActive) {
 			console.log('CustomEvent.sendData failed: no session active');
+			return;
 		} else {
-			console.warn('network here, sending Event Batch');
+			let payload = {};
+			payload['userid'] = this.core.userId;
+			payload['timestamp'] = this.core.getTimestamp();
+			payload['sessionid'] = this.core.getSessionId();
+			payload['part'] = this.jsonPart;
+			this.jsonPart++;
+			payload['data'] = this.batchedCustomEvents;
+			this.network.networkCall('events', payload);
 			this.batchedCustomEvents = [];
 		}
-		// userid:this.c3d.userid,
-		// timestamp:this.,
-		// sessionid:'',
-		// part:'',
-		// hmdtype:'',
-		// interval:'',
-		// this.network.networkCall('gaze', {d:2} )
-		// this.sendData()
 	}
+
 	endSession() {
 		this.batchedCustomEvents = [];
+		this.jsonPart = 1;
 	}
 }
-// const defaultConfig = new Config();
 export default CustomEvents;

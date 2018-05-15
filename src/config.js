@@ -11,9 +11,16 @@ class Config {
 		this.CustomEventBatchSize = 64;
 		this.GazeBatchSize = 3;
 		this.GazeInterval = 0.1;
-		this.HMDType = 'rift';
+		this.HMDType = '';
+		this.allSceneData = [];
 	}
-
+	sceneData(sceneName, sceneId, versionNumber) {
+		return {
+			SceneName:sceneName,
+			SceneId:sceneId,
+			VersionNumber:versionNumber
+		}
+	}
 	set settings(settings) {
 		if (settings.LOG) {
 			this.LOG = settings.LOG;
@@ -35,10 +42,10 @@ class Config {
 		}
 		if (settings.DynamicDataLimit) {
 			this.DynamicDataLimit = settings.DynamicDataLimit;
-		} 
+		}
 		if (settings.CustomEventBatchSize) {
 			this.CustomEventBatchSize = settings.CustomEventBatchSize;
-		} 
+		}
 		if (settings.GazeBatchSize) {
 			this.GazeBatchSize = settings.GazeBatchSize;
 		}
