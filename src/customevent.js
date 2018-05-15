@@ -12,9 +12,7 @@ class CustomEvents {
 		data['name'] = category;
 		data['time'] = this.core.getTimestamp();
 		data['point'] = [position[0], position[1], position[2]];
-		if (properties) {
-			data['properties'] = properties;
-		}
+		if (properties) { data['properties'] = properties; }
 		this.batchedCustomEvents = this.batchedCustomEvents.concat([data]);
 		if (this.batchedCustomEvents.length >= this.core.config.CustomEventBatchSize) {
 			this.sendData();
@@ -40,6 +38,7 @@ class CustomEvents {
 
 	endSession() {
 		this.batchedCustomEvents = [];
+		//restart counter on end session
 		this.jsonPart = 1;
 	}
 }

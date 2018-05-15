@@ -19,7 +19,7 @@ class Network {
 			}
 			fetch(path, options);
 		});
-	}
+	};
 }
 
 export default Network;

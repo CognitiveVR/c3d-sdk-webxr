@@ -24,7 +24,7 @@ class C3D {
 
 		this.customEvent.send('Session Start', [0, 0, 0]);
 		return true;
-	}
+	};
 
 	endSession() {
 		// if session is not active do nothing
@@ -53,14 +53,14 @@ class C3D {
 		// this.dynamicObject.endSession();
 		// this.sensor.endSession();
 
-	}
-	sceneData(name, id, version){
-		return this.core.getSceneData(name,id,version);
-	}
-	
-	set allSceneData(allSceneData){
+	};
+	sceneData(name, id, version) {
+		return this.core.getSceneData(name, id, version);
+	};
+
+	set allSceneData(allSceneData) {
 		this.core.allSceneData = allSceneData;
-	}
+	};
 	sendData() {
 		if (!this.core.isSessionActive) {
 			console.log("Cognitive3DAnalyticsCore::SendData failed: no session active");
@@ -71,35 +71,62 @@ class C3D {
 		//-------------------------//
 		// this.dynamicObject.sendData();
 		// this.sensor.sendData();
+	};
+	isSessionActive(){
+		return this.core.isSessionActive;
+	};
+	//notsure if needed;
+	wasInitSuccessful(){
+		return this.core.isSessionActive;
+	};
+	getSessionTimestamp(){
+		return this.core.getSessionTimestamp();
+	};
+	getSessionId(){
+		return this.core.getSessionId();
+	};
+	getUserProperties(){
+		return {...this.core.newUserProperties};
+	};
+	getDeviceProperties(){
+		return {...this.core.newDeviceProperties};
 	}
 	set userId(userId) {
 		this.core.setUserId = userId;
-	}
+	};
 	setUserProperty(property, value) {
 		this.core.setUserProperty(property, value);
 	};
+	setUserName(name) {
+		this.core.setUserId = name;
+		this.setUserProperty('name', name);
+	};
+	setDeviceName(name) {
+		this.core.setDeviceId = name;
+		this.core.newDeviceProperties['name'] = name;
+	};
 	setDeviceProperty(property, value) {
 		this.core.setDeviceProperty(property, value)
-	}
+	};
 	set deviceId(deviceId) {
 		this.core.setDeviceId = deviceId;
-	}
+	};
 	set sceneName(name) {
 		this.core.sceneData.sceneName = name;
-	}
+	};
 	set sceneId(id) {
 		this.core.sceneData.sceneId = id;
-	}
+	};
 	set versionNumber(versionNumber) {
 		this.core.sceneData.versionNumber = versionNumber;
-	}
+	};
 	getApiKey() {
 		return this.core.getApiKey();
-	}
+	};
 	getSceneId() {
 		return this.core.sceneData.SceneId;
-	}
+	};
 
 }
 
-export default C3D
+export default C3D;
