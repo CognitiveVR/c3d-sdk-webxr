@@ -18,7 +18,7 @@ class Sensors {
 			this.allSensors.push({ name: name, data: [point] });
 
 		this.sensorCount++;
-		if (this.sensorCount >= this.core.config.SensorDataLimit) {
+		if (this.sensorCount >= this.core.config.sensorDataLimit) {
 			this.sendData();
 		}
 	}
@@ -28,12 +28,12 @@ class Sensors {
 				console.log('Sensor.sendData failed: no session active');
 				return;
 			}
-			if(this.allSensors.length === 0) return;
+			if (this.allSensors.length === 0) return;
 
 			let payload = {};
 			payload['name'] = this.core.userId;
 			payload['sessionid'] = this.core.getSessionId();
-			payload['timestamp'] = parseInt(this.core.getTimestamp());
+			payload['timestamp'] = parseInt(this.core.getTimestamp(), 10);
 			payload['part'] = this.jsonPart;
 			this.jsonPart++;
 			payload['data'] = this.allSensors;

@@ -1,5 +1,3 @@
-import Config from "./config";
-import SceneData from './scenedata';
 class Network {
 	constructor(core) {
 		this.core = core;

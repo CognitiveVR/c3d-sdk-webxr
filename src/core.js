@@ -1,7 +1,5 @@
 import Config from "./config";
-import Network from './network';
 import SceneData from './scenedata';
-import GazeTracker from "./gazetracker";
 import c3dSettings from '../settings';
 //need another class ?
 class CognitiveVRAnalyticsCore {
@@ -9,7 +7,7 @@ class CognitiveVRAnalyticsCore {
 		this.config = Config
 		if (settings) { this.config.settings = settings.config; }
 		this.isSessionActive = false;
-		this.sceneData = SceneData;
+		this.sceneData = this.getCurrentScene();
 		this.userId = '';
 		this.deviceId = '';
 		this.sessionId = '';
@@ -37,15 +35,32 @@ class CognitiveVRAnalyticsCore {
 		};
 	}
 
-	removeSettings() {
-
-	};
-
 	getSessionTimestamp() {
 		if (!this.sessionTimestamp) {
-			this.sessionTimestamp = parseInt(this.getTimestamp());
+			this.sessionTimestamp = parseInt(this.getTimestamp(), 10);
 		}
 		return this.sessionTimestamp;
+	};
+	getCurrentScene() {
+		let scene;
+		if (this.config.allSceneData.length === 1) {
+			scene = this.config.allSceneData[0];
+		} else {
+			scene = {
+				SceneName: '',
+				SceneId: '',
+				VersionNumber: ''
+			}
+		}
+		return scene;
+	};
+	setScene(name) {
+		for (let i = 0; i <= this.config.allSceneData.length-1; i++){
+			console.log(this.config.allSceneData[i]['SceneName']);
+			if (this.config.allSceneData[i].SceneName === name){
+				this.sceneData = this.config.allSceneData[i];
+			}
+		}
 	};
 
 	getTimestamp() {

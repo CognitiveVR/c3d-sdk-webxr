@@ -23,7 +23,7 @@ class GazeTracker {
 
 		this.batchedGaze = this.batchedGaze.concat([data]);
 
-		if (this.batchedGaze.length >= this.core.config.GazeBatchSize) {
+		if (this.batchedGaze.length >= this.core.config.gazeBatchSize) {
 			this.sendData()
 		}
 	}

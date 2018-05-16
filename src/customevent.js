@@ -14,7 +14,7 @@ class CustomEvents {
 		data['point'] = [position[0], position[1], position[2]];
 		if (properties) { data['properties'] = properties; }
 		this.batchedCustomEvents = this.batchedCustomEvents.concat([data]);
-		if (this.batchedCustomEvents.length >= this.core.config.CustomEventBatchSize) {
+		if (this.batchedCustomEvents.length >= this.core.config.customEventBatchSize) {
 			this.sendData();
 		}
 	}
@@ -27,7 +27,7 @@ class CustomEvents {
 			let payload = {};
 			payload['userid'] = this.core.userId;
 			//might need to set timestamp here to sessionT imestamp
-			payload['timestamp'] = parseInt(this.core.getTimestamp(),10);
+			payload['timestamp'] = parseInt(this.core.getTimestamp(), 10);
 			payload['sessionid'] = this.core.getSessionId();
 			payload['part'] = this.jsonPart;
 			this.jsonPart++;

@@ -6,19 +6,19 @@ class Config {
 		//added to the header of the requests
 		this.APIKey = '';
 		this.networkVersion = '0';
-		this.SensorDataLimit = 64;
+		this.sensorDataLimit = 64;
 		this.DynamicDataLimit = 64;
-		this.CustomEventBatchSize = 64;
-		this.GazeBatchSize = 3;
+		this.customEventBatchSize = 64;
+		this.gazeBatchSize = 3;
 		this.GazeInterval = 0.1;
 		this.HMDType = '';
 		this.allSceneData = [];
 	}
 	sceneData(sceneName, sceneId, versionNumber) {
 		return {
-			SceneName:sceneName,
-			SceneId:sceneId,
-			VersionNumber:versionNumber
+			SceneName: sceneName,
+			SceneId: sceneId,
+			VersionNumber: versionNumber
 		}
 	}
 	set settings(settings) {
@@ -37,23 +37,26 @@ class Config {
 		if (settings.networkVersion) {
 			this.networkVersion = settings.networkVersion;
 		}
-		if (settings.SensorDataLimit) {
-			this.SensorDataLimit = settings.SensorDataLimit;
+		if (settings.sensorDataLimit) {
+			this.sensorDataLimit = settings.sensorDataLimit;
 		}
 		if (settings.DynamicDataLimit) {
 			this.DynamicDataLimit = settings.DynamicDataLimit;
 		}
-		if (settings.CustomEventBatchSize) {
-			this.CustomEventBatchSize = settings.CustomEventBatchSize;
+		if (settings.customEventBatchSize) {
+			this.customEventBatchSize = settings.customEventBatchSize;
 		}
-		if (settings.GazeBatchSize) {
-			this.GazeBatchSize = settings.GazeBatchSize;
+		if (settings.gazeBatchSize) {
+			this.gazeBatchSize = settings.gazeBatchSize;
 		}
 		if (settings.GazeInterval) {
 			this.GazeInterval = settings.GazeInterval;
 		}
 		if (settings.HMDType) {
 			this.HMDType = settings.HMDType;
+		}
+		if (settings.allSceneData) {
+			this.allSceneData = settings.allSceneData;
 		}
 	}
 }

@@ -1,4 +1,3 @@
-import Config from "./config";
 import CognitiveVRAnalyticsCore from './core'
 import GazeTracker from "./gazetracker";
 import CustomEvent from "./customevent";
@@ -38,7 +37,7 @@ class C3D {
 		let sessionLength = this.core.getTimestamp() - this.core.sessionTimestamp;
 		props['sessionLength'] = sessionLength;
 
-		this.customEvent.send('Session End', [0, 0, 0], props);
+		this.customEvent.send('Session End', endPos, props);
 
 		this.sendData();
 
@@ -59,7 +58,12 @@ class C3D {
 	sceneData(name, id, version) {
 		return this.core.getSceneData(name, id, version);
 	};
-
+	addToAllSceneData(scene){
+		this.core.config.allSceneData.push(scene)
+	};
+	setScene(name){
+		this.core.setScene(name);
+	};
 	set allSceneData(allSceneData) {
 		this.core.allSceneData = allSceneData;
 	};
@@ -113,15 +117,15 @@ class C3D {
 	set deviceId(deviceId) {
 		this.core.setDeviceId = deviceId;
 	};
-	set sceneName(name) {
-		this.core.sceneData.sceneName = name;
-	};
-	set sceneId(id) {
-		this.core.sceneData.sceneId = id;
-	};
-	set versionNumber(versionNumber) {
-		this.core.sceneData.versionNumber = versionNumber;
-	};
+	// set sceneName(name) {
+	// 	this.core.sceneData.sceneName = name;
+	// };
+	// set sceneId(id) {
+	// 	this.core.sceneData.sceneId = id;
+	// };
+	// set versionNumber(versionNumber) {
+	// 	this.core.sceneData.versionNumber = versionNumber;
+	// };
 	getApiKey() {
 		return this.core.getApiKey();
 	};
