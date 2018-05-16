@@ -50,14 +50,14 @@ class GazeTracker {
 
 			let payload = {};
 
-			payload["userid"] = this.core.userId;
-			payload["timestamp"] = this.core.getTimestamp();
-			payload["sessionid"] = this.core.getSessionId();
-			payload["part"] = this.jsonPart;
+			payload['userid'] = this.core.userId;
+			payload['timestamp'] = parseInt(this.core.getTimestamp());
+			payload['sessionid'] = this.core.getSessionId();
+			payload['part'] = this.jsonPart;
 			this.jsonPart++;
-			payload["hmdtype"] = this.HMDType;
-			payload["interval"] = this.playerSnapshotInterval;
-			payload["data"] = this.batchedGaze;
+			payload['hmdtype'] = this.HMDType;
+			payload['interval'] = this.playerSnapshotInterval;
+			payload['data'] = this.batchedGaze;
 
 			if (Object.keys(dproperties).length) {
 				payload['device'] = dproperties;
@@ -68,7 +68,7 @@ class GazeTracker {
 			}
 			this.network.networkCall('gaze', payload);
 			this.batchedGaze = [];
-		})
+		});
 
 	}
 

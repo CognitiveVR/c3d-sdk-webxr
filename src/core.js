@@ -43,13 +43,13 @@ class CognitiveVRAnalyticsCore {
 
 	getSessionTimestamp() {
 		if (!this.sessionTimestamp) {
-			this.sessionTimestamp = this.getTimestamp();
+			this.sessionTimestamp = parseInt(this.getTimestamp());
 		}
 		return this.sessionTimestamp;
 	};
 
 	getTimestamp() {
-		return Date.now();
+		return Date.now() / 1000;
 	};
 
 	isSessionActive1() {
@@ -58,9 +58,9 @@ class CognitiveVRAnalyticsCore {
 	getSessionId() {
 		if (!this.sessionId) {
 			if (!this.userId) {
-				this.sessionId = `${this.getSessionTimestamp()}_${this.deviceId}`;
+				this.sessionId = `${this.sessionTimestamp}_${this.deviceId}`;
 			} else {
-				this.sessionId = `${this.getSessionTimestamp()}_${this.userId}`;
+				this.sessionId = `${this.sessionTimestamp}_${this.userId}`;
 			}
 		}
 		return this.sessionId;

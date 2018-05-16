@@ -3,6 +3,7 @@ import CognitiveVRAnalyticsCore from './core'
 import GazeTracker from "./gazetracker";
 import CustomEvent from "./customevent";
 import Network from './network';
+import Sensor from './sensors';
 
 class C3D {
 	constructor() {
@@ -10,6 +11,7 @@ class C3D {
 		this.network = new Network(this.core);
 		this.gaze = new GazeTracker(this.core);
 		this.customEvent = new CustomEvent(this.core);
+		this.sensor = new Sensor(this.core);
 	}
 
 	startSession() {
@@ -49,9 +51,9 @@ class C3D {
 
 		this.gaze.endSession();
 		this.customEvent.endSession();
+		this.sensor.endSession();
 		//-------------------------//
 		// this.dynamicObject.endSession();
-		// this.sensor.endSession();
 
 	};
 	sceneData(name, id, version) {
@@ -68,9 +70,9 @@ class C3D {
 		}
 		this.gaze.sendData();
 		this.customEvent.sendData();
+		this.sensor.sendData();
 		//-------------------------//
 		// this.dynamicObject.sendData();
-		// this.sensor.sendData();
 	};
 	isSessionActive(){
 		return this.core.isSessionActive;
