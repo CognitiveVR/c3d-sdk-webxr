@@ -12,10 +12,11 @@ class C3D {
 		this.gaze = new GazeTracker(this.core);
 		this.customEvent = new CustomEvent(this.core);
 		this.sensor = new Sensor(this.core);
-		//TODO:handle property's for each unavailability 
-		// console.log(navigator.deviceMemory)
-		this.setDeviceProperty('DeviceMemory', window.navigator.deviceMemory);
-		this.setDeviceProperty('DeviceType', this.getPlatformType());
+		(typeof navigator !== 'undefined') && navigator.deviceMemory && this.setDeviceProperty('DeviceMemory', window.navigator.deviceMemory * 1000);
+		(typeof window !== 'undefined') && window.navigator && window.navigator.platform && this.setDeviceProperty('DeviceType', window.navigator.platform);
+		(typeof window !== 'undefined') && window.screen && window.screen.height && this.setDeviceProperty('DeviceScreenHeight', window.screen.height);
+		(typeof window !== 'undefined') && window.screen && window.screen.width && this.setDeviceProperty('DeviceScreenWidth', window.screen.width);
+		this.setDeviceProperty('DevicePlatform', this.getPlatformType());
 		this.setDeviceProperty('DeviceOS', this.getOS());
 	}
 
@@ -25,7 +26,6 @@ class C3D {
 		this.core.setSessionStatus = true;
 		this.core.getSessionTimestamp();
 		this.core.getSessionId();
-
 		this.gaze.setHMDType(this.core.config.HMDType);
 		this.gaze.setInterval(this.core.config.GazeInterval);
 
@@ -37,7 +37,7 @@ class C3D {
 		// if session is not active do nothing
 		if (!this.core.isSessionActive) return;
 
-		//calculate session lenth
+		//calculate session length
 		let props = {};
 		let endPos = [0, 0, 0];
 		let sessionLength = this.core.getTimestamp() - this.core.sessionTimestamp;
@@ -87,12 +87,14 @@ class C3D {
 	};
 
 	getPlatformType() {
-		if (window.navigator.userAgent.match(/mobile/i)) {
-			return 'Mobile';
-		} else if (window.navigator.userAgent.match(/iPad|Android|Touch/i)) {
-			return 'Tablet';
-		} else {
-			return 'Desktop';
+		if (window && window.navigator) {
+			if (window.navigator.userAgent.match(/mobile/i)) {
+				return 'Mobile';
+			} else if (window.navigator.userAgent.match(/iPad|Android|Touch/i)) {
+				return 'Tablet';
+			} else {
+				return 'Desktop';
+			}
 		}
 	};
 	config(property, value) {
