@@ -5,12 +5,18 @@ import Network from './network';
 import Sensor from './sensors';
 
 class C3D {
-	constructor() {
+	constructor(settings) {
 		this.core = CognitiveVRAnalyticsCore;
+		if (settings) { this.core.config.settings = settings.config; }
 		this.network = new Network(this.core);
 		this.gaze = new GazeTracker(this.core);
 		this.customEvent = new CustomEvent(this.core);
 		this.sensor = new Sensor(this.core);
+		//TODO:handle property's for each unavailability 
+		// console.log(navigator.deviceMemory)
+		this.setDeviceProperty('DeviceMemory', window.navigator.deviceMemory);
+		this.setDeviceProperty('DeviceType', this.getPlatformType());
+		this.setDeviceProperty('DeviceOS', this.getOS());
 	}
 
 	startSession() {
@@ -58,15 +64,53 @@ class C3D {
 	sceneData(name, id, version) {
 		return this.core.getSceneData(name, id, version);
 	};
-	addToAllSceneData(scene){
+
+	getOS() {
+		let userAgent = window.navigator.userAgent,
+			platform = window.navigator.platform,
+			macosPlatforms = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'],
+			windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE'],
+			iosPlatforms = ['iPhone', 'iPad', 'iPod'],
+			os = null;
+		if (macosPlatforms.indexOf(platform) !== -1) {
+			os = 'MacOS';
+		} else if (iosPlatforms.indexOf(platform) !== -1) {
+			os = 'iOS';
+		} else if (windowsPlatforms.indexOf(platform) !== -1) {
+			os = 'Windows';
+		} else if (/Android/.test(userAgent)) {
+			os = 'Android';
+		} else if (!os && /Linux/.test(platform)) {
+			os = 'Linux';
+		}
+		return os || 'unknown';
+	};
+
+	getPlatformType() {
+		if (window.navigator.userAgent.match(/mobile/i)) {
+			return 'Mobile';
+		} else if (window.navigator.userAgent.match(/iPad|Android|Touch/i)) {
+			return 'Tablet';
+		} else {
+			return 'Desktop';
+		}
+	};
+	config(property, value) {
+		this.core.config[property] = value;
+	}
+
+	addToAllSceneData(scene) {
 		this.core.config.allSceneData.push(scene)
 	};
-	setScene(name){
+
+	setScene(name) {
 		this.core.setScene(name);
 	};
+
 	set allSceneData(allSceneData) {
 		this.core.allSceneData = allSceneData;
 	};
+
 	sendData() {
 		if (!this.core.isSessionActive) {
 			console.log("Cognitive3DAnalyticsCore::SendData failed: no session active");
@@ -78,24 +122,24 @@ class C3D {
 		//-------------------------//
 		// this.dynamicObject.sendData();
 	};
-	isSessionActive(){
+	isSessionActive() {
 		return this.core.isSessionActive;
 	};
 	//notsure if needed;
-	wasInitSuccessful(){
+	wasInitSuccessful() {
 		return this.core.isSessionActive;
 	};
-	getSessionTimestamp(){
+	getSessionTimestamp() {
 		return this.core.getSessionTimestamp();
 	};
-	getSessionId(){
+	getSessionId() {
 		return this.core.getSessionId();
 	};
-	getUserProperties(){
-		return {...this.core.newUserProperties};
+	getUserProperties() {
+		return { ...this.core.newUserProperties };
 	};
-	getDeviceProperties(){
-		return {...this.core.newDeviceProperties};
+	getDeviceProperties() {
+		return { ...this.core.newDeviceProperties };
 	}
 	set userId(userId) {
 		this.core.setUserId = userId;
@@ -130,9 +174,8 @@ class C3D {
 		return this.core.getApiKey();
 	};
 	getSceneId() {
-		return this.core.sceneData.SceneId;
+		return this.core.sceneData.sceneId;
 	};
 
 }
-
 export default C3D;

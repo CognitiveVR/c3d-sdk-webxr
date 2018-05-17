@@ -3,11 +3,10 @@ class GazeTracker {
 	constructor(core) {
 		this.core = core;
 		this.network = new Network(core);
-		this.playerSnapshotInterval;
-		this.HMDType;
+		this.playerSnapshotInterval = undefined;
+		this.HMDType = undefined;
 		this.batchedGaze = [];
 		this.jsonPart = 1;
-		// this.isSessionActive = isSessionActive
 	}
 	recordGaze(position, rotation, gaze, objectId) {
 		let ts = this.core.getTimestamp();
@@ -51,7 +50,7 @@ class GazeTracker {
 			let payload = {};
 
 			payload['userid'] = this.core.userId;
-			payload['timestamp'] = parseInt(this.core.getTimestamp());
+			payload['timestamp'] = parseInt(this.core.getTimestamp(), 10);
 			payload['sessionid'] = this.core.getSessionId();
 			payload['part'] = this.jsonPart;
 			this.jsonPart++;

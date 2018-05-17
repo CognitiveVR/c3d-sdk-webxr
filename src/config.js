@@ -16,9 +16,9 @@ class Config {
 	}
 	sceneData(sceneName, sceneId, versionNumber) {
 		return {
-			SceneName: sceneName,
-			SceneId: sceneId,
-			VersionNumber: versionNumber
+			sceneName,
+			sceneId,
+			versionNumber
 		}
 	}
 	set settings(settings) {

@@ -1,11 +1,9 @@
 import Config from "./config";
-import SceneData from './scenedata';
 import c3dSettings from '../settings';
 //need another class ?
 class CognitiveVRAnalyticsCore {
 	constructor(settings) {
 		this.config = Config
-		if (settings) { this.config.settings = settings.config; }
 		this.isSessionActive = false;
 		this.sceneData = this.getCurrentScene();
 		this.userId = '';
@@ -47,26 +45,23 @@ class CognitiveVRAnalyticsCore {
 			scene = this.config.allSceneData[0];
 		} else {
 			scene = {
-				SceneName: '',
-				SceneId: '',
-				VersionNumber: ''
+				sceneName: '',
+				sceneId: '',
+				versionNumber: ''
 			}
 		}
 		return scene;
 	};
 	setScene(name) {
-		for (let i = 0; i <= this.config.allSceneData.length-1; i++){
-			console.log(this.config.allSceneData[i]['SceneName']);
-			if (this.config.allSceneData[i].SceneName === name){
+		for (let i = 0; i <= this.config.allSceneData.length - 1; i++) {
+			if (this.config.allSceneData[i].sceneName === name) {
 				this.sceneData = this.config.allSceneData[i];
 			}
 		}
 	};
-
 	getTimestamp() {
 		return Date.now() / 1000;
 	};
-
 	isSessionActive1() {
 		return this.isSessionActive;
 	};
@@ -82,9 +77,9 @@ class CognitiveVRAnalyticsCore {
 	};
 	getSceneData(sceneName, sceneId, versionNumber) {
 		return {
-			SceneName: sceneName,
-			SceneId: sceneId,
-			VersionNumber: versionNumber
+			sceneName: sceneName,
+			sceneId: sceneId,
+			versionNumber: versionNumber
 		};
 	};
 	set setSessionId(id) {
