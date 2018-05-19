@@ -1,8 +1,6 @@
 import Config from "./config";
-import c3dSettings from '../settings';
-//need another class ?
 class CognitiveVRAnalyticsCore {
-	constructor(settings) {
+	constructor() {
 		this.config = Config
 		this.isSessionActive = false;
 		this.sceneData = this.getCurrentScene();
@@ -117,4 +115,4 @@ class CognitiveVRAnalyticsCore {
 
 
 }
-export default new CognitiveVRAnalyticsCore(c3dSettings) 
+export default new CognitiveVRAnalyticsCore() 

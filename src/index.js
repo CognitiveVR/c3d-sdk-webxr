@@ -3,6 +3,7 @@ import GazeTracker from "./gazetracker";
 import CustomEvent from "./customevent";
 import Network from './network';
 import Sensor from './sensors';
+import ExitPoll from './exitpoll';
 
 class C3D {
 	constructor(settings) {
@@ -12,6 +13,7 @@ class C3D {
 		this.gaze = new GazeTracker(this.core);
 		this.customEvent = new CustomEvent(this.core);
 		this.sensor = new Sensor(this.core);
+		this.exitpoll = new ExitPoll(this.core);
 		(typeof navigator !== 'undefined') && navigator.deviceMemory && this.setDeviceProperty('DeviceMemory', window.navigator.deviceMemory * 1000);
 		(typeof window !== 'undefined') && window.navigator && window.navigator.platform && this.setDeviceProperty('DeviceType', window.navigator.platform);
 		(typeof window !== 'undefined') && window.screen && window.screen.height && this.setDeviceProperty('DeviceScreenHeight', window.screen.height);
@@ -138,10 +140,10 @@ class C3D {
 		return this.core.getSessionId();
 	};
 	getUserProperties() {
-		return { ...this.core.newUserProperties };
+		return this.core.newUserProperties ;
 	};
 	getDeviceProperties() {
-		return { ...this.core.newDeviceProperties };
+		return this.core.newDeviceProperties ;
 	}
 	set userId(userId) {
 		this.core.setUserId = userId;

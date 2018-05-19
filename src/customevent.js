@@ -36,6 +36,9 @@ class CustomEvents {
 			this.batchedCustomEvents = [];
 		}
 	}
+	printSomething(){
+		console.log(this)
+	}
 
 	endSession() {
 		this.batchedCustomEvents = [];
