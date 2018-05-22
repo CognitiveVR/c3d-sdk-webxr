@@ -1,10 +1,9 @@
-import Network from './network'
-import CustomEvent from './customevent'
+import Network from './network';
 class ExitPoll {
-	constructor(core) {
+	constructor(core, customEvent) {
 		this.core = core;
 		this.network = new Network(core);
-		this.customEvent = new CustomEvent(core)
+		this.customEvent = customEvent;
 		this.currentQuestionSetString = '';
 		this.fullResponse = {};
 		this.currentQuestionSet = {};
@@ -17,6 +16,7 @@ class ExitPoll {
 			voice: 'VOICE'
 		}
 	}
+
 	requestQuestionSet(hook) {
 		return new Promise((resolve, reject) => {
 			if (!this.core.isSessionActive) {
@@ -59,11 +59,12 @@ class ExitPoll {
 		return this.currentQuestionSet;
 	};
 
-	ClearQuestionSet() {
+	clearQuestionSet() {
 		this.currentQuestionSetString = '';
 		this.currentQuestionSet = '';
 		this.fullResponse = {};
 	};
+
 	addAnswer(type, answer) {
 		if (!type || answer === undefined || answer === null) {
 			console.error('ExitPoll.addAnswer: cannot add anser, it takes two arguments, type and answer');
@@ -78,26 +79,29 @@ class ExitPoll {
 			this.fullResponse['answers'] = [anAnswer];
 		}
 	};
+
 	sendAllAnswers(pos) {
 		if (!this.core.isSessionActive) {
 			console.log('ExitPoll.sendAllAnswers failed: no session active');
 			return;
 		}
-
 		//companyname1234-productname-test/questionSets/:questionset_name/:version#/responses
-		// this.network.networkExitpollPost(this.fullResponse.questionSetName, this.fullResponse.questionSetVersion, this.fullResponse);
+		this.network.networkExitpollPost(this.fullResponse.questionSetName, this.fullResponse.questionSetVersion, this.fullResponse);
 
 		//TODO: send this as a transaction too
 		if (!pos) { pos = [0, 0, 0] }
-		// let properties = {};
-		// properties['userId'] = this.core.uerId;
-		// properties['questionSetId'] = this.fullResponse.questionSetId;
-		// properties['hook'] = this.fullResponse.hook;
-		// properties['answers']= this.fullResponse.answers;
-		this.customEvent.printSomething();
-		// cvr -> customevent -> Send('cvr.exitpoll', pos, properties);
-
-		// ClearQuestionSet();
-	}
+		let properties = {};
+		properties['userId'] = this.core.userId;
+		properties['questionSetId'] = this.fullResponse.questionSetId;
+		properties['hook'] = this.fullResponse.hook;
+		for (let i = 0; i < this.fullResponse.answers.length; i++) {
+			//strings are only for voice responses. these do not show up in dash
+			//else bool(0-1), null(-32768), number(0-10)
+			properties[`Answer${i}`] = (typeof this.fullResponse.answers[i].value === 'string') ? 0 :
+				this.fullResponse.answers[i].value;
+		}
+		this.customEvent.send('cvr.exitpoll', pos, properties);
+		this.clearQuestionSet();
+	};
 }
 export default ExitPoll;

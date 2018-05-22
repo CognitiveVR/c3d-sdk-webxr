@@ -36,14 +36,11 @@ class CustomEvents {
 			this.batchedCustomEvents = [];
 		}
 	}
-	printSomething(){
-		console.log(this)
-	}
 
 	endSession() {
 		this.batchedCustomEvents = [];
 		//restart counter on end session
 		this.jsonPart = 1;
-	}
+	};
 }
 export default CustomEvents;

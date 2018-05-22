@@ -13,7 +13,7 @@ class C3D {
 		this.gaze = new GazeTracker(this.core);
 		this.customEvent = new CustomEvent(this.core);
 		this.sensor = new Sensor(this.core);
-		this.exitpoll = new ExitPoll(this.core);
+		this.exitpoll = new ExitPoll(this.core, this.customEvent);
 		(typeof navigator !== 'undefined') && navigator.deviceMemory && this.setDeviceProperty('DeviceMemory', window.navigator.deviceMemory * 1000);
 		(typeof window !== 'undefined') && window.navigator && window.navigator.platform && this.setDeviceProperty('DeviceType', window.navigator.platform);
 		(typeof window !== 'undefined') && window.screen && window.screen.height && this.setDeviceProperty('DeviceScreenHeight', window.screen.height);
@@ -165,21 +165,14 @@ class C3D {
 	set deviceId(deviceId) {
 		this.core.setDeviceId = deviceId;
 	};
-	// set sceneName(name) {
-	// 	this.core.sceneData.sceneName = name;
-	// };
-	// set sceneId(id) {
-	// 	this.core.sceneData.sceneId = id;
-	// };
-	// set versionNumber(versionNumber) {
-	// 	this.core.sceneData.versionNumber = versionNumber;
-	// };
 	getApiKey() {
 		return this.core.getApiKey();
 	};
 	getSceneId() {
 		return this.core.sceneData.sceneId;
 	};
+
+	
 
 }
 export default C3D;
