@@ -9,7 +9,7 @@ class Config {
 		this.sensorDataLimit = 64;
 		this.dynamicDataLimit = 64;
 		this.customEventBatchSize = 64;
-		this.gazeBatchSize = 3;
+		this.gazeBatchSize = 64;
 		this.GazeInterval = 0.1;
 		this.HMDType = '';
 		this.allSceneData = [];
@@ -40,8 +40,8 @@ class Config {
 		if (settings.sensorDataLimit) {
 			this.sensorDataLimit = settings.sensorDataLimit;
 		}
-		if (settings.DynamicDataLimit) {
-			this.DynamicDataLimit = settings.DynamicDataLimit;
+		if (settings.dynamicDataLimit) {
+			this.dynamicDataLimit = settings.dynamicDataLimit;
 		}
 		if (settings.customEventBatchSize) {
 			this.customEventBatchSize = settings.customEventBatchSize;
