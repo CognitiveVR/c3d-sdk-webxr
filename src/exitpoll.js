@@ -23,7 +23,6 @@ class ExitPoll {
 				console.log('ExitPoll.requestQuestionSet failed: no session active');
 				return;
 			}
-
 			this.network.networkExitpollGet(hook, this.exitPollCalback)
 				.then(questionset => {
 					this.receiveQuestionSet(questionset, hook)
