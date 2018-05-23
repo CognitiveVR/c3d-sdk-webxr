@@ -19,7 +19,7 @@ class CognitiveVRAnalyticsCore {
 			DeviceModel: 'cvr.device.model',
 			DeviceMemory: 'cvr.device.memory',
 			DeviceOS: 'cvr.device.os',
-			DevicePlatform:'cvr.device.platform',
+			DevicePlatform: 'cvr.device.platform',
 			DeviceCPU: 'cvr.device.cpu',
 			DeviceCPUCores: 'cvr.device.cpu.cores',
 			DeviceCPUVendor: 'cvr.device.cpu.vendor',
@@ -27,8 +27,8 @@ class CognitiveVRAnalyticsCore {
 			DeviceGPUDriver: 'cvr.device.gpu.driver',
 			DeviceGPUVendor: 'cvr.device.gpu.vendor',
 			DeviceGPUMemory: 'cvr.device.gpu.memory',
-			DeviceScreenHeight:'cvr.device.sceen.height',
-			DeviceScreenWidth:'cvr.device.sceen.width',
+			DeviceScreenHeight: 'cvr.device.sceen.height',
+			DeviceScreenWidth: 'cvr.device.sceen.width',
 			VRModel: 'cvr.vr.model',
 			VRVendor: 'cvr.vr.vendor',
 		};
@@ -54,10 +54,19 @@ class CognitiveVRAnalyticsCore {
 		return scene;
 	};
 	setScene(name) {
+		let foundScene = false;
 		for (let i = 0; i <= this.config.allSceneData.length - 1; i++) {
 			if (this.config.allSceneData[i].sceneName === name) {
 				this.sceneData = this.config.allSceneData[i];
+				foundScene = true;
+				break;
 			}
+		}
+		if (!foundScene) {
+			console.error("CognitiveVRAnalyticsCore::SetScene Config scene ids does not contain key for scene " + name);
+			this.sceneData.sceneName = '';
+			this.sceneData.sceneId = '';
+			this.sceneData.versionNumber = '';
 		}
 	};
 	getTimestamp() {

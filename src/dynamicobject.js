@@ -19,30 +19,30 @@ class DynamicObject {
 		//all engagements that need to be written to snapshots. active or inactive. inactive engagements are removed after being sent
 		this.allEngagements = {};
 	}
-	// registerObjectCustomId(name, meshname, customid, position, rotation) {
-	// 	for (let i = 0; i < this.objectIds.length; i++) {
-	// 		if (this.objectIds[i].id === customid) {
-	// 			console.log("DynamicObject.registerObjectCustomId object id " + customid + " already registered");
-	// 			break;
-	// 		}
-	// 	}
+	registerObjectCustomId(name, meshname, customid, position, rotation) {
+		for (let i = 0; i < this.objectIds.length; i++) {
+			if (this.objectIds[i].id === customid) {
+				console.log("DynamicObject.registerObjectCustomId object id " + customid + " already registered");
+				break;
+			}
+		}
 
-	// 	let registerId = this.dynamicObjectId(id, meshname);
-	// 	this.objectIds.push(registerId);
+		let registerId = this.dynamicObjectId(customid, meshname);
+		this.objectIds.push(registerId);
 
-	// 	let dome = this.dynamicObjectManifestEntry(registerId.id, name, meshname);
-	// 	this.manifestEntries.push(dome);
-	// 	this.fullManifest.push(dome);
-	// 	let props = {};
-	// 	props['enabled'] = true;
+		let dome = this.dynamicObjectManifestEntry(registerId.id, name, meshname);
+		this.manifestEntries.push(dome);
+		this.fullManifest.push(dome);
+		let props = {};
+		props['enabled'] = true;
 
-	// 	// this.addSnapshot(customid, position, rotation, props);
+		this.addSnapshot(customid, position, rotation, props);
 
-	// 	if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
-	// 		this.sendData();
-	// 	}
-	// 	return;
-	// };
+		if ((this.snapshots.length + this.manifestEntries.length) >= this.core.config.dynamicDataLimit) {
+			this.sendData();
+		}
+		return;
+	};
 
 	registerObject(name, meshname, position, rotation) {
 		let foundRecycledId = false;
@@ -150,9 +150,9 @@ class DynamicObject {
 		}
 
 		sendJson['data'] = data;
-		// this.network.networkCall('dynamics', sendJson);
-		// this.manifestEntries = [];
-		// this.snapshots = [];
+		this.network.networkCall('dynamics', sendJson);
+		this.manifestEntries = [];
+		this.snapshots = [];
 	};
 
 	dynamicObjectSnapshot(position, rotation, objectId, properties) {
@@ -195,8 +195,24 @@ class DynamicObject {
 			mesh
 		}
 	};
+
 	endSession() {
-		console.log('end session ....')
+		this.fullManifest = [];
+		this.manifestEntries = [];
+		this.objectIds = [];
+		this.snapshots = [];
+		// this.engagementCount = null;
+		this.allEngagements = {};
+
+	};
+
+	//re-add all manifest entries when a scene changes.
+	//otherwise there could be snapshots for dynamic 
+	//objects without any identification in the new scene
+	refreshObjectManifest() {
+		for (let element of this.fullManifest) {
+			this.manifestEntries.push(element);
+		}
 	}
 }
 export default DynamicObject;

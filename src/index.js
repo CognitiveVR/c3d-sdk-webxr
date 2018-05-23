@@ -15,7 +15,7 @@ class C3D {
 		this.customEvent = new CustomEvent(this.core);
 		this.sensor = new Sensor(this.core)
 		this.exitpoll = new ExitPoll(this.core, this.customEvent);
-		this.dynamicobject = new DynamicObject(this.core, this.customEvent);
+		this.dynamicObject = new DynamicObject(this.core, this.customEvent);
 		(typeof navigator !== 'undefined') && navigator.deviceMemory && this.setDeviceProperty('DeviceMemory', window.navigator.deviceMemory * 1000);
 		(typeof window !== 'undefined') && window.navigator && window.navigator.platform && this.setDeviceProperty('DeviceType', window.navigator.platform);
 		(typeof window !== 'undefined') && window.screen && window.screen.height && this.setDeviceProperty('DeviceScreenHeight', window.screen.height);
@@ -61,8 +61,7 @@ class C3D {
 		this.gaze.endSession();
 		this.customEvent.endSession();
 		this.sensor.endSession();
-		//-------------------------//
-		// this.dynamicObject.endSession();
+		this.dynamicObject.endSession();
 
 	};
 	sceneData(name, id, version) {
@@ -106,10 +105,15 @@ class C3D {
 	}
 
 	addToAllSceneData(scene) {
-		this.core.config.allSceneData.push(scene)
+		this.core.config.allSceneData.push(scene);
 	};
 
 	setScene(name) {
+		console.log("CognitiveVRAnalytics::SetScene: " + name);
+		if(this.core.sceneData.sceneId){
+			this.sendData();
+			this.dynamicObject.refreshObjectManifest();
+		}
 		this.core.setScene(name);
 	};
 
@@ -125,8 +129,7 @@ class C3D {
 		this.gaze.sendData();
 		this.customEvent.sendData();
 		this.sensor.sendData();
-		//-------------------------//
-		this.dynamicobject.sendData();
+		this.dynamicObject.sendData();
 	};
 	isSessionActive() {
 		return this.core.isSessionActive;

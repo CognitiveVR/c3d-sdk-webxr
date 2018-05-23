@@ -50,7 +50,7 @@ class Network {
 			};
 			let path = "https://" + this.core.config.networkHost + "/v" + this.core.config.networkVersion + "/questionSets/" + questionsetname + "/" + questionsetversion + "/responses";
 			fetch(path, options)
-				.then(() => console.log('sent'))
+				// .then(() => console.log('sent'))
 				.catch(err => console.error(err));
 		});
 	}
