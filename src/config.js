@@ -7,7 +7,7 @@ class Config {
 		this.APIKey = '';
 		this.networkVersion = '0';
 		this.sensorDataLimit = 64;
-		this.DynamicDataLimit = 64;
+		this.dynamicDataLimit = 64;
 		this.customEventBatchSize = 64;
 		this.gazeBatchSize = 3;
 		this.GazeInterval = 0.1;

@@ -1,15 +1,6 @@
 import Network from './network';
 import uuid from 'uuid/v4';
 
-class DynamicObjectId {
-	constructor(id, meshname) {
-		id = id;
-		used = true;
-		meshname = meshname
-	}
-}
-
-
 class DynamicObject {
 	constructor(core, customEvent) {
 		this.core = core;
@@ -25,64 +16,47 @@ class DynamicObject {
 		this.fullManifest = [];
 		//all objects that have not yet been sent to SceneExplorer. cleared on send
 		this.manifestEntries = [];
-
 		//all engagements that need to be written to snapshots. active or inactive. inactive engagements are removed after being sent
 		this.allEngagements = {};
 	}
-	registerObjectCustomId(name, meshname, customid, position, rotation) {
-		for (let i = 0; i < this.objectIds.length; i++) {
-			if (this.objectIds[i].id === customid) {
-				console.log("DynamicObject.registerObjectCustomId object id " + customid + " already registered");
-				break;
-			}
-		}
+	// registerObjectCustomId(name, meshname, customid, position, rotation) {
+	// 	for (let i = 0; i < this.objectIds.length; i++) {
+	// 		if (this.objectIds[i].id === customid) {
+	// 			console.log("DynamicObject.registerObjectCustomId object id " + customid + " already registered");
+	// 			break;
+	// 		}
+	// 	}
 
-		let registerId = this.dynamicObjectId(id, meshname);
-		this.objectIds.push(registerId);
+	// 	let registerId = this.dynamicObjectId(id, meshname);
+	// 	this.objectIds.push(registerId);
 
-		let dome = this.dynamicObjectManifestEntry(registerId.id, name, meshname);
-		this.manifestEntries.push(dome);
-		this.fullManifest.push(dome);
-		let props = {};
-		props['enabled'] = true;
+	// 	let dome = this.dynamicObjectManifestEntry(registerId.id, name, meshname);
+	// 	this.manifestEntries.push(dome);
+	// 	this.fullManifest.push(dome);
+	// 	let props = {};
+	// 	props['enabled'] = true;
 
-		// this.addSnapshot(customid, position, rotation, props);
+	// 	// this.addSnapshot(customid, position, rotation, props);
 
-		if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
-			this.sendData();
-		}
-		return;
-	};
+	// 	if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
+	// 		this.sendData();
+	// 	}
+	// 	return;
+	// };
 
-	registerObject(name, mushname, position, rotation) {
+	registerObject(name, meshname, position, rotation) {
 		let foundRecycledId = false;
-		let newObjectId = this.dynamicObjectId('0', meshname);
-
-		let nextObjectId = uuid();
-		for (let element of this.objectIds) {
-			if (element.id === nextObjectId) { nextObjectId = uuid(); continue; }
-			if (element.used) { continue; }
-			if (element.meshname === meshname) {
-				//found an unused objectid
-				element.used = true;
-				newObjectId = element;
-				foundRecycledId = true;
-				break;
-			}
-		}
+		let newObjectId = this.dynamicObjectId(uuid(), meshname);
 
 		if (!foundRecycledId) {
-			newObjectId = DynamicObjectId(newObjectId, meshname);
-			objectIds.push(newObjectId);
-			let dome = DynamicObjectManifestEntry(newObjectId.Id, name, meshname);
-
-			manifestEntries.push(dome);
-			fullManifest.push(dome);
+			this.objectIds.push(newObjectId);
+			let dome = this.dynamicObjectManifestEntry(newObjectId.id, name, meshname);
+			this.manifestEntries.push(dome);
+			this.fullManifest.push(dome);
 		}
-
 		let props = {};
 		props['enabled'] = true;
-		this.addSnapShot(newObjectId.id, position, rotation, props);
+		this.addSnapshot(newObjectId.id, position, rotation, props);
 		if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
 			this.sendData();
 		}
@@ -94,7 +68,7 @@ class DynamicObject {
 		//if dynamic object id is not in manifest, display warning. likely object ids were cleared from scene change
 		let foundId = false;
 		for (let element of this.objectIds) {
-			if (objectId == element.Id) {
+			if (objectId == element.id) {
 				foundId = true;
 				break;
 			}
@@ -105,8 +79,7 @@ class DynamicObject {
 
 		let snapshot = this.dynamicObjectSnapshot(position, rotation, objectId, properties);
 
-
-		if (Object.keys(this.allEngagements[objectId]).length > 0) {
+		if (this.allEngagements[objectId] && Object.keys(this.allEngagements[objectId]).length > 0) {
 			let i = 0;
 
 			//add engagements to snapshot
@@ -128,12 +101,12 @@ class DynamicObject {
 			// cvr -> log -> Info("all engagements post " + std:: to_string(allEngagements[objectId].size()));
 		}
 
-		snapshots.emplace_back(snapshot);
+		this.snapshots.push(snapshot);
 
-		if (snapshots.size() + manifestEntries.size() >= cvr -> config -> DynamicDataLimit) {
-			SendData();
+		if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
+			this.endData();
 		}
-	}
+	};
 
 	isInactive() {
 
@@ -141,7 +114,47 @@ class DynamicObject {
 
 	sendData() {
 		console.log('sendData.........')
-	}
+		if (!this.core.isSessionActive) {
+			console.log("DynamicObject.sendData failed: no session active");
+			return;
+		}
+
+		if ((this.manifestEntries.length + this.snapshots.length) === 0) {
+			return;
+		}
+		let sendJson = {};
+		sendJson['userid'] = this.core.userId;
+		sendJson['timestamp'] = this.core.getTimestamp();
+		sendJson['sessionid'] = this.core.sessionId;
+		sendJson['part'] = this.jsonpart;
+
+		let manifest = {};
+		for (let element of this.manifestEntries) {
+			let entryValues = {}
+			entryValues["name"] = element.name;
+			entryValues["mesh"] = element.meshname;
+			manifest[element.id] = entryValues;
+		}
+		sendJson['manifest'] = manifest;
+
+		let data = [];
+
+		for (let element of this.snapshots) {
+			let entry = {};
+			entry['id'] = element.id;
+			entry['time'] = element.time;
+			entry['p'] = element.position;
+			entry['r'] = element.rotation;
+			if (element.properties) { entry['properties'] = element.properties }
+			data.push(entry);
+		}
+
+		sendJson['data'] = data;
+		// this.network.networkCall('dynamics', sendJson);
+		// this.manifestEntries = [];
+		// this.snapshots = [];
+	};
+
 	dynamicObjectSnapshot(position, rotation, objectId, properties) {
 		let ss = {};
 		//TODO conversion for xyz = -xzy or whatever
@@ -153,7 +166,8 @@ class DynamicObject {
 			ss['properties'] = properties;
 		}
 		return ss;
-	}
+	};
+
 	dynamicObjectEngagementEvent(id, engagementName, engagementNumber) {
 		let engagementEvent = {};
 		engagementEvent['isActive'] = true;
@@ -165,13 +179,11 @@ class DynamicObject {
 		return engagementEvent;
 	};
 
-
-
 	//used in the client to track which ids are used and which can be reused
 	dynamicObjectId(id, meshname) {
 		return {
 			id,
-			used: true
+			used: true,
 			meshname
 		}
 	};
@@ -183,5 +195,8 @@ class DynamicObject {
 			mesh
 		}
 	};
+	endSession() {
+		console.log('end session ....')
+	}
 }
 export default DynamicObject;

@@ -4,6 +4,7 @@ import CustomEvent from "./customevent";
 import Network from './network';
 import Sensor from './sensors';
 import ExitPoll from './exitpoll';
+import DynamicObject from './dynamicobject';
 
 class C3D {
 	constructor(settings) {
@@ -12,8 +13,9 @@ class C3D {
 		this.network = new Network(this.core);
 		this.gaze = new GazeTracker(this.core);
 		this.customEvent = new CustomEvent(this.core);
-		this.sensor = new Sensor(this.core);
+		this.sensor = new Sensor(this.core)
 		this.exitpoll = new ExitPoll(this.core, this.customEvent);
+		this.dynamicobject = new DynamicObject(this.core, this.customEvent);
 		(typeof navigator !== 'undefined') && navigator.deviceMemory && this.setDeviceProperty('DeviceMemory', window.navigator.deviceMemory * 1000);
 		(typeof window !== 'undefined') && window.navigator && window.navigator.platform && this.setDeviceProperty('DeviceType', window.navigator.platform);
 		(typeof window !== 'undefined') && window.screen && window.screen.height && this.setDeviceProperty('DeviceScreenHeight', window.screen.height);
@@ -124,7 +126,7 @@ class C3D {
 		this.customEvent.sendData();
 		this.sensor.sendData();
 		//-------------------------//
-		// this.dynamicObject.sendData();
+		this.dynamicobject.sendData();
 	};
 	isSessionActive() {
 		return this.core.isSessionActive;
