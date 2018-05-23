@@ -16,8 +16,12 @@ class DynamicObject {
 		this.fullManifest = [];
 		//all objects that have not yet been sent to SceneExplorer. cleared on send
 		this.manifestEntries = [];
+		//engagements that are currently active
+		this.activeEngagements = {};
 		//all engagements that need to be written to snapshots. active or inactive. inactive engagements are removed after being sent
 		this.allEngagements = {};
+		//count of engagements on dynamic objects of type
+		this.engagementCounts = {};
 	}
 	registerObjectCustomId(name, meshname, customid, position, rotation) {
 		for (let i = 0; i < this.objectIds.length; i++) {
@@ -57,6 +61,7 @@ class DynamicObject {
 		let props = {};
 		props['enabled'] = true;
 		this.addSnapshot(newObjectId.id, position, rotation, props);
+
 		if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
 			this.sendData();
 		}
@@ -102,9 +107,8 @@ class DynamicObject {
 		}
 
 		this.snapshots.push(snapshot);
-
 		if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
-			this.endData();
+			this.sendData();
 		}
 	};
 
@@ -113,7 +117,6 @@ class DynamicObject {
 	};
 
 	sendData() {
-		console.log('sendData.........')
 		if (!this.core.isSessionActive) {
 			console.log("DynamicObject.sendData failed: no session active");
 			return;
@@ -126,7 +129,8 @@ class DynamicObject {
 		sendJson['userid'] = this.core.userId;
 		sendJson['timestamp'] = this.core.getTimestamp();
 		sendJson['sessionid'] = this.core.sessionId;
-		sendJson['part'] = this.jsonpart;
+		sendJson['part'] = this.jsonPart;
+		this.jsonPart++
 
 		let manifest = {};
 		for (let element of this.manifestEntries) {
@@ -213,6 +217,45 @@ class DynamicObject {
 		for (let element of this.fullManifest) {
 			this.manifestEntries.push(element);
 		}
+	};
+
+	removeObject(objectid, position, rotation) {
+		//end any engagements if the object had any active
+		this.endActiveEngagements(objectid);
+
+		//one final snapshot to send all the ended engagements
+		let props = {};
+		props['enabled'] = false;
+		this.addSnapshot(objectid, position, rotation, props);
+
+		for (let i = 0; i < this.objectIds.length; i++) {
+			if (this.objectIds[i].id === objectid) {
+				this.objectIds[i].used = false;
+				return;
+			}
+		}
+	};
+
+	beginEngagement(objectId, name) {
+		console.log("DynamicObject::beginEngagement engagement " + name + " on object " + objectId);
+
+		this.engagementCounts[objectId] = {};
+		(this.engagementCounts[objectId][name]) ? this.engagementCounts[objectId][name] += 1 : 
+		this.engagementCounts[objectId][name] = 1;
+
+		let engagement = this.dynamicObjectEngagementEvent(objectId, name, this.engagementCounts[objectId][name]);
+		this.activeEngagements[objectId].push(engagement);
+		this.allEngagements[objectId].push(engagement);
 	}
+
+	endActiveEngagements(objectId) {
+		if (!this.activeEngagements[objectId]) return;
+		for (let i = 0; i < this.activeEngagements[objectId].length; i++) {
+			if (this.activeEngagements[objectId].isActive) {
+				this.endEngagement(objectId, this.activeEngagements[objectId].name);
+			}
+		}
+	};
+
 }
 export default DynamicObject;
