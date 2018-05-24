@@ -172,14 +172,24 @@ class DynamicObject {
 		return ss;
 	};
 
+	// dynamicObjectEngagementEvent(id, engagementName, engagementNumber) {
+	// 	let engagementEvent = {};
+	// 	engagementEvent['isActive'] = true;
+
+	// 	engagementEvent['startTime'] = -1;
+	// 	engagementEvent['name'] = "";
+	// 	engagementEvent['objectId'] = "";
+	// 	engagementEvent['engagementNumber'] = 0;
+	// 	return engagementEvent;
+	// };
+
 	dynamicObjectEngagementEvent(id, engagementName, engagementNumber) {
 		let engagementEvent = {};
 		engagementEvent['isActive'] = true;
-
-		engagementEvent['startTime'] = -1;
-		engagementEvent['name'] = "";
-		engagementEvent['objectId'] = "";
-		engagementEvent['engagementNumber'] = 0;
+		engagementEvent['startTime'] = this.core.getTimestamp();
+		engagementEvent['name'] = engagementName;
+		engagementEvent['objectId'] = id;
+		engagementEvent['engagementNumber'] = engagementNumber;
 		return engagementEvent;
 	};
 
@@ -240,15 +250,21 @@ class DynamicObject {
 		console.log("DynamicObject::beginEngagement engagement " + name + " on object " + objectId);
 
 		this.engagementCounts[objectId] = {};
-		(this.engagementCounts[objectId][name]) ? this.engagementCounts[objectId][name] += 1 : 
-		this.engagementCounts[objectId][name] = 1;
+		this.engagementCounts[objectId][name] = +1;
 
 		let engagement = this.dynamicObjectEngagementEvent(objectId, name, this.engagementCounts[objectId][name]);
+		if (!this.activeEngagements[objectId]) {
+			this.activeEngagements[objectId] = [];
+		}
+		if (!this.allEngagements[objectId]) {
+			this.allEngagements[objectId] = [];
+		}
 		this.activeEngagements[objectId].push(engagement);
 		this.allEngagements[objectId].push(engagement);
-	}
+	};
 
 	endActiveEngagements(objectId) {
+		debugger;
 		if (!this.activeEngagements[objectId]) return;
 		for (let i = 0; i < this.activeEngagements[objectId].length; i++) {
 			if (this.activeEngagements[objectId].isActive) {
