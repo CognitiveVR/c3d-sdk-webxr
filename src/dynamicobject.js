@@ -1,5 +1,5 @@
-import Network from './network';
 import uuid from 'uuid/v4';
+import Network from './network';
 
 class DynamicObject {
 	constructor(core, customEvent) {
@@ -73,7 +73,7 @@ class DynamicObject {
 		//if dynamic object id is not in manifest, display warning. likely object ids were cleared from scene change
 		let foundId = false;
 		for (let element of this.objectIds) {
-			if (objectId == element.id) {
+			if (objectId === element.id) {
 				foundId = true;
 				break;
 			}
@@ -86,12 +86,16 @@ class DynamicObject {
 
 		if (this.allEngagements[objectId] && Object.keys(this.allEngagements[objectId]).length > 0) {
 			let i = 0;
-
 			//add engagements to snapshot
 			for (let e of this.allEngagements[objectId]) {
 				if (e.isActive) {
+					if (!snapshot.engagements) {
+						snapshot.engagements = [];
+					}
+
 					let engagementEvent = {};
-					engagementEvent['engagementparent'] = objectId;
+					engagementEvent['engagementtype'] = e.name;
+					engagementEvent['engagementparent'] = e.id;
 					engagementEvent['engagement_count'] = e.engagementNumber;
 					engagementEvent['engagement_time'] = this.core.getTimestamp() - e.startTime;
 					snapshot.engagements.push(engagementEvent);
@@ -188,7 +192,7 @@ class DynamicObject {
 		engagementEvent['isActive'] = true;
 		engagementEvent['startTime'] = this.core.getTimestamp();
 		engagementEvent['name'] = engagementName;
-		engagementEvent['objectId'] = id;
+		engagementEvent['id'] = id;
 		engagementEvent['engagementNumber'] = engagementNumber;
 		return engagementEvent;
 	};
@@ -246,13 +250,20 @@ class DynamicObject {
 		}
 	};
 
-	beginEngagement(objectId, name) {
+	beginEngagement(objectId, name, parentId = null) {
+		//parentId is the Id of the object that we are engaging with 
+		//objectId is the Id of the object getting engaged
 		console.log("DynamicObject::beginEngagement engagement " + name + " on object " + objectId);
+		if (!this.engagementCounts[objectId]) {
+			this.engagementCounts[objectId] = {};
+		}
+		if (!this.engagementCounts[objectId][name]) {
+			this.engagementCounts[objectId][name] = 1;
+		} else {
+			this.engagementCounts[objectId][name] = this.engagementCounts[objectId][name] + 1;
+		}
 
-		this.engagementCounts[objectId] = {};
-		this.engagementCounts[objectId][name] = +1;
-
-		let engagement = this.dynamicObjectEngagementEvent(objectId, name, this.engagementCounts[objectId][name]);
+		let engagement = this.dynamicObjectEngagementEvent(parentId, name, this.engagementCounts[objectId][name]);
 		if (!this.activeEngagements[objectId]) {
 			this.activeEngagements[objectId] = [];
 		}
@@ -264,14 +275,61 @@ class DynamicObject {
 	};
 
 	endActiveEngagements(objectId) {
-		debugger;
 		if (!this.activeEngagements[objectId]) return;
 		for (let i = 0; i < this.activeEngagements[objectId].length; i++) {
-			if (this.activeEngagements[objectId].isActive) {
-				this.endEngagement(objectId, this.activeEngagements[objectId].name);
+			if (this.activeEngagements[objectId][i].isActive) {
+				this.activeEngagements[objectId][i].isActive = false
 			}
 		}
 	};
+
+	endEngagement(objectId, name, parentId) {
+		//parentId is the Id of the object that we are engaging with 
+		//objectId is the Id of the object getting engaged
+		if (this.activeEngagements[objectId]) {
+			for (let i = 0; i < this.activeEngagements[objectId].length; i++) {
+				if (parentId) {
+					if (this.activeEngagements[objectId][i].isActive && this.activeEngagements[objectId][i].name === name && this.activeEngagements[objectId][i].id === parentId) {
+						console.log('here1')
+						this.activeEngagements[objectId][i].isActive = false;
+						return;
+					}
+				} else {
+					if (this.activeEngagements[objectId][i].name === name) {
+						this.activeEngagements[objectId][i].isActive = false;
+						return;
+					}
+				}
+			}
+		}
+		// otherwise create and end the engagement
+		console.log("DynamicObject::EndEngagement engagement " + name + " not found on object" + objectId + ". Begin+End");
+		this.beginEngagement(objectId, name, parentId);
+		for (let i = 0; i < this.activeEngagements[objectId].length; i++) {
+
+			if (parentId) {
+				debugger;
+				if (this.activeEngagements[objectId].isActive &&
+					this.activeEngagements[objectId].name === name &&
+					this.activeEngagements[objectId].id === parentId) {
+					this.activeEngagements[objectId].isActive = false;
+					return;
+				}
+			} else {
+				if (this.activeEngagements[objectId].name === name) {
+					debugger;
+					this.activeEngagements[objectId].isActive = false;
+					return;
+				}
+			}
+			// auto rit = activeEngagements[objectId].rbegin();
+			// for (; rit != activeEngagements[objectId].rend(); ++rit) {
+			// 	if (rit -> Name  name) {
+			// 		rit -> isActive = false;
+			// 		return;
+			// 	}
+		}
+	}
 
 }
 export default DynamicObject;
