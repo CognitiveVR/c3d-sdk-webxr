@@ -53,7 +53,7 @@ class C3D {
 
 		//clear out session's start timestamp, id and status.
 		this.core.setSessionTimestamp = '';
-		this.core.setSessionId = "";
+		this.core.setSessionId = '';
 		this.core.setSessionStatus = false;
 
 		//clear out data containers for events 
@@ -102,7 +102,7 @@ class C3D {
 	};
 	config(property, value) {
 		this.core.config[property] = value;
-	}
+	};
 
 	addToAllSceneData(scene) {
 		this.core.config.allSceneData.push(scene);
@@ -149,7 +149,7 @@ class C3D {
 	};
 	getDeviceProperties() {
 		return this.core.newDeviceProperties ;
-	}
+	};
 	set userId(userId) {
 		this.core.setUserId = userId;
 	};
@@ -176,8 +176,6 @@ class C3D {
 	getSceneId() {
 		return this.core.sceneData.sceneId;
 	};
-
-	
 
 }
 export default C3D;

@@ -1,7 +1,7 @@
 import Config from "./config";
 class CognitiveVRAnalyticsCore {
 	constructor() {
-		this.config = Config
+		this.config = Config;
 		this.isSessionActive = false;
 		this.sceneData = this.getCurrentScene();
 		this.userId = '';
@@ -113,11 +113,9 @@ class CognitiveVRAnalyticsCore {
 	setDeviceProperty(property, value) {
 		this.newDeviceProperties[this.devicePropertyString(property)] = value;
 	};
-
 	getApiKey() {
 		return this.config.APIKey;
 	};
-
 	devicePropertyString(property, value) {
 		return this.devicePropertyMap[property] ? this.devicePropertyMap[property] : "unknown.property";
 	};

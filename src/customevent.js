@@ -26,7 +26,6 @@ class CustomEvents {
 		} else {
 			let payload = {};
 			payload['userid'] = this.core.userId;
-			//might need to set timestamp here to sessionT imestamp
 			payload['timestamp'] = parseInt(this.core.getTimestamp(), 10);
 			payload['sessionid'] = this.core.getSessionId();
 			payload['part'] = this.jsonPart;
@@ -35,8 +34,7 @@ class CustomEvents {
 			this.network.networkCall('events', payload);
 			this.batchedCustomEvents = [];
 		}
-	}
-
+	};
 	endSession() {
 		this.batchedCustomEvents = [];
 		//restart counter on end session
