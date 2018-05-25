@@ -85,7 +85,7 @@ class DynamicObject {
 		let snapshot = this.dynamicObjectSnapshot(position, rotation, objectId, properties);
 
 		if (this.allEngagements[objectId] && Object.keys(this.allEngagements[objectId]).length > 0) {
-			let i = 0;
+			// let i = 0;
 			//add engagements to snapshot
 			for (let e of this.allEngagements[objectId]) {
 				if (e.isActive) {
@@ -228,7 +228,8 @@ class DynamicObject {
 	//otherwise there could be snapshots for dynamic 
 	//objects without any identification in the new scene
 	refreshObjectManifest() {
-		for (let element of this.fullManifest) {
+		for (var i = 0; i < this.fullManifest.length; i++) {
+			var element = this.fullManifest[i];
 			this.manifestEntries.push(element);
 		}
 	};
@@ -283,6 +284,32 @@ class DynamicObject {
 		}
 	};
 
+	// const myStupidDelimiter = "%#*)&)*&T";
+
+	// id is "587-358" and engagement name is "grab"
+	// id is "587" and engagement name is "358-grab"
+	// both become "587-358-grab"
+
+	// createUniqueKey(objectId, name) {
+	// 	return objectId + "-" + name;
+	// }
+
+	// myActiveStuff = {
+	// 	{name:"foo", objectId:"ut4380q9345u83109gj"}: {
+	// 		"1": {
+	// 			"parentId": "fb8f95d8-451c-4496-9bbc-d59b717a4631",
+	// 			isActive: false,
+	// 			startTIme: 105901295
+	// 		}
+	// 	}
+	// }
+
+	// var newKeyImGonnaUse = {name:"foo", objectId:"ut4380q9345u83109gj"};
+
+	// pendingREmovaLStuuff = {
+
+	// }
+
 	endEngagement(objectId, name, parentId) {
 		//parentId is the Id of the object that we are engaging with 
 		//objectId is the Id of the object getting engaged
@@ -322,12 +349,6 @@ class DynamicObject {
 					return;
 				}
 			}
-			// auto rit = activeEngagements[objectId].rbegin();
-			// for (; rit != activeEngagements[objectId].rend(); ++rit) {
-			// 	if (rit -> Name  name) {
-			// 		rit -> isActive = false;
-			// 		return;
-			// 	}
 		}
 	}
 
