@@ -9,3 +9,9 @@ Quickstart
 The documentation explains how to integrate the SDK, track your users' experience and how to export your scene to view on SceneExplorer.
 
 [Go to the Docs](http://docs.cognitive3d.com/js/get-started/)
+## TO RUN TEST
+```
+yarn test 
+
+```
+That will run test on the transpiled src (lib) 
