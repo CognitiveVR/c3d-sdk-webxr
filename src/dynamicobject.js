@@ -85,7 +85,6 @@ class DynamicObject {
 		let snapshot = this.dynamicObjectSnapshot(position, rotation, objectId, properties);
 
 		if (this.allEngagements[objectId] && Object.keys(this.allEngagements[objectId]).length > 0) {
-			// let i = 0;
 			//add engagements to snapshot
 			for (let e of this.allEngagements[objectId]) {
 				if (!snapshot.engagements) {
@@ -121,11 +120,6 @@ class DynamicObject {
 			}
 		}
 	}
-
-	isInactive() {
-
-	};
-
 	sendData() {
 		if (!this.core.isSessionActive) {
 			console.log("DynamicObject.sendData failed: no session active");
@@ -140,7 +134,7 @@ class DynamicObject {
 		sendJson['timestamp'] = this.core.getTimestamp();
 		sendJson['sessionid'] = this.core.sessionId;
 		sendJson['part'] = this.jsonPart;
-		this.jsonPart++
+		this.jsonPart++;
 
 		let manifest = {};
 		for (let element of this.manifestEntries) {
@@ -152,13 +146,13 @@ class DynamicObject {
 		sendJson['manifest'] = manifest;
 
 		let data = [];
-
 		for (let element of this.snapshots) {
 			let entry = {};
 			entry['id'] = element.id;
 			entry['time'] = element.time;
 			entry['p'] = element.position;
 			entry['r'] = element.rotation;
+			if (element.engagements && element.engagements.length ) { entry['engagements'] = element.engagements }
 			if (element.properties) { entry['properties'] = element.properties }
 			data.push(entry);
 		}
@@ -285,7 +279,6 @@ class DynamicObject {
 			for (let i = 0; i < this.activeEngagements[objectId].length; i++) {
 				if (parentId) {
 					if (this.activeEngagements[objectId][i].isActive && this.activeEngagements[objectId][i].name === name && this.activeEngagements[objectId][i].id === parentId) {
-						console.log('here1')
 						this.activeEngagements[objectId][i].isActive = false;
 						this.activeEngagements[objectId][i]['endTime'] = this.core.getTimestamp() - this.activeEngagements[objectId][i].startTime;
 						return;
