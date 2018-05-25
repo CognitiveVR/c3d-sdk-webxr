@@ -8,7 +8,7 @@ let settings = {
 	config: {
 		APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
 		gazeBatchSize: 12,
-		dynamicDataLimit:20,
+		dynamicDataLimit: 20,
 		customEventBatchSize: 3,
 		HMDType: 'rift',
 		sensorDataLimit: 10,
@@ -45,36 +45,10 @@ test('Multiple Start Sessions', () => {
 	c3d.endSession();
 });
 
-test('should set userId, deviceId', () => {
-	let c3d = new C3DAnalytics(settings);
-
-	expect(c3d.core.userId).not.toBe('test_id');
-	c3d.userId = 'test_id';
-	expect(c3d.core.userId).toBe('test_id');
-
-	expect(c3d.core.deviceId).not.toBe('test_device_id');
-	c3d.setDeviceName('test_device_id');
-	expect(c3d.core.deviceId).toBe('test_device_id');
-
-	c3d.endSession();
-});
-
-test('Should Set User Properties properly', () => {
-	let c3d = new C3DAnalytics(settings);
-	let userPropertisBeofreSetting = c3d.getUserProperties();
-	expect(userPropertisBeofreSetting).toEqual({});
-	c3d.setUserProperty('name', 'test_name');
-	c3d.setUserProperty('location', 'canada');
-	let userPropertis = c3d.getUserProperties();
-  expect(userPropertis).toEqual({name: 'test_name', location: 'canada'});
-	c3d.endSession();
-});
-
-
 test('Can End Session', () => {
 	let c3d = new C3DAnalytics(settings);
-
 	c3d.endSession();
+	expect(c3d.isSessionActive()).toBe(false);
 });
 
 test('Multiple Start & End Sessions', () => {
@@ -87,12 +61,10 @@ test('Multiple Start & End Sessions', () => {
 	c3d.endSession();
 });
 
-
-
-test('', () => {
+test('Initialization and send custom event', () => {
 	let c3d = new C3DAnalytics(settings);
 	expect(c3d.startSession()).toBe(true);
-	c3d.customEvent.send('testing', [0,0,0]);
+	c3d.customEvent.send('testing', [0, 0, 0]);
 	c3d.endSession();
 	expect(c3d.isSessionActive()).toBe(false);
 });
