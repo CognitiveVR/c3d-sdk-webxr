@@ -88,33 +88,39 @@ class DynamicObject {
 			// let i = 0;
 			//add engagements to snapshot
 			for (let e of this.allEngagements[objectId]) {
-				if (e.isActive) {
-					if (!snapshot.engagements) {
-						snapshot.engagements = [];
-					}
-
-					let engagementEvent = {};
-					engagementEvent['engagementtype'] = e.name;
-					engagementEvent['engagementparent'] = e.id;
-					engagementEvent['engagement_count'] = e.engagementNumber;
-					engagementEvent['engagement_time'] = this.core.getTimestamp() - e.startTime;
-					snapshot.engagements.push(engagementEvent);
+				if (!snapshot.engagements) {
+					snapshot.engagements = [];
 				}
+				let engagementEvent = {};
+				engagementEvent['engagementtype'] = e.name;
+				engagementEvent['engagementparent'] = e.id;
+				engagementEvent['engagement_count'] = e.engagementNumber;
+				engagementEvent['engagement_time'] = e.isActive ? (this.core.getTimestamp() - e.startTime) : e.endTime;
+				snapshot.engagements.push(engagementEvent);
 			}
 
-
-
 			console.log("all engagements pre " + this.allEngagements[objectId].length);
-			//remove inactive engagements https://en.wikipedia.org/wiki/Erase%E2%80%93remove_idiom
-			// this.allEngagements[objectId].erase(:: std:: remove_if(allEngagements[objectId].begin(), allEngagements[objectId].end(), isInactive), allEngagements[objectId].end());
-			// cvr -> log -> Info("all engagements post " + std:: to_string(allEngagements[objectId].size()));
+			this.removeInActiveEngagementsOfAnObject(objectId);
+			console.log('all engagements post ' + this.allEngagements[objectId].length);
 		}
-
 		this.snapshots.push(snapshot);
+
 		if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
 			this.sendData();
 		}
 	};
+	removeInActiveEngagementsOfAnObject(objectId) {
+		let { length: i } = this.allEngagements[objectId];
+		while (i--) {
+			if (!this.allEngagements[objectId][i].isActive) {
+				this.allEngagements[objectId].splice(i, 1);
+			}
+
+			if (!this.activeEngagements[objectId][i].isActive) {
+				this.activeEngagements[objectId].splice(i, 1);
+			}
+		}
+	}
 
 	isInactive() {
 
@@ -175,18 +181,6 @@ class DynamicObject {
 		}
 		return ss;
 	};
-
-	// dynamicObjectEngagementEvent(id, engagementName, engagementNumber) {
-	// 	let engagementEvent = {};
-	// 	engagementEvent['isActive'] = true;
-
-	// 	engagementEvent['startTime'] = -1;
-	// 	engagementEvent['name'] = "";
-	// 	engagementEvent['objectId'] = "";
-	// 	engagementEvent['engagementNumber'] = 0;
-	// 	return engagementEvent;
-	// };
-
 	dynamicObjectEngagementEvent(id, engagementName, engagementNumber) {
 		let engagementEvent = {};
 		engagementEvent['isActive'] = true;
@@ -219,9 +213,8 @@ class DynamicObject {
 		this.manifestEntries = [];
 		this.objectIds = [];
 		this.snapshots = [];
-		// this.engagementCount = null;
+		this.engagementCount = {};
 		this.allEngagements = {};
-
 	};
 
 	//re-add all manifest entries when a scene changes.
@@ -284,31 +277,6 @@ class DynamicObject {
 		}
 	};
 
-	// const myStupidDelimiter = "%#*)&)*&T";
-
-	// id is "587-358" and engagement name is "grab"
-	// id is "587" and engagement name is "358-grab"
-	// both become "587-358-grab"
-
-	// createUniqueKey(objectId, name) {
-	// 	return objectId + "-" + name;
-	// }
-
-	// myActiveStuff = {
-	// 	{name:"foo", objectId:"ut4380q9345u83109gj"}: {
-	// 		"1": {
-	// 			"parentId": "fb8f95d8-451c-4496-9bbc-d59b717a4631",
-	// 			isActive: false,
-	// 			startTIme: 105901295
-	// 		}
-	// 	}
-	// }
-
-	// var newKeyImGonnaUse = {name:"foo", objectId:"ut4380q9345u83109gj"};
-
-	// pendingREmovaLStuuff = {
-
-	// }
 
 	endEngagement(objectId, name, parentId) {
 		//parentId is the Id of the object that we are engaging with 
@@ -319,11 +287,13 @@ class DynamicObject {
 					if (this.activeEngagements[objectId][i].isActive && this.activeEngagements[objectId][i].name === name && this.activeEngagements[objectId][i].id === parentId) {
 						console.log('here1')
 						this.activeEngagements[objectId][i].isActive = false;
+						this.activeEngagements[objectId][i]['endTime'] = this.core.getTimestamp() - this.activeEngagements[objectId][i].startTime;
 						return;
 					}
 				} else {
 					if (this.activeEngagements[objectId][i].name === name) {
 						this.activeEngagements[objectId][i].isActive = false;
+						this.activeEngagements[objectId][i]['endTime'] = this.core.getTimestamp() - this.activeEngagements[objectId][i].startTime;
 						return;
 					}
 				}
@@ -333,19 +303,18 @@ class DynamicObject {
 		console.log("DynamicObject::EndEngagement engagement " + name + " not found on object" + objectId + ". Begin+End");
 		this.beginEngagement(objectId, name, parentId);
 		for (let i = 0; i < this.activeEngagements[objectId].length; i++) {
-
 			if (parentId) {
-				debugger;
 				if (this.activeEngagements[objectId].isActive &&
 					this.activeEngagements[objectId].name === name &&
 					this.activeEngagements[objectId].id === parentId) {
 					this.activeEngagements[objectId].isActive = false;
+					this.activeEngagements[objectId][i]['endTime'] = this.core.getTimestamp() - this.activeEngagements[objectId][i].startTime;
 					return;
 				}
 			} else {
 				if (this.activeEngagements[objectId].name === name) {
-					debugger;
 					this.activeEngagements[objectId].isActive = false;
+					this.activeEngagements[objectId][i]['endTime'] = this.core.getTimestamp() - this.activeEngagements[objectId][i].startTime;
 					return;
 				}
 			}
