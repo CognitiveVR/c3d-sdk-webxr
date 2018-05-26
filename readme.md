@@ -11,7 +11,7 @@ The documentation explains how to integrate the SDK, track your users' experienc
 [Go to the Docs](http://docs.cognitive3d.com/js/get-started/)
 ## Testing
 Jest is being used to test the sdk to run the test run the following command
-```yarn test```
+``` yarn test ```
 that will assume source code is being transpiled into lib folder
 
 ## Build 

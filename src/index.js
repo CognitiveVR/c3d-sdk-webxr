@@ -55,9 +55,8 @@ class C3D {
 		this.core.setSessionTimestamp = '';
 		this.core.setSessionId = '';
 		this.core.setSessionStatus = false;
-
+		this.core.resetNewUserDevicProperties();
 		//clear out data containers for events 
-
 		this.gaze.endSession();
 		this.customEvent.endSession();
 		this.sensor.endSession();

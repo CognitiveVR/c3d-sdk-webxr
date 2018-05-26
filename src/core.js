@@ -119,7 +119,9 @@ class CognitiveVRAnalyticsCore {
 	devicePropertyString(property, value) {
 		return this.devicePropertyMap[property] ? this.devicePropertyMap[property] : "unknown.property";
 	};
-
-
+	resetNewUserDevicProperties() {
+		this.newUserProperties = {};
+		this.newDeviceProperties = {};
+	}
 }
 export default new CognitiveVRAnalyticsCore() 
