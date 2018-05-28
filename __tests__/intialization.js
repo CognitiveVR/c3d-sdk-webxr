@@ -1,4 +1,4 @@
-import C3DAnalytics from '../src';
+import C3DAnalytics from '../lib';
 require('es6-promise').polyfill();
 require('isomorphic-fetch');
 
@@ -63,8 +63,29 @@ test('Multiple Start & End Sessions', () => {
 
 test('Initialization and send custom event', () => {
 	let c3d = new C3DAnalytics(settings);
+	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	expect(c3d.startSession()).toBe(true);
+	//start session sends 'Session Start' custom event
+	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
 	c3d.customEvent.send('testing', [0, 0, 0]);
+	expect(c3d.customEvent.batchedCustomEvents.length).toBe(2);
 	c3d.endSession();
+	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
+	expect(c3d.isSessionActive()).toBe(false);
+});
+
+test('Session End', () => {
+	let c3d = new C3DAnalytics(settings);
+	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
+	expect(c3d.endSession()).toBe(undefined);
+	expect(c3d.isSessionActive()).toBe(false);
+});
+
+test('Start session and end session', () => {
+	let c3d = new C3DAnalytics(settings);
+	expect(c3d.startSession()).toBe(true);
+	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
+	expect(c3d.endSession()).toBe(true);
+	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	expect(c3d.isSessionActive()).toBe(false);
 });

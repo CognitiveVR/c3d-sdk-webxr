@@ -1,0 +1,152 @@
+import C3DAnalytics from '../lib';
+require('es6-promise').polyfill();
+require('isomorphic-fetch');
+
+
+
+let settings = {
+	config: {
+		APIKey: 'INTIAL_API',
+		gazeBatchSize: 12,
+		dynamicDataLimit: 20,
+		customEventBatchSize: 3,
+		HMDType: 'rift',
+		sensorDataLimit: 10,
+		allSceneData: [
+			{
+				sceneName: 'test_scene1',
+				sceneId: 'test_id1',
+				versionNumber: 'version1'
+			},
+			{
+				sceneName: 'test_scene2',
+				sceneId: 'test_id2',
+				versionNumber: 'version2'
+			},
+			{
+				sceneName: 'nawar',
+				sceneId: 'nawar_id2',
+				versionNumber: '9'
+			}
+		]
+		//if a config is not spicificed then use the default value.
+	},
+};
+
+// global.console = {
+//   warn: jest.fn(),
+//   log: jest.fn()
+// }
+
+/**
+* @jest-environment jsdom
+*/
+
+
+const c3d = new C3DAnalytics(settings);
+beforeEach(() => {
+	c3d.core.resetNewUserDevicProperties();
+	if (c3d.isSessionActive()) {
+		c3d.endSession();
+	}
+});
+
+test('Device Pre Session', () => {
+	c3d.setDeviceName('7741345684915735');
+	c3d.setDeviceProperty('DeviceMemory', 128);
+	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
+	c3d.setDeviceProperty('DevicePlatform', "Desktop");
+	let deviceProperties = c3d.getDeviceProperties();
+	expect(Object.keys(deviceProperties).length).toEqual(4);
+	expect(deviceProperties['name']).toEqual("7741345684915735");
+	expect(c3d.startSession()).toEqual(true);
+	c3d.endSession();
+});
+
+test('Device Post Session', () => {
+	c3d.startSession();
+	c3d.setDeviceName('7741345684915735');
+	c3d.setDeviceProperty('DeviceCPU', "i7-4770 CPU @ 3.40GHz");
+	c3d.setDeviceProperty('DeviceGPU', "GeForce GTX 970");
+	c3d.setDeviceProperty('DeviceMemory', 128);
+	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
+	c3d.setDeviceProperty('DevicePlatform', "Desktop");
+	let deviceProperties = c3d.getDeviceProperties();
+	expect(Object.keys(deviceProperties).length).toEqual(6);
+	expect(c3d.sendData()).toEqual(true);
+});
+
+test('Device Post Session', () => {
+	c3d.startSession();
+	c3d.setDeviceName('7741345684915735');
+	c3d.setDeviceName('7741345684915736');
+	c3d.setDeviceProperty('DeviceCPU', "i5");
+	c3d.setDeviceProperty('DeviceGPU', "GeForce GTX 170");
+	c3d.setDeviceProperty('DeviceMemory', 16);
+	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
+
+	c3d.setDeviceProperty('DeviceCPU', "i7-4770 CPU @ 3.40GHz");
+	c3d.setDeviceProperty('DeviceGPU', "GeForce GTX 970");
+	c3d.setDeviceProperty('DeviceMemory', 128);
+	c3d.setDeviceProperty('DevicePlatform', "Desktop");
+	let deviceProperties = c3d.getDeviceProperties();
+	expect(Object.keys(deviceProperties).length).toEqual(6);
+	expect(deviceProperties).toEqual({
+		name: '7741345684915736',
+		'cvr.device.cpu': "i7-4770 CPU @ 3.40GHz",
+		'cvr.device.gpu': "GeForce GTX 970",
+		'cvr.device.memory': 128,
+		'cvr.device.platform': 'Desktop',
+		'cvr.device.os': "chrome os 16.9f"
+	});
+});
+
+test('Device Null Post Session', () => {
+	expect(c3d.startSession()).toEqual(true);
+	c3d.setDeviceName("");
+	let deviceProperties = c3d.getDeviceProperties();
+	expect(deviceProperties['name']).toEqual("");
+});
+
+test('Device Null Pre Sesssion', () => {
+	c3d.setDeviceName('7741345684915735');
+	c3d.setDeviceName('7741345684915736');
+	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
+	c3d.setDeviceProperty('DeviceMemory', 128);
+	expect(c3d.endSession()).toEqual(undefined);
+});
+
+test('User Device Post Session', () => {
+	expect(c3d.startSession()).toEqual(true);
+	c3d.setDeviceName("7741345684915735");
+	c3d.setDeviceProperty('DeviceMemory', 128);
+	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
+	expect(c3d.sendData()).toEqual(true);
+
+	let deviceProperties = c3d.getDeviceProperties();
+	expect(Object.keys(deviceProperties).length).toEqual(3);
+	c3d.setUserName("john");
+	c3d.setUserProperty("location", "vancouver");
+	c3d.setUserProperty("location", "seattle");
+	
+	let userProperties = c3d.getUserProperties();
+	expect(Object.keys(userProperties).length).toEqual(2);
+	expect(c3d.endSession()).toEqual(true);
+});
+
+test('User Device pre Session', () => {
+	c3d.setUserName("john");
+	c3d.setUserProperty("location", "vancouver");
+	c3d.setUserProperty("location", "seattle");
+	
+	c3d.setDeviceName("7741345684915735");
+	c3d.setDeviceProperty('DeviceMemory', 128);
+	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
+
+	let deviceProperties = c3d.getDeviceProperties();
+	expect(Object.keys(deviceProperties).length).toEqual(3);
+	let userProperties = c3d.getUserProperties();
+	expect(Object.keys(userProperties).length).toEqual(2);
+	expect(c3d.startSession()).toEqual(true);
+	expect(c3d.endSession()).toEqual(true);
+});

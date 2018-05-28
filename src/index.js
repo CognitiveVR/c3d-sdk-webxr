@@ -61,7 +61,7 @@ class C3D {
 		this.customEvent.endSession();
 		this.sensor.endSession();
 		this.dynamicObject.endSession();
-
+		return true; 
 	};
 	sceneData(name, id, version) {
 		return this.core.getSceneData(name, id, version);
@@ -129,6 +129,7 @@ class C3D {
 		this.customEvent.sendData();
 		this.sensor.sendData();
 		this.dynamicObject.sendData();
+		return true;
 	};
 	isSessionActive() {
 		return this.core.isSessionActive;
