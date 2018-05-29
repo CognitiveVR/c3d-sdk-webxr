@@ -52,7 +52,7 @@ beforeEach(() => {
 });
 
 
-test('Pre Session No End', () => {
+test('Pre Session No End', async () => {
 	let pos = [0,0,0]
 	c3d.startSession();
 	c3d.customEvent.send('testing', pos);
@@ -64,21 +64,18 @@ test('Pre Session No End', () => {
 	expect(c3d.core.sceneData.sceneName).toEqual("");
 	expect(c3d.core.sceneData.sceneId).toEqual("");
 	expect(c3d.core.sceneData.versionNumber).toEqual("");
-	c3d.endSession();
+	expect(c3d.endSession()).rejects.toEqual('no scene selected');
 });
 
-test('init scenes', () => {
-	let scene1 = c3d.sceneData('tutorial', 'DELETE_ME_1', '0');
+test('init scenes', async () => {
+	let scene1 = c3d.sceneData('tutorial_test', 'DELETE_ME_1', '0');
 	let scene2 = c3d.sceneData('menu', 'DELETE_ME_2', '0');
 	let scene3 = c3d.sceneData('finalboss', 'DELETE_ME_3', '0');
-
 	settings.config.allSceneData = [ scene1, scene2, scene3];
 	let c3d1 = new C3DAnalytics(settings);
-	c3d1.setScene('tutorial');
-	c3d1.sendData();
-	expect(c3d1.core.sceneData.sceneName).toEqual("tutorial");
+	c3d1.setScene('tutorial_test');
+	expect(c3d1.core.sceneData.sceneName).toEqual("tutorial_test");
 	expect(c3d1.core.sceneData.sceneId).toEqual("DELETE_ME_1");
 	expect(c3d1.core.sceneData.versionNumber).toEqual("0");
-
-	c3d1.endSession();
+	expect(c3d.endSession()).rejects.toEqual('session is not active');
 });
