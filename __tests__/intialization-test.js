@@ -7,11 +7,11 @@ require('isomorphic-fetch');
 let settings = {
 	config: {
 		APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
-		gazeBatchSize: 12,
-		dynamicDataLimit: 20,
-		customEventBatchSize: 3,
+		gazeBatchSize: 64,
+		dynamicDataLimit: 64,
+		customEventBatchSize: 64,
 		HMDType: 'rift',
-		sensorDataLimit: 10,
+		sensorDataLimit: 64,
 		allSceneData: [
 			{
 				sceneName: 'test_scene1',
@@ -27,6 +27,11 @@ let settings = {
 				sceneName: 'nawar',
 				sceneId: 'nawar_id2',
 				versionNumber: '9'
+			},
+			{
+				sceneName: 'tutorial',
+				sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
+				versionNumber: '3'
 			}
 		]
 		//if a config is not spicificed then use the default value.
@@ -37,31 +42,36 @@ let settings = {
 * @jest-environment jsdom
 */
 
-test('Multiple Start Sessions', () => {
+test('Multiple Start Sessions', async () => {
 	let c3d = new C3DAnalytics(settings);
+	c3d.setScene('tutorial');
 	expect(c3d.startSession()).toBe(true);
 	expect(c3d.startSession()).toBe(false);
 	expect(c3d.startSession()).toBe(false);
-	c3d.endSession();
+	let endSession = await c3d.endSession();
+	expect(endSession).toEqual(200);
 });
 
-test('Can End Session', () => {
+test('Can End Session', async () => {
 	let c3d = new C3DAnalytics(settings);
-	c3d.endSession();
+	expect(c3d.endSession()).rejects.toEqual("session is not active");
 	expect(c3d.isSessionActive()).toBe(false);
 });
 
-test('Multiple Start & End Sessions', () => {
+test('Multiple Start & End Sessions', async () => {
 	let c3d = new C3DAnalytics(settings);
 	expect(c3d.startSession()).toBe(true);
-	c3d.endSession();
+	let endSession = await c3d.endSession();
+	expect(endSession).toEqual(200);
 	expect(c3d.startSession()).toBe(true);
-	c3d.endSession();
+	endSession = await c3d.endSession();
+	expect(endSession).toEqual(200);
 	expect(c3d.startSession()).toBe(true);
-	c3d.endSession();
+	endSession = await c3d.endSession();
+	expect(endSession).toEqual(200);;
 });
 
-test('Initialization and send custom event', () => {
+test('Initialization and send custom event', async () => {
 	let c3d = new C3DAnalytics(settings);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	expect(c3d.startSession()).toBe(true);
@@ -69,23 +79,25 @@ test('Initialization and send custom event', () => {
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
 	c3d.customEvent.send('testing', [0, 0, 0]);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(2);
-	c3d.endSession();
+	let endSession = await c3d.endSession();
+	expect(endSession).toEqual(200);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	expect(c3d.isSessionActive()).toBe(false);
 });
 
-test('Session End', () => {
+test('Session End', async () => {
 	let c3d = new C3DAnalytics(settings);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
-	expect(c3d.endSession()).toBe(undefined);
+	expect(c3d.endSession()).rejects.toEqual("session is not active");
 	expect(c3d.isSessionActive()).toBe(false);
 });
 
-test('Start session and end session', () => {
+test('Start session and end session', async () => {
 	let c3d = new C3DAnalytics(settings);
 	expect(c3d.startSession()).toBe(true);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
-	expect(c3d.endSession()).toBe(true);
+	let endSession = await c3d.endSession();
+	expect(endSession).toEqual(200);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	expect(c3d.isSessionActive()).toBe(false);
 });
