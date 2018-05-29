@@ -20,20 +20,24 @@ class CustomEvents {
 	}
 
 	sendData() {
-		if (!this.core.isSessionActive) {
-			console.log('CustomEvent.sendData failed: no session active');
-			return;
-		} else {
-			let payload = {};
-			payload['userid'] = this.core.userId;
-			payload['timestamp'] = parseInt(this.core.getTimestamp(), 10);
-			payload['sessionid'] = this.core.getSessionId();
-			payload['part'] = this.jsonPart;
-			this.jsonPart++;
-			payload['data'] = this.batchedCustomEvents;
-			this.network.networkCall('events', payload);
-			this.batchedCustomEvents = [];
-		}
+		return new Promise((resolve, reject) => {
+			if (!this.core.isSessionActive) {
+				resolve('CustomEvent.sendData failed: no session active');
+				console.log('CustomEvent.sendData failed: no session active');
+				return;
+			} else {
+				let payload = {};
+				payload['userid'] = this.core.userId;
+				payload['timestamp'] = parseInt(this.core.getTimestamp(), 10);
+				payload['sessionid'] = this.core.getSessionId();
+				payload['part'] = this.jsonPart;
+				this.jsonPart++;
+				payload['data'] = this.batchedCustomEvents;
+				this.network.networkCall('events', payload)
+					.then(res => (res === 200) ? resolve(res) : reject(res));
+				this.batchedCustomEvents = [];
+			}
+		})
 	};
 	endSession() {
 		this.batchedCustomEvents = [];

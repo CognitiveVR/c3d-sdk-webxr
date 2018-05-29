@@ -121,10 +121,15 @@ class DynamicObject {
 		}
 	}
 	sendData() {
-		if (!this.core.isSessionActive) {
-			console.log("DynamicObject.sendData failed: no session active");
-			return;
-		}
+		return new Promise((resolve, reject) => {
+			if (!this.core.isSessionActive) {
+				console.log('DynamicObject.sendData failed: no session active');
+				reject('DynamicObject.sendData failed: no session active');
+				return;
+			}
+
+		});
+
 
 		if ((this.manifestEntries.length + this.snapshots.length) === 0) {
 			return;

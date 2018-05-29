@@ -36,8 +36,9 @@ class GazeTracker {
 	}
 
 	sendData() {
-		return new Promise((res) => {
+		return new Promise((resolve, reject) => {
 			if (!this.core.isSessionActive) {
+				reject('GazeTracker.sendData failed: no session active');
 				console.log('GazeTracker.sendData failed: no session active');
 				return;
 			}
@@ -65,7 +66,8 @@ class GazeTracker {
 			if (Object.keys(uproperties).length) {
 				payload['user'] = uproperties;
 			}
-			this.network.networkCall('gaze', payload);
+			this.network.networkCall('gaze', payload)
+				.then(res => (res === 200) ? resolve(res) : reject(res));
 			this.batchedGaze = [];
 		});
 

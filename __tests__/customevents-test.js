@@ -1,4 +1,4 @@
-import C3DAnalytics from '../lib';
+import C3DAnalytics from '../src';
 require('es6-promise').polyfill();
 require('isomorphic-fetch');
 
@@ -6,12 +6,12 @@ require('isomorphic-fetch');
 
 let settings = {
 	config: {
-		APIKey: 'INTIAL_API',
-		gazeBatchSize: 12,
-		dynamicDataLimit: 20,
-		customEventBatchSize: 3,
+		APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
+		gazeBatchSize: 64,
+		dynamicDataLimit: 64,
+		customEventBatchSize: 64,
 		HMDType: 'rift',
-		sensorDataLimit: 10,
+		sensorDataLimit: 64,
 		allSceneData: [
 			{
 				sceneName: 'test_scene1',
@@ -27,6 +27,11 @@ let settings = {
 				sceneName: 'nawar',
 				sceneId: 'nawar_id2',
 				versionNumber: '9'
+			},
+			{
+				sceneName: 'tutorial',
+				sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
+				versionNumber: '3'
 			}
 		]
 		//if a config is not spicificed then use the default value.
@@ -51,31 +56,31 @@ beforeEach(() => {
 	};
 });
 
-afterAll(() => setTimeout(() => {
-	console.log('here')
-}, 5000));
 
 test('Pre Session No End', () => {
 	let pos = [0, 0, 0];
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	c3d.customEvent.send('testing1', pos);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
+	c3d.setScene('tutorial');
 	c3d.startSession();
 	c3d.endSession();
 });
 
-test('Pre Session End', () => {
+test('Pre Session End', async () => {
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	let pos = [0, 0, 0];
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	c3d.customEvent.send('testing1', pos);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
+	c3d.setScene('tutorial');
 	c3d.startSession();
-	c3d.endSession();
+	let endSession = await c3d.endSession();
+	expect(endSession).toEqual(200)
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 });
 
-test('Pre Session send', () => {
+test('Pre Session send', async () => {
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	let pos = [0, 0, 0];
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
@@ -83,60 +88,79 @@ test('Pre Session send', () => {
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
 	c3d.startSession();
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(2);
-	expect(c3d.sendData()).toEqual(true);
+	c3d.setScene('tutorial');
+
+	expect(c3d.sendData()).resolves.toEqual(200);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
+	c3d.startSession();
+	let endSession = await c3d.endSession();
+	expect(endSession).toEqual(200);
 });
 
-test('PreSession Props Send', () => {
+test('PreSession Props Send', async () => {
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	let pos = [0, 0, 0];
 	let props = {
 		age: 21,
 		location: 'vancouver'
 	};
+	c3d.setScene('tutorial');
 	c3d.customEvent.send('testing1', pos, props)
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
 	// c3d.customEvent.send('testing1', pos);
+	c3d.setScene('tutorial');
 	c3d.startSession();
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(2);
 	// expect(c3d.customEvent.batchedCustomEvents.length).toBe(2);
-	c3d.sendData();
+	await expect(c3d.sendData()).resolves.toEqual(200);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
+	let endSession = await c3d.endSession();
+	expect(endSession).toEqual(200);
 });
 
-test('Send Limit Pre Session Threshold', () => {
+test('Send Limit Pre Session Threshold', async () => {
 	let pos = [0, 0, 0];
-	settings.customEventBatchSize = 3 //on the third transaction it should send
+	settings.config.customEventBatchSize = 4 //on the third transaction it should send
 	let c3d = new C3DAnalytics(settings);
+
+	c3d.setScene('tutorial');
+	
 	c3d.customEvent.send('testing1', pos);
+	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
 	c3d.customEvent.send('testing1', pos);
 	c3d.customEvent.send('testing1', pos);
 
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(3);
 	c3d.startSession();//fouth transaction, should send all here. 
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
+	let endSession = await c3d.endSession();
+	expect(endSession).toEqual(200);
+	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
+
 });
 
-test('Send Limit Pre Session', () => {
+test('Send Limit Pre Session', async () => {
 	let pos = [0, 0, 0];
-	settings.customEventBatchSize = 3 //on the third transaction it should send
+	settings.config.customEventBatchSize = 3 //on the third transaction it should send
 	let c3d = new C3DAnalytics(settings);
-
+	c3d.setScene('tutorial');
 	c3d.customEvent.send('testing1', pos);
 	c3d.startSession();
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(2);
 
 	c3d.customEvent.send('testing1', pos);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
-	c3d.endSession();
+	let endSession = await c3d.endSession();
+	expect(endSession).toEqual(200);
 });
 
-test('Send Limit Session', () => {
+test('Send Limit Session', async () => {
 	let pos = [0, 0, 0];
-	settings.customEventBatchSize = 3 //on the third transaction it should send
+	settings.config.customEventBatchSize = 3 //on the third transaction it should send
 	let c3d = new C3DAnalytics(settings);
-	c3d.startSession();
+	c3d.setScene('tutorial');
 
+	c3d.startSession();
 	c3d.customEvent.send('testing1', pos);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(2);
 	c3d.customEvent.send('testing2', pos);
@@ -146,10 +170,8 @@ test('Send Limit Session', () => {
 	c3d.customEvent.send('testing3', pos);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	c3d.customEvent.send('testing1', pos);
-	c3d.endSession();
+
+	await expect(c3d.endSession()).resolves.toEqual(200);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 });
-
-
-
 

@@ -32,36 +32,40 @@ class C3D {
 		this.core.getSessionId();
 		this.gaze.setHMDType(this.core.config.HMDType);
 		this.gaze.setInterval(this.core.config.GazeInterval);
-
 		this.customEvent.send('Session Start', [0, 0, 0]);
 		return true;
 	};
 
 	endSession() {
-		// if session is not active do nothing
-		if (!this.core.isSessionActive) return;
+		return new Promise((resolve, reject) => {
+			if (!this.core.isSessionActive) {
+				reject('session is not active');
+				return;
+			};
+			// if session is not active do nothing
 
-		//calculate session length
-		let props = {};
-		let endPos = [0, 0, 0];
-		let sessionLength = this.core.getTimestamp() - this.core.sessionTimestamp;
-		props['sessionLength'] = sessionLength;
+			//calculate session length
+			let props = {};
+			let endPos = [0, 0, 0];
+			let sessionLength = this.core.getTimestamp() - this.core.sessionTimestamp;
+			props['sessionLength'] = sessionLength;
 
-		this.customEvent.send('Session End', endPos, props);
+			this.customEvent.send('Session End', endPos, props);
 
-		this.sendData();
+			this.sendData().then(res => resolve(res));
 
-		//clear out session's start timestamp, id and status.
-		this.core.setSessionTimestamp = '';
-		this.core.setSessionId = '';
-		this.core.setSessionStatus = false;
-		this.core.resetNewUserDevicProperties();
-		//clear out data containers for events 
-		this.gaze.endSession();
-		this.customEvent.endSession();
-		this.sensor.endSession();
-		this.dynamicObject.endSession();
-		return true; 
+			//clear out session's start timestamp, id and status.
+			this.core.setSessionTimestamp = '';
+			this.core.setSessionId = '';
+			this.core.setSessionStatus = false;
+			this.core.resetNewUserDevicProperties();
+			//clear out data containers for events 
+			this.gaze.endSession();
+			this.customEvent.endSession();
+			this.sensor.endSession();
+			this.dynamicObject.endSession();
+			// return true;
+		})
 	};
 	sceneData(name, id, version) {
 		return this.core.getSceneData(name, id, version);
@@ -109,7 +113,7 @@ class C3D {
 
 	setScene(name) {
 		console.log("CognitiveVRAnalytics::SetScene: " + name);
-		if(this.core.sceneData.sceneId){
+		if (this.core.sceneData.sceneId) {
 			this.sendData();
 			this.dynamicObject.refreshObjectManifest();
 		}
@@ -121,15 +125,23 @@ class C3D {
 	};
 
 	sendData() {
-		if (!this.core.isSessionActive) {
-			console.log("Cognitive3DAnalyticsCore::SendData failed: no session active");
-			return;
-		}
-		this.gaze.sendData();
-		this.customEvent.sendData();
-		this.sensor.sendData();
-		this.dynamicObject.sendData();
-		return true;
+		return new Promise((resolve, rejet) => {
+			if (!this.core.isSessionActive) {
+				console.log("Cognitive3DAnalyticsCore::SendData failed: no session active");
+				resolve("Cognitive3DAnalyticsCore::SendData failed: no session active")
+				return;
+			}
+
+			let custom = this.customEvent.sendData();
+			let gaze = this.gaze.sendData();
+			let sensor = this.sensor.sendData();
+			let dynamicObject = this.dynamicObject.sendData();
+			sensor.then(res=>console.log(res))
+			let promises = [custom, gaze, sensor];
+			Promise.all(promises)
+				.then(res => resolve(200))
+				.catch((res) => resolve(res))
+		})
 	};
 	isSessionActive() {
 		return this.core.isSessionActive;
@@ -145,10 +157,10 @@ class C3D {
 		return this.core.getSessionId();
 	};
 	getUserProperties() {
-		return this.core.newUserProperties ;
+		return this.core.newUserProperties;
 	};
 	getDeviceProperties() {
-		return this.core.newDeviceProperties ;
+		return this.core.newDeviceProperties;
 	};
 	set userId(userId) {
 		this.core.setUserId = userId;

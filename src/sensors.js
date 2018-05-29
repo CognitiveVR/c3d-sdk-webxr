@@ -23,12 +23,16 @@ class Sensors {
 		}
 	}
 	sendData() {
-		return new Promise((res) => {
+		return new Promise((resolve, reject) => {
 			if (!this.core.isSessionActive) {
+				reject('Sensor.sendData failed: no session active');
 				console.log('Sensor.sendData failed: no session active');
 				return;
 			}
-			if (this.allSensors.length === 0) return;
+			if (this.allSensors.length === 0) {
+				resolve('no sensor data');
+				return;
+			}
 
 			let payload = {};
 			payload['name'] = this.core.userId;
@@ -37,7 +41,9 @@ class Sensors {
 			payload['part'] = this.jsonPart;
 			this.jsonPart++;
 			payload['data'] = this.allSensors;
-			this.network.networkCall('sensors', payload);
+			console.log('rip')
+			this.network.networkCall('sensors', payload)
+				.then(res => (res === 200) ? resolve(res) : reject(res));
 			this.sensorCount = 0;
 			this.allSensors = [];
 		});
