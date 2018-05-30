@@ -19,6 +19,7 @@ require('isomorphic-fetch');
 
 const c3d = new C3DAnalytics(settings);
 c3d.setScene('tutorial');
+c3d.userId = 'test_id';
 
 beforeEach(async() => {
 	c3d.core.resetNewUserDevicProperties();
