@@ -20,13 +20,14 @@ class ExitPoll {
 	requestQuestionSet(hook) {
 		return new Promise((resolve, reject) => {
 			if (!this.core.isSessionActive) {
+				reject('ExitPoll.requestQuestionSet failed: no session active');
 				console.log('ExitPoll.requestQuestionSet failed: no session active');
 				return;
 			}
 			this.network.networkExitpollGet(hook, this.exitPollCalback)
 				.then(questionset => {
 					this.receiveQuestionSet(questionset, hook)
-					resolve();
+					resolve(true);
 				})
 		});
 	};
@@ -80,27 +81,31 @@ class ExitPoll {
 	};
 
 	sendAllAnswers(pos) {
-		if (!this.core.isSessionActive) {
-			console.log('ExitPoll.sendAllAnswers failed: no session active');
-			return;
-		}
-		//companyname1234-productname-test/questionSets/:questionset_name/:version#/responses
-		this.network.networkExitpollPost(this.fullResponse.questionSetName, this.fullResponse.questionSetVersion, this.fullResponse);
+		return new Promise((resolve, reject) => {
 
-		//TODO: send this as a transaction too
-		if (!pos) { pos = [0, 0, 0] }
-		let properties = {};
-		properties['userId'] = this.core.userId;
-		properties['questionSetId'] = this.fullResponse.questionSetId;
-		properties['hook'] = this.fullResponse.hook;
-		for (let i = 0; i < this.fullResponse.answers.length; i++) {
-			//strings are only for voice responses. these do not show up in dash
-			//else bool(0-1), null(-32768), number(0-10)
-			properties[`Answer${i}`] = (typeof this.fullResponse.answers[i].value === 'string') ? 0 :
-				this.fullResponse.answers[i].value;
-		}
-		this.customEvent.send('cvr.exitpoll', pos, properties);
-		this.clearQuestionSet();
+			if (!this.core.isSessionActive) {
+				reject('ExitPoll.sendAllAnswers failed: no session active')
+				console.log('ExitPoll.sendAllAnswers failed: no session active');
+				return;
+			}
+			//companyname1234-productname-test/questionSets/:questionset_name/:version#/responses
+			this.network.networkExitpollPost(this.fullResponse.questionSetName, this.fullResponse.questionSetVersion, this.fullResponse)
+				.then(res =>(res === 200) ? resolve(200) : reject(res));
+
+			if (!pos) { pos = [0, 0, 0] }
+			let properties = {};
+			properties['userId'] = this.core.userId;
+			properties['questionSetId'] = this.fullResponse.questionSetId;
+			properties['hook'] = this.fullResponse.hook;
+			for (let i = 0; i < this.fullResponse.answers.length; i++) {
+				//strings are only for voice responses. these do not show up in dash
+				//else bool(0-1), null(-32768), number(0-10)
+				properties[`Answer${i}`] = (typeof this.fullResponse.answers[i].value === 'string') ? 0 :
+					this.fullResponse.answers[i].value;
+			}
+			this.customEvent.send('cvr.exitpoll', pos, properties);
+			this.clearQuestionSet();
+		});
 	};
 }
 export default ExitPoll;
