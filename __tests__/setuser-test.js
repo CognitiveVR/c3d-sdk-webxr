@@ -1,42 +1,13 @@
 import C3DAnalytics from '../src';
+import settings from '../settings';
 require('es6-promise').polyfill();
 require('isomorphic-fetch');
 
 
-
-let settings = {
-	config: {
-		APIKey: 'INTIAL_API',
-		gazeBatchSize: 12,
-		dynamicDataLimit: 20,
-		customEventBatchSize: 3,
-		HMDType: 'rift',
-		sensorDataLimit: 10,
-		allSceneData: [
-			{
-				sceneName: 'test_scene1',
-				sceneId: 'test_id1',
-				versionNumber: 'version1'
-			},
-			{
-				sceneName: 'test_scene2',
-				sceneId: 'test_id2',
-				versionNumber: 'version2'
-			},
-			{
-				sceneName: 'nawar',
-				sceneId: 'nawar_id2',
-				versionNumber: '9'
-			}
-		]
-		//if a config is not spicificed then use the default value.
-	},
-};
-
-global.console = {
-  warn: jest.fn(),
-  log: jest.fn()
-}
+// global.console = {
+// 	warn: jest.fn(),
+// 	log: jest.fn()
+// }
 
 /**
 * @jest-environment jsdom
@@ -46,7 +17,7 @@ global.console = {
 const c3d = new C3DAnalytics(settings);
 beforeEach(() => {
 	c3d.core.resetNewUserDevicProperties();
-	if(c3d.isSessionActive()){
+	if (c3d.isSessionActive()) {
 		c3d.endSession();
 	}
 });
@@ -78,28 +49,31 @@ test('User PreSession', () => {
 	c3d.setUserProperty('location', 'canada');
 	let userPropertis = c3d.getUserProperties();
 	expect(Object.keys(userPropertis).length).toEqual(3);
-	c3d.startSession();
 });
 
-test('User Post Session', () => {
+test('User Post Session', async () => {
 	settings.config.APIKey = 'TEST_API';
 	let c3d = new C3DAnalytics(settings);
 	let currentAPI = c3d.getApiKey();
 	expect(currentAPI).toEqual('TEST_API');
+	c3d.setScene('tutorial');
 	c3d.startSession();
 	c3d.setUserName("john");
 	c3d.setUserProperty('age', 21);
 	c3d.setUserProperty('location', 'vancouver');
-	c3d.sendData();
+	//
+	await expect(c3d.sendData()).resolves.toEqual(401);
 	let userPropertis = c3d.getUserProperties();
 	expect(Object.keys(userPropertis).length).toEqual(3);
 });
 
-test('User null pre session', () => {
-	console.log('here')
+test('User null pre session', async () => {
+	c3d.setScene('tutorial')
 	c3d.startSession();
-	c3d.sendData();
-	expect(global.console.log).not.toHaveBeenCalledWith("Cognitive3DAnalyticsCore::SendData failed: no session active")
+	await expect(c3d.sendData()).resolves.toEqual(401);
+	let endSession = await c3d.endSession();
+	//changed wrong API key in the previous test. 
+	expect(endSession).toEqual(401);
 });
 
 
