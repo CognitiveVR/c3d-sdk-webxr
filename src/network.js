@@ -43,6 +43,7 @@ class Network {
 				.then(response => response.json())
 				.then(payload => resolve(payload))
 				.then(payload => resolve(payload))
+				.catch(err =>reject(err));
 		});
 	};
 	networkExitpollPost(questionsetname, questionsetversion, content) {
@@ -57,7 +58,8 @@ class Network {
 			};
 			let path = "https://" + this.core.config.networkHost + "/v" + this.core.config.networkVersion + "/questionSets/" + questionsetname + "/" + questionsetversion + "/responses";
 			fetch(path, options)
-				// .then(() => console.log('sent'))
+				.then(res => res.status)
+				.then(res => resolve(res))
 				.catch(err => console.error(err));
 		});
 	}
