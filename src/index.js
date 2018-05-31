@@ -136,8 +136,8 @@ class C3D {
 			let gaze = this.gaze.sendData();
 			let sensor = this.sensor.sendData();
 			let dynamicObject = this.dynamicObject.sendData();
-			sensor.then(res=>console.log(res))
-			let promises = [custom, gaze, sensor];
+			dynamicObject.then(res=>console.log(res))
+			let promises = [custom, gaze, sensor, dynamicObject];
 			Promise.all(promises)
 				.then(res => resolve(200))
 				.catch((res) => resolve(res))

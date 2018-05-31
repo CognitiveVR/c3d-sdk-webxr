@@ -128,44 +128,48 @@ class DynamicObject {
 				return;
 			}
 
+
+
+			if ((this.manifestEntries.length + this.snapshots.length) === 0) {
+				resolve('no manifest entries/snapshots');
+				console.log('no manifest entries/snapshots');
+
+				return;
+			}
+			let sendJson = {};
+			sendJson['userid'] = this.core.userId;
+			sendJson['timestamp'] = this.core.getTimestamp();
+			sendJson['sessionid'] = this.core.sessionId;
+			sendJson['part'] = this.jsonPart;
+			this.jsonPart++;
+
+			let manifest = {};
+			for (let element of this.manifestEntries) {
+				let entryValues = {}
+				entryValues["name"] = element.name;
+				entryValues["mesh"] = element.meshname;
+				manifest[element.id] = entryValues;
+			}
+			sendJson['manifest'] = manifest;
+
+			let data = [];
+			for (let element of this.snapshots) {
+				let entry = {};
+				entry['id'] = element.id;
+				entry['time'] = element.time;
+				entry['p'] = element.position;
+				entry['r'] = element.rotation;
+				if (element.engagements && element.engagements.length) { entry['engagements'] = element.engagements }
+				if (element.properties) { entry['properties'] = element.properties }
+				data.push(entry);
+			}
+
+			sendJson['data'] = data;
+			this.network.networkCall('dynamics', sendJson)
+				.then(res => (res === 200) ? resolve(200) : reject(res));
+			this.manifestEntries = [];
+			this.snapshots = [];
 		});
-
-
-		if ((this.manifestEntries.length + this.snapshots.length) === 0) {
-			return;
-		}
-		let sendJson = {};
-		sendJson['userid'] = this.core.userId;
-		sendJson['timestamp'] = this.core.getTimestamp();
-		sendJson['sessionid'] = this.core.sessionId;
-		sendJson['part'] = this.jsonPart;
-		this.jsonPart++;
-
-		let manifest = {};
-		for (let element of this.manifestEntries) {
-			let entryValues = {}
-			entryValues["name"] = element.name;
-			entryValues["mesh"] = element.meshname;
-			manifest[element.id] = entryValues;
-		}
-		sendJson['manifest'] = manifest;
-
-		let data = [];
-		for (let element of this.snapshots) {
-			let entry = {};
-			entry['id'] = element.id;
-			entry['time'] = element.time;
-			entry['p'] = element.position;
-			entry['r'] = element.rotation;
-			if (element.engagements && element.engagements.length ) { entry['engagements'] = element.engagements }
-			if (element.properties) { entry['properties'] = element.properties }
-			data.push(entry);
-		}
-
-		sendJson['data'] = data;
-		this.network.networkCall('dynamics', sendJson);
-		this.manifestEntries = [];
-		this.snapshots = [];
 	};
 
 	dynamicObjectSnapshot(position, rotation, objectId, properties) {

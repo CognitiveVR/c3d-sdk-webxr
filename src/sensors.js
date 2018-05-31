@@ -34,6 +34,7 @@ class Sensors {
 				return;
 			}
 
+
 			let payload = {};
 			payload['name'] = this.core.userId;
 			payload['sessionid'] = this.core.getSessionId();
@@ -41,7 +42,6 @@ class Sensors {
 			payload['part'] = this.jsonPart;
 			this.jsonPart++;
 			payload['data'] = this.allSensors;
-			console.log('rip')
 			this.network.networkCall('sensors', payload)
 				.then(res => (res === 200) ? resolve(res) : reject(res));
 			this.sensorCount = 0;
