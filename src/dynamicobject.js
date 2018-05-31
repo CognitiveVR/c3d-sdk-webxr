@@ -124,7 +124,7 @@ class DynamicObject {
 		return new Promise((resolve, reject) => {
 			if (!this.core.isSessionActive) {
 				console.log('DynamicObject.sendData failed: no session active');
-				reject('DynamicObject.sendData failed: no session active');
+				resolve('DynamicObject.sendData failed: no session active');
 				return;
 			}
 
