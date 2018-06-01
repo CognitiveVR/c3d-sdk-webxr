@@ -32,7 +32,7 @@ test('Init Register Send', async () => {
 	let pos = [0, 0, 0];
 	let rot = [0, 0, 0, 1];
 	let object1Id = c3d.dynamicObject.registerObject("object1", "lamp", pos, rot);
-	let object2Is = c3d.dynamicObject.registerObject("object2", "lamp", pos, rot);
+	let object2Id = c3d.dynamicObject.registerObject("object2", "lamp", pos, rot);
 	expect(c3d.dynamicObject.fullManifest.length).toBe(2);
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
 	expect(c3d.dynamicObject.snapshots.length).toBe(2);
@@ -44,26 +44,26 @@ test('Init Register Send Add Snapshot ', async () => {
 	let pos = [0, 0, 0];
 	let rot = [0, 0, 0, 1];
 	let object1Id = c3d.dynamicObject.registerObject("object1", "lamp", pos, rot);
-	let object2Is = c3d.dynamicObject.registerObject("object2", "lamp", pos, rot);
+	let object2Id = c3d.dynamicObject.registerObject("object2", "lamp", pos, rot);
 	expect(c3d.dynamicObject.fullManifest.length).toBe(2);
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
 	expect(c3d.dynamicObject.snapshots.length).toBe(2);
 	pos = [0, 0, 5];
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);
 	pos = [0, 1, 6];
-	c3d.dynamicObject.addSnapshot(object2Is, pos, rot);
+	c3d.dynamicObject.addSnapshot(object2Id, pos, rot);
 	expect(c3d.dynamicObject.snapshots.length).toBe(4);
 
 	pos = [0, 0, 7];
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);
 	pos = [0, 2, 8];
-	c3d.dynamicObject.addSnapshot(object2Is, pos, rot);
+	c3d.dynamicObject.addSnapshot(object2Id, pos, rot);
 	expect(c3d.dynamicObject.snapshots.length).toBe(6);
 
 	pos = [0, 0, 9];
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);
 	pos = [0, 3, 10];
-	c3d.dynamicObject.addSnapshot(object2Is, pos, rot);
+	c3d.dynamicObject.addSnapshot(object2Id, pos, rot);
 	expect(c3d.dynamicObject.snapshots.length).toBe(8);
 	await expect(c3d.sendData()).resolves.toEqual(200);
 	expect(c3d.dynamicObject.fullManifest.length).toBe(2);
@@ -81,7 +81,7 @@ test('Init Register Scene Add', async () => {
 	let rot = [0, 0, 0, 1];
 
 	let object1Id = c3d.dynamicObject.registerObject("object1", "lamp", pos, rot);
-	let object2Is = c3d.dynamicObject.registerObject("object2", "lamp", pos, rot);
+	let object2Id = c3d.dynamicObject.registerObject("object2", "lamp", pos, rot);
 
 	expect(c3d.dynamicObject.fullManifest.length).toBe(2);
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
@@ -91,21 +91,21 @@ test('Init Register Scene Add', async () => {
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);
 
 	pos = [0, 1, 6];
-	c3d.dynamicObject.addSnapshot(object2Is, pos, rot);
+	c3d.dynamicObject.addSnapshot(object2Id, pos, rot);
 	expect(c3d.dynamicObject.snapshots.length).toBe(4);
 
 	pos = [0, 0, 7];
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);
 
 	pos = [0, 2, 8];
-	c3d.dynamicObject.addSnapshot(object2Is, pos, rot);
+	c3d.dynamicObject.addSnapshot(object2Id, pos, rot);
 	expect(c3d.dynamicObject.snapshots.length).toBe(6);
 
 	pos = [0, 0, 9];
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);
 
 	pos = [0, 3, 10];
-	c3d.dynamicObject.addSnapshot(object2Is, pos, rot);
+	c3d.dynamicObject.addSnapshot(object2Id, pos, rot);
 
 	await expect(c3d.sendData()).resolves.toEqual(200);
 	expect(c3d.dynamicObject.snapshots.length).toBe(0);
@@ -167,7 +167,7 @@ test('Init Register Scene Add snapshot', async () => {
 	let rot = [0, 0, 0, 1];
 
 	let object1Id = c3d.dynamicObject.registerObject("object1", "lamp", pos, rot);
-	let object2Is = c3d.dynamicObject.registerObject("object2", "lamp", pos, rot);
+	let object2Id = c3d.dynamicObject.registerObject("object2", "lamp", pos, rot);
 
 	expect(c3d.dynamicObject.fullManifest.length).toBe(2);
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
@@ -177,21 +177,21 @@ test('Init Register Scene Add snapshot', async () => {
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);
 
 	pos = [0, 1, 6];
-	c3d.dynamicObject.addSnapshot(object2Is, pos, rot);
+	c3d.dynamicObject.addSnapshot(object2Id, pos, rot);
 	expect(c3d.dynamicObject.snapshots.length).toBe(4);
 
 	pos = [0, 0, 7];
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);
 
 	pos = [0, 2, 8];
-	c3d.dynamicObject.addSnapshot(object2Is, pos, rot);
+	c3d.dynamicObject.addSnapshot(object2Id, pos, rot);
 	expect(c3d.dynamicObject.snapshots.length).toBe(6);
 
 	pos = [0, 0, 9];
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);
 
 	pos = [0, 3, 10];
-	c3d.dynamicObject.addSnapshot(object2Is, pos, rot);
+	c3d.dynamicObject.addSnapshot(object2Id, pos, rot);
 
 	await expect(c3d.sendData()).resolves.toEqual(200);
 	expect(c3d.dynamicObject.snapshots.length).toBe(0);
@@ -252,7 +252,7 @@ test('Reset ObjectIds Scene Change', async () => {
 	const rot = [0, 0, 0, 1];
 
 	const object1Id = c3d.dynamicObject.registerObject("object1", "lamp", pos, rot);
-	const object2Is = c3d.dynamicObject.registerObject("object2", "lamp", pos, rot);
+	const object2Id = c3d.dynamicObject.registerObject("object2", "lamp", pos, rot);
 
 	const props = {
 		enabled: true
@@ -266,7 +266,7 @@ test('Reset ObjectIds Scene Change', async () => {
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
 
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);
-	c3d.dynamicObject.addSnapshot(object2Is, pos, rot);
+	c3d.dynamicObject.addSnapshot(object2Id, pos, rot);
 
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
 	await expect(c3d.sendData()).resolves.toEqual(200);
