@@ -1,10 +1,10 @@
-import C3DAnalytics from '../src';
+import C3DAnalytics from '../lib';
 import settings from '../settings';
 require('es6-promise').polyfill();
 require('isomorphic-fetch');
 
 
-//----------------------SETTING SCENE KEYS FOR SCENE EXPLORER-----------------------//
+//----------------------SENSORS TEST FOR SCENE EXPLORER-----------------------//
 
 
 
@@ -182,8 +182,3 @@ test('Many Sensors', async () => {
 
 	await expect(c3d.endSession()).resolves.toEqual(200);
 });
-
-
-
-
-

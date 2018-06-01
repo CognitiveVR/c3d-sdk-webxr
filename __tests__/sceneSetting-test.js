@@ -1,4 +1,4 @@
-import C3DAnalytics from '../src';
+import C3DAnalytics from '../lib';
 import settings from '../settings';
 require('es6-promise').polyfill();
 require('isomorphic-fetch');
