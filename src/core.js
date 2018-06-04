@@ -10,6 +10,7 @@ class CognitiveVRAnalyticsCore {
 		this.sessionTimestamp = '';
 		this.newDeviceProperties = {};
 		this.newUserProperties = {};
+		this.lobbyId = '';
 		this.devicePropertyMap = {
 			AppName: 'cvr.app.name',
 			AppVersion: 'cvr.app.version',
@@ -122,6 +123,9 @@ class CognitiveVRAnalyticsCore {
 	resetNewUserDevicProperties() {
 		this.newUserProperties = {};
 		this.newDeviceProperties = {};
+	}
+	setLobbyId(id) {
+		this.lobbyId = id;
 	}
 }
 export default new CognitiveVRAnalyticsCore() 

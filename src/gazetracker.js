@@ -45,6 +45,7 @@ class GazeTracker {
 			let dproperties = this.core.newDeviceProperties;
 			let uproperties = this.core.newUserProperties;
 			if (this.batchedGaze.length === 0 && dproperties.length === 0 && uproperties.length === 0) {
+				reject();
 				return;
 			}
 
@@ -53,18 +54,19 @@ class GazeTracker {
 			payload['userid'] = this.core.userId;
 			payload['timestamp'] = parseInt(this.core.getTimestamp(), 10);
 			payload['sessionid'] = this.core.getSessionId();
+			if (this.core.lobbyId) { payload['lobbyId'] = this.core.lobbyId; }
 			payload['part'] = this.jsonPart;
 			this.jsonPart++;
 			payload['hmdtype'] = this.HMDType;
 			payload['interval'] = this.playerSnapshotInterval;
 			payload['data'] = this.batchedGaze;
-
+			payload['properties'] = {};
 			if (Object.keys(dproperties).length) {
-				payload['device'] = dproperties;
+				payload['properties'] = {...dproperties};
 			}
 
 			if (Object.keys(uproperties).length) {
-				payload['user'] = uproperties;
+				payload['properties'] = { ...payload.properties, ...uproperties};
 			}
 			this.network.networkCall('gaze', payload)
 				.then(res => (res === 200) ? resolve(res) : reject(res));

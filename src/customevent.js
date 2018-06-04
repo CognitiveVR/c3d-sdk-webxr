@@ -12,6 +12,7 @@ class CustomEvents {
 		data['name'] = category;
 		data['time'] = this.core.getTimestamp();
 		data['point'] = [position[0], position[1], position[2]];
+		data['lobbyId'] = this.core.lobbyId;
 		if (properties) { data['properties'] = properties; }
 		this.batchedCustomEvents = this.batchedCustomEvents.concat([data]);
 		if (this.batchedCustomEvents.length >= this.core.config.customEventBatchSize) {

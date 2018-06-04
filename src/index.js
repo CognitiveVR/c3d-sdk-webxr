@@ -136,7 +136,7 @@ class C3D {
 			let gaze = this.gaze.sendData();
 			let sensor = this.sensor.sendData();
 			let dynamicObject = this.dynamicObject.sendData();
-			dynamicObject.then(res=>console.log(res))
+			dynamicObject.then(res => console.log(res))
 			let promises = [custom, gaze, sensor, dynamicObject];
 			Promise.all(promises)
 				.then(res => resolve(200))
@@ -146,7 +146,6 @@ class C3D {
 	isSessionActive() {
 		return this.core.isSessionActive;
 	};
-	//notsure if needed;
 	wasInitSuccessful() {
 		return this.core.isSessionActive;
 	};
@@ -170,11 +169,17 @@ class C3D {
 	};
 	setUserName(name) {
 		this.core.setUserId = name;
-		this.setUserProperty('name', name);
+		this.setUserProperty('cvr.name', name);
+	};
+	setSessionName(name) {
+		this.setUserProperty('cvr.sessionname', name);
+	};
+	setLobbyId(id) {
+		this.core.setLobbyId(id);
 	};
 	setDeviceName(name) {
 		this.core.setDeviceId = name;
-		this.core.newDeviceProperties['name'] = name;
+		this.core.newDeviceProperties['cvr.device.name'] = name;
 	};
 	setDeviceProperty(property, value) {
 		this.core.setDeviceProperty(property, value)
