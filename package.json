@@ -1,5 +1,5 @@
 {
-  "name": "cvr-sdk-js",
+  "name": "cognitive3d-analytics",
   "version": "1.0.0",
   "description": "This SDK allows you to integrate your Javascript Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project. In addition, Cognitive3D empowers you to take actions that will improve users' engagement with your experience.",
   "main": "index.js",
@@ -24,6 +24,7 @@
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.6.1",
+    "babel-preset-stage-3": "^6.24.1",
     "jest": "^23.0.0"
   },
   "peerDependencies": {
