@@ -31,7 +31,8 @@ test('Device Pre Session', async () => {
 	c3d.setDeviceProperty('DevicePlatform', "Desktop");
 	let deviceProperties = c3d.getDeviceProperties();
 	expect(Object.keys(deviceProperties).length).toEqual(4);
-	expect(deviceProperties['name']).toEqual("7741345684915735");
+
+	expect(deviceProperties['cvr.device.name']).toEqual('7741345684915735');
 	expect(c3d.startSession()).toEqual(true);
 	let endSession = await c3d.endSession();
 	expect(endSession).toEqual(200);;
@@ -66,7 +67,7 @@ test('Device Post Session', async () => {
 	let deviceProperties = c3d.getDeviceProperties();
 	expect(Object.keys(deviceProperties).length).toEqual(6);
 	expect(deviceProperties).toEqual({
-		name: '7741345684915736',
+		"cvr.device.name": "7741345684915736",
 		'cvr.device.cpu': "i7-4770 CPU @ 3.40GHz",
 		'cvr.device.gpu': "GeForce GTX 970",
 		'cvr.device.memory': 128,
@@ -81,7 +82,7 @@ test('Device Null Post Session', async () => {
 	expect(c3d.startSession()).toEqual(true);
 	c3d.setDeviceName("");
 	let deviceProperties = c3d.getDeviceProperties();
-	expect(deviceProperties['name']).toEqual("");
+	expect(deviceProperties['cvr.device.name']).toEqual("");
 	let endSession = await c3d.endSession();
 	expect(endSession).toEqual(200);;
 });
