@@ -12,3 +12,9 @@ notifications:
             - engineering@cognitive3d.com
     on_success: always
     on_failure: always
+
+# only test on development and master
+branches:
+  only:
+    - development
+    - master
