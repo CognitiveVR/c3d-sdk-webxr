@@ -8,7 +8,7 @@ Quickstart
 =========
 
 ## Cognitive3D Documentation
-The documentation explains how to integrate the SDK, track your users' experience and how to export your scene to view on SceneExplorer.
+The documentation explains how to integrate the SDK, track your users' experience and how to export your scene to view on Cognitive3D.com.
 
 [Go to the Docs](http://docs.cognitive3d.com/js/get-started/)
 ## Testing
