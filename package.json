@@ -33,17 +33,16 @@
   "homepage": "https://github.com/CognitiveVR/cvr-sdk-js#readme",
   "devDependencies": {
     "babel-cli": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
+    "babel-preset-env": "^1.7.0",
     "babel-preset-stage-3": "^6.24.1",
-    "jest": "^23.0.0"
+    "jest": "^29.7.0"
   },
   "peerDependencies": {
     "uuid": "^3.2.1"
   },
   "dependencies": {
-    "es6-promise": "^4.2.4",
-    "isomorphic-fetch": "^2.2.1",
-    "uuid": "^3.2.1",
-    "whatwg-fetch": "^2.0.4"
+    "es6-promise": "^4.2.8",
+    "isomorphic-fetch": "^3.0.0",
+    "whatwg-fetch": "^3.6.20"
   }
 }
