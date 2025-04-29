@@ -16,7 +16,7 @@ The documentation explains how to integrate the SDK, track your users' experienc
 
 Jest is being used to test the sdk to run the test run the following command
 
-``` yarn test ```
+`npm run test`
 
 that will assume source code is being transpiled into lib folder
 
@@ -24,4 +24,4 @@ that will assume source code is being transpiled into lib folder
 
 To ensure broader browser compatibility, source code written in ES6 needs to be transpiled. Run the following command to use Babel for this task:
 
-``` npm run build ```
+`npm run build`
