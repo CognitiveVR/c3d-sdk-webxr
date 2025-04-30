@@ -1,6 +1,29 @@
 {
   "presets": [
-		"env",
-		"stage-3"
-	]
+    ["@babel/preset-env", {
+      "targets": {
+        "browsers": [
+          ">0.2%",
+          "not dead",
+          "not op_mini all"
+        ],
+        "node": "14"
+      },
+      "modules": false,
+      "useBuiltIns": "usage",
+      "corejs": 3
+    }]
+  ],
+  "plugins": [],
+  "env": {
+    "test": {
+      "presets": [
+        ["@babel/preset-env", {
+          "targets": {
+            "node": "current"
+          }
+        }]
+      ]
+    }
+  }
 }
