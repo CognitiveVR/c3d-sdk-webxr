@@ -1,6 +1,6 @@
 {
   "name": "@cognitive3d/analytics",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "This SDK allows you to integrate your Javascript Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project. In addition, Cognitive3D empowers you to take actions that will improve users' engagement with your experience.",
   "main": "lib/index.js",
   "files": [
