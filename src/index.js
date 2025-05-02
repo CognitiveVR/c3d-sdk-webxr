@@ -1,198 +1,214 @@
-import CognitiveVRAnalyticsCore from './core'
-import GazeTracker from "./gazetracker";
-import CustomEvent from "./customevent";
+import CognitiveVRAnalyticsCore from './core';
+import GazeTracker from './gazetracker';
+import CustomEvent from './customevent';
 import Network from './network';
 import Sensor from './sensors';
 import ExitPoll from './exitpoll';
 import DynamicObject from './dynamicobject';
+import {
+  getDeviceMemory,
+  getPlatform,
+  getScreenHeight,
+  getScreenWidth,
+  getPlatformType,
+  getOS
+} from './utils/environment';
 
 class C3D {
-	constructor(settings) {
-		this.core = CognitiveVRAnalyticsCore;
-		if (settings) { this.core.config.settings = settings.config; }
-		this.network = new Network(this.core);
-		this.gaze = new GazeTracker(this.core);
-		this.customEvent = new CustomEvent(this.core);
-		this.sensor = new Sensor(this.core)
-		this.exitpoll = new ExitPoll(this.core, this.customEvent);
-		this.dynamicObject = new DynamicObject(this.core, this.customEvent);
-		(typeof navigator !== 'undefined') && navigator.deviceMemory && this.setDeviceProperty('DeviceMemory', window.navigator.deviceMemory * 1000);
-		(typeof window !== 'undefined') && window.navigator && window.navigator.platform && this.setDeviceProperty('DeviceType', window.navigator.platform);
-		(typeof window !== 'undefined') && window.screen && window.screen.height && this.setDeviceProperty('DeviceScreenHeight', window.screen.height);
-		(typeof window !== 'undefined') && window.screen && window.screen.width && this.setDeviceProperty('DeviceScreenWidth', window.screen.width);
-		this.setDeviceProperty('DevicePlatform', this.getPlatformType());
-		this.setDeviceProperty('DeviceOS', this.getOS());
-	}
+  constructor(settings) {
+    this.core = CognitiveVRAnalyticsCore;
+    if (settings) { this.core.config.settings = settings.config; }
 
-	startSession() {
-		if (this.core.isSessionActive) { return false; }
+    this.network = new Network(this.core);
+    this.gaze = new GazeTracker(this.core);
+    this.customEvent = new CustomEvent(this.core);
+    this.sensor = new Sensor(this.core);
+    this.exitpoll = new ExitPoll(this.core, this.customEvent);
+    this.dynamicObject = new DynamicObject(this.core, this.customEvent);
 
-		this.core.setSessionStatus = true;
-		this.core.getSessionTimestamp();
-		this.core.getSessionId();
-		this.gaze.setHMDType(this.core.config.HMDType);
-		this.gaze.setInterval(this.core.config.GazeInterval);
-		this.customEvent.send('Session Start', [0, 0, 0]);
-		return true;
-	};
+    // Set default device properties using environment utils
+    const deviceMemory = getDeviceMemory();
+    if (deviceMemory) {
+      this.setDeviceProperty('DeviceMemory', deviceMemory * 1000);
+    }
 
-	endSession() {
-		return new Promise((resolve, reject) => {
-			if (!this.core.isSessionActive) {
-				reject('session is not active');
-				return;
-			};
-			// if session is not active do nothing
+    const platform = getPlatform();
+    if (platform) {
+      this.setDeviceProperty('DeviceType', platform);
+    }
 
-			//calculate session length
-			let props = {};
-			let endPos = [0, 0, 0];
-			let sessionLength = this.core.getTimestamp() - this.core.sessionTimestamp;
-			props['sessionLength'] = sessionLength;
+    const screenHeight = getScreenHeight();
+    if (screenHeight) {
+      this.setDeviceProperty('DeviceScreenHeight', screenHeight);
+    }
 
-			this.customEvent.send('Session End', endPos, props);
+    const screenWidth = getScreenWidth();
+    if (screenWidth) {
+      this.setDeviceProperty('DeviceScreenWidth', screenWidth);
+    }
 
-			this.sendData().then(res => resolve(res));
+    this.setDeviceProperty('DevicePlatform', getPlatformType());
+    this.setDeviceProperty('DeviceOS', getOS());
+  }
 
-			//clear out session's start timestamp, id and status.
-			this.core.setSessionTimestamp = '';
-			this.core.setSessionId = '';
-			this.core.setSessionStatus = false;
-			this.core.resetNewUserDevicProperties();
-			//clear out data containers for events 
-			this.gaze.endSession();
-			this.customEvent.endSession();
-			this.sensor.endSession();
-			this.dynamicObject.endSession();
-			// return true;
-		})
-	};
-	sceneData(name, id, version) {
-		return this.core.getSceneData(name, id, version);
-	};
+  startSession() {
+    if (this.core.isSessionActive) { return false; }
 
-	getOS() {
-		let userAgent = window.navigator.userAgent,
-			platform = window.navigator.platform,
-			macosPlatforms = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'],
-			windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE'],
-			iosPlatforms = ['iPhone', 'iPad', 'iPod'],
-			os = null;
-		if (macosPlatforms.indexOf(platform) !== -1) {
-			os = 'MacOS';
-		} else if (iosPlatforms.indexOf(platform) !== -1) {
-			os = 'iOS';
-		} else if (windowsPlatforms.indexOf(platform) !== -1) {
-			os = 'Windows';
-		} else if (/Android/.test(userAgent)) {
-			os = 'Android';
-		} else if (!os && /Linux/.test(platform)) {
-			os = 'Linux';
-		}
-		return os || 'unknown';
-	};
+    this.core.setSessionStatus = true;
+    this.core.getSessionTimestamp();
+    this.core.getSessionId();
+    this.gaze.setHMDType(this.core.config.HMDType);
+    this.gaze.setInterval(this.core.config.GazeInterval);
+    this.customEvent.send('Session Start', [0, 0, 0]);
+    return true;
+  }
 
-	getPlatformType() {
-		if (window && window.navigator) {
-			if (window.navigator.userAgent.match(/mobile/i)) {
-				return 'Mobile';
-			} else if (window.navigator.userAgent.match(/iPad|Android|Touch/i)) {
-				return 'Tablet';
-			} else {
-				return 'Desktop';
-			}
-		}
-	};
-	config(property, value) {
-		this.core.config[property] = value;
-	};
+  endSession() {
+    return new Promise((resolve, reject) => {
+      if (!this.core.isSessionActive) {
+        reject('session is not active');
+        return;
+      }
 
-	addToAllSceneData(scene) {
-		this.core.config.allSceneData.push(scene);
-	};
+      // Calculate session length
+      const props = {};
+      const endPos = [0, 0, 0];
+      const sessionLength = this.core.getTimestamp() - this.core.sessionTimestamp;
+      props['sessionLength'] = sessionLength;
 
-	setScene(name) {
-		console.log("CognitiveVRAnalytics::SetScene: " + name);
-		if (this.core.sceneData.sceneId) {
-			this.sendData();
-			this.dynamicObject.refreshObjectManifest();
-		}
-		this.core.setScene(name);
-	};
+      this.customEvent.send('Session End', endPos, props);
 
-	set allSceneData(allSceneData) {
-		this.core.allSceneData = allSceneData;
-	};
+      this.sendData()
+        .then(res => {
+          // Clear out session's start timestamp, id and status
+          this.core.setSessionTimestamp = '';
+          this.core.setSessionId = '';
+          this.core.setSessionStatus = false;
+          this.core.resetNewUserDevicProperties();
 
-	sendData() {
-		return new Promise((resolve, rejet) => {
-			if (!this.core.isSessionActive) {
-				console.log("Cognitive3DAnalyticsCore::SendData failed: no session active");
-				resolve("Cognitive3DAnalyticsCore::SendData failed: no session active")
-				return;
-			}
+          // Clear out data containers for events
+          this.gaze.endSession();
+          this.customEvent.endSession();
+          this.sensor.endSession();
+          this.dynamicObject.endSession();
 
-			let custom = this.customEvent.sendData();
-			let gaze = this.gaze.sendData();
-			let sensor = this.sensor.sendData();
-			let dynamicObject = this.dynamicObject.sendData();
-			dynamicObject.then(res => console.log(res))
-			let promises = [custom, gaze, sensor, dynamicObject];
-			Promise.all(promises)
-				.then(res => resolve(200))
-				.catch((res) => resolve(res))
-		})
-	};
-	isSessionActive() {
-		return this.core.isSessionActive;
-	};
-	wasInitSuccessful() {
-		return this.core.isSessionActive;
-	};
-	getSessionTimestamp() {
-		return this.core.getSessionTimestamp();
-	};
-	getSessionId() {
-		return this.core.getSessionId();
-	};
-	getUserProperties() {
-		return this.core.newUserProperties;
-	};
-	getDeviceProperties() {
-		return this.core.newDeviceProperties;
-	};
-	set userId(userId) {
-		this.core.setUserId = userId;
-	};
-	setUserProperty(property, value) {
-		this.core.setUserProperty(property, value);
-	};
-	setUserName(name) {
-		this.core.setUserId = name;
-		this.setUserProperty('cvr.name', name);
-	};
-	setSessionName(name) {
-		this.setUserProperty('cvr.sessionname', name);
-	};
-	setLobbyId(id) {
-		this.core.setLobbyId(id);
-	};
-	setDeviceName(name) {
-		this.core.setDeviceId = name;
-		this.core.newDeviceProperties['cvr.device.name'] = name;
-	};
-	setDeviceProperty(property, value) {
-		this.core.setDeviceProperty(property, value)
-	};
-	set deviceId(deviceId) {
-		this.core.setDeviceId = deviceId;
-	};
-	getApiKey() {
-		return this.core.getApiKey();
-	};
-	getSceneId() {
-		return this.core.sceneData.sceneId;
-	};
+          resolve(res);
+        })
+        .catch(err => reject(err));
+    });
+  }
 
+  sceneData(name, id, version) {
+    return this.core.getSceneData(name, id, version);
+  }
+
+  config(property, value) {
+    this.core.config[property] = value;
+  }
+
+  addToAllSceneData(scene) {
+    this.core.config.allSceneData.push(scene);
+  }
+
+  setScene(name) {
+    console.log(`CognitiveVRAnalytics::SetScene: ${name}`);
+    if (this.core.sceneData.sceneId) {
+      this.sendData();
+      this.dynamicObject.refreshObjectManifest();
+    }
+    this.core.setScene(name);
+  }
+
+  set allSceneData(allSceneData) {
+    this.core.allSceneData = allSceneData;
+  }
+
+  sendData() {
+    return new Promise((resolve, reject) => {
+      if (!this.core.isSessionActive) {
+        console.log("Cognitive3DAnalyticsCore::SendData failed: no session active");
+        resolve("Cognitive3DAnalyticsCore::SendData failed: no session active");
+        return;
+      }
+
+      const custom = this.customEvent.sendData();
+      const gaze = this.gaze.sendData();
+      const sensor = this.sensor.sendData();
+      const dynamicObject = this.dynamicObject.sendData();
+
+      const promises = [custom, gaze, sensor, dynamicObject];
+
+      Promise.all(promises)
+        .then(() => resolve(200))
+        .catch(err => reject(err));
+    });
+  }
+
+  isSessionActive() {
+    return this.core.isSessionActive;
+  }
+
+  wasInitSuccessful() {
+    return this.core.isSessionActive;
+  }
+
+  getSessionTimestamp() {
+    return this.core.getSessionTimestamp();
+  }
+
+  getSessionId() {
+    return this.core.getSessionId();
+  }
+
+  getUserProperties() {
+    return this.core.newUserProperties;
+  }
+
+  getDeviceProperties() {
+    return this.core.newDeviceProperties;
+  }
+
+  set userId(userId) {
+    this.core.setUserId = userId;
+  }
+
+  setUserProperty(property, value) {
+    this.core.setUserProperty(property, value);
+  }
+
+  setUserName(name) {
+    this.core.setUserId = name;
+    this.setUserProperty('cvr.name', name);
+  }
+
+  setSessionName(name) {
+    this.setUserProperty('cvr.sessionname', name);
+  }
+
+  setLobbyId(id) {
+    this.core.setLobbyId(id);
+  }
+
+  setDeviceName(name) {
+    this.core.setDeviceId = name;
+    this.core.newDeviceProperties['cvr.device.name'] = name;
+  }
+
+  setDeviceProperty(property, value) {
+    this.core.setDeviceProperty(property, value);
+  }
+
+  set deviceId(deviceId) {
+    this.core.setDeviceId = deviceId;
+  }
+
+  getApiKey() {
+    return this.core.getApiKey();
+  }
+
+  getSceneId() {
+    return this.core.sceneData.sceneId;
+  }
 }
+
 export default C3D;
