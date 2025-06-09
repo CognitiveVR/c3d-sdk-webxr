@@ -1,6 +1,4 @@
-import C3DAnalytics from '../lib';
-require('es6-promise').polyfill();
-require('isomorphic-fetch');
+import C3DAnalytics from '../lib/index.cjs.js';
 import settings from '../settings';
 
 
@@ -15,10 +13,10 @@ import settings from '../settings';
 
 
 const c3d = new C3DAnalytics(settings);
-c3d.setScene('tutorial');
+c3d.setScene('BasicScene');
 
 beforeEach(() => {
-	c3d.core.resetNewUserDevicProperties();
+	c3d.core.resetNewUserDeviceProperties();
 	if (c3d.isSessionActive()) {
 		c3d.endSession();
 	}
@@ -87,7 +85,7 @@ test('Device Null Post Session', async () => {
 	expect(endSession).toEqual(200);;
 });
 
-test('Device Null Pre Sesssion', async () => {
+test('Device Null Pre Session', async () => {
 	c3d.setDeviceName('7741345684915735');
 	c3d.setDeviceName('7741345684915736');
 	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");

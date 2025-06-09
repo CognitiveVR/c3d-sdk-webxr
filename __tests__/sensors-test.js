@@ -1,8 +1,5 @@
-import C3DAnalytics from '../lib';
+import C3DAnalytics from '../lib/index.cjs.js';
 import settings from '../settings';
-require('es6-promise').polyfill();
-require('isomorphic-fetch');
-
 
 //----------------------SENSORS TEST FOR SCENE EXPLORER-----------------------//
 
@@ -21,14 +18,14 @@ const c3d = new C3DAnalytics(settings);
 // c3d.setScene('tutorial');
 
 beforeEach(async () => {
-	c3d.core.resetNewUserDevicProperties();
+	c3d.core.resetNewUserDeviceProperties();
 	if (c3d.isSessionActive()) {
 		await expect(c3d.endSession()).resolves.toEqual(200);
 	};
 });
 
 test('Sense then Init ', async () => {
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 
 	for (var i = 0; i < 10; i++) {
 		c3d.sensor.recordSensor('test-sensor', i);
@@ -43,7 +40,7 @@ test('Sense then Init ', async () => {
 
 
 test('End Session Then Sense', async () => {
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 	await expect(c3d.endSession()).resolves.toEqual(200);
 
@@ -58,7 +55,7 @@ test('Sensor Limit Single ', async () => {
 	settings.config.sensorDataLimit = 10;
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 
 	for (var i = 0; i < 5; i++) {
@@ -75,7 +72,7 @@ test('Sensor Limit Single ', async () => {
 	settings.config.sensorDataLimit = 15;
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 
 	for (var i = 0; i < 5; i++) {
@@ -98,7 +95,7 @@ test('Sensor Limit Many ', async () => {
 	settings.config.sensorDataLimit = 15;
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 
 	for (var i = 0; i < 5; i++) {
@@ -143,7 +140,7 @@ test('Sense and then set Scene', async () => {
 test('Set Scene then Sense and then then set Scene another scene', async () => {
 	settings.config.sensorDataLimit = 15;
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 
 	for (var i = 0; i < 5; i++) {
@@ -155,7 +152,7 @@ test('Set Scene then Sense and then then set Scene another scene', async () => {
 		c3d.sensor.recordSensor('test-sensor', i);
 	}
 	expect(c3d.sensor.sensorCount).toBe(10);
-	c3d.setScene('test_scene1');
+	c3d.setScene('BasicScene');
 	expect(c3d.sensor.sensorCount).toBe(0);
 
 	await expect(c3d.endSession()).resolves.toEqual(400); //not valid scene 
@@ -164,7 +161,7 @@ test('Set Scene then Sense and then then set Scene another scene', async () => {
 test('Many Sensors', async () => {
 	settings.config.sensorDataLimit = 64;
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 
 	for (var i = 0; i < 10; i++) {
@@ -177,7 +174,7 @@ test('Many Sensors', async () => {
 	}
 	expect(c3d.sensor.sensorCount).toBe(20);
 
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 	expect(c3d.sensor.sensorCount).toBe(0);
 
 	await expect(c3d.endSession()).resolves.toEqual(200);

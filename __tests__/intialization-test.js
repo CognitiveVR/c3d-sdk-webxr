@@ -1,12 +1,11 @@
-import C3DAnalytics from '../lib';
-require('es6-promise').polyfill();
-require('isomorphic-fetch');
+import C3DAnalytics from '../lib/index.cjs.js';
+import settings from '../settings';
 
 
-
+/*
 let settings = {
 	config: {
-		APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
+		APIKey: 'YCMPEND2PURSDFAHEHUYEJ6R2F2RQ5QH',
 		gazeBatchSize: 64,
 		dynamicDataLimit: 64,
 		customEventBatchSize: 64,
@@ -37,6 +36,7 @@ let settings = {
 		//if a config is not spicificed then use the default value.
 	},
 };
+*/
 
 /**
 * @jest-environment jsdom
@@ -44,7 +44,7 @@ let settings = {
 
 test('Multiple Start Sessions', async () => {
 	let c3d = new C3DAnalytics(settings);
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 	expect(c3d.startSession()).toBe(true);
 	expect(c3d.startSession()).toBe(false);
 	expect(c3d.startSession()).toBe(false);

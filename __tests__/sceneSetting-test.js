@@ -1,7 +1,6 @@
-import C3DAnalytics from '../lib';
+import C3DAnalytics from '../lib/index.cjs.js';
 import settings from '../settings';
-require('es6-promise').polyfill();
-require('isomorphic-fetch');
+
 
 
 //----------------------SETTING SCENE KEYS FOR SCENE EXPLORER-----------------------//
@@ -19,7 +18,7 @@ require('isomorphic-fetch');
 
 const c3d = new C3DAnalytics(settings);
 beforeEach(() => {
-	c3d.core.resetNewUserDevicProperties();
+	c3d.core.resetNewUserDeviceProperties();
 	if (c3d.isSessionActive()) {
 		c3d.endSession();
 	};

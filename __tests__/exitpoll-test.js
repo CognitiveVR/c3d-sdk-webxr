@@ -1,7 +1,6 @@
-import C3DAnalytics from '../lib';
+import C3DAnalytics from '../lib/index.cjs.js';
 import settings from '../settings';
-require('es6-promise').polyfill();
-require('isomorphic-fetch');
+
 
 
 //----------------------EXIT POLL TEST -----------------------//
@@ -18,11 +17,11 @@ require('isomorphic-fetch');
 */
 
 const c3d = new C3DAnalytics(settings);
-c3d.setScene('tutorial');
+c3d.setScene('BasicScene');
 c3d.userId = 'test_id';
 
 beforeEach(async() => {
-	c3d.core.resetNewUserDevicProperties();
+	c3d.core.resetNewUserDeviceProperties();
 	if (c3d.isSessionActive()) {
 		await expect(c3d.endSession()).resolves.toEqual(200);
 	};

@@ -1,7 +1,5 @@
-import C3DAnalytics from '../lib';
+import C3DAnalytics from '../lib/index.cjs.js';
 import settings from '../settings';
-require('es6-promise').polyfill();
-require('isomorphic-fetch');
 
 
 // global.console = {
@@ -16,7 +14,7 @@ require('isomorphic-fetch');
 
 const c3d = new C3DAnalytics(settings);
 beforeEach(() => {
-	c3d.core.resetNewUserDevicProperties();
+	c3d.core.resetNewUserDeviceProperties();
 	if (c3d.isSessionActive()) {
 		c3d.endSession();
 	}
@@ -32,13 +30,13 @@ test('should set userId, deviceId', () => {
 });
 
 test('Should Set User Properties properly', () => {
-	let userPropertisBeofreSetting = c3d.getUserProperties();
-	expect(userPropertisBeofreSetting).toEqual({});
+	let userPropertiesBeforeSetting = c3d.getUserProperties();
+	expect(userPropertiesBeforeSetting).toEqual({});
 
 	c3d.setUserProperty('name', 'test_name');
 	c3d.setUserProperty('location', 'canada');
-	let userPropertis = c3d.getUserProperties();
-	expect(userPropertis).toEqual({ name: 'test_name', location: 'canada' });
+	let userProperties = c3d.getUserProperties();
+	expect(userProperties).toEqual({ name: 'test_name', location: 'canada' });
 });
 
 test('User PreSession', () => {
@@ -47,8 +45,8 @@ test('User PreSession', () => {
 	c3d.setUserName("john");
 	c3d.setUserProperty('age', 38);
 	c3d.setUserProperty('location', 'canada');
-	let userPropertis = c3d.getUserProperties();
-	expect(Object.keys(userPropertis).length).toEqual(3);
+	let userProperties = c3d.getUserProperties();
+	expect(Object.keys(userProperties).length).toEqual(3);
 });
 
 test('User Post Session', async () => {
@@ -56,19 +54,19 @@ test('User Post Session', async () => {
 	let c3d = new C3DAnalytics(settings);
 	let currentAPI = c3d.getApiKey();
 	expect(currentAPI).toEqual('TEST_API');
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 	c3d.setUserName("john");
 	c3d.setUserProperty('age', 21);
 	c3d.setUserProperty('location', 'vancouver');
 	//
 	await expect(c3d.sendData()).resolves.toEqual(401);
-	let userPropertis = c3d.getUserProperties();
-	expect(Object.keys(userPropertis).length).toEqual(3);
+	let userProperties = c3d.getUserProperties();
+	expect(Object.keys(userProperties).length).toEqual(3);
 });
 
 test('User null pre session', async () => {
-	c3d.setScene('tutorial')
+	c3d.setScene('BasicScene')
 	c3d.startSession();
 	await expect(c3d.sendData()).resolves.toEqual(401);
 	let endSession = await c3d.endSession();
