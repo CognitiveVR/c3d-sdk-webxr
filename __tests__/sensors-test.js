@@ -14,8 +14,8 @@ import settings from '../settings';
 * @jest-environment jsdom
 */
 
-const c3d = new C3DAnalytics(settings);
-// c3d.setScene('tutorial');
+const c3d = new C3DAnalytics(settings); 
+//c3d.setScene('BasicScene');
 
 beforeEach(async () => {
 	c3d.core.resetNewUserDeviceProperties();
@@ -23,8 +23,19 @@ beforeEach(async () => {
 		await expect(c3d.endSession()).resolves.toEqual(200);
 	};
 });
+/*
+let c3d = new C3DAnalytics(settings);
 
-test('Sense then Init ', async () => {
+beforeEach(async () => {
+    c3d = new C3DAnalytics(settings); // Initialize new C3DAnalytics instance for each test
+
+    c3d.core.resetNewUserDeviceProperties();
+    if (c3d.isSessionActive()) {
+        await expect(c3d.endSession()).resolves.toEqual(200);
+    }
+});
+*/
+test('Buffer sensor data before session starts and send successfully after', async () => {
 	c3d.setScene('BasicScene');
 
 	for (var i = 0; i < 10; i++) {
@@ -39,7 +50,7 @@ test('Sense then Init ', async () => {
 
 
 
-test('End Session Then Sense', async () => {
+test('Record sensor data when session is inactive', async () => {
 	c3d.setScene('BasicScene');
 	c3d.startSession();
 	await expect(c3d.endSession()).resolves.toEqual(200);
@@ -51,7 +62,7 @@ test('End Session Then Sense', async () => {
 });
 
 
-test('Sensor Limit Single ', async () => {
+test('Automatically send sensor data when batch limit is reached (single overflow)', async () => {
 	settings.config.sensorDataLimit = 10;
 	const c3d = new C3DAnalytics(settings);
 
@@ -68,7 +79,7 @@ test('Sensor Limit Single ', async () => {
 	expect(c3d.sensor.sensorCount).toBe(1);
 });
 
-test('Sensor Limit Single ', async () => {
+test('Automatically send sensor data when batch limit is reached (exact multiple)', async () => {
 	settings.config.sensorDataLimit = 15;
 	const c3d = new C3DAnalytics(settings);
 
@@ -91,7 +102,7 @@ test('Sensor Limit Single ', async () => {
 
 });
 
-test('Sensor Limit Many ', async () => {
+test('Handle multiple automatic sensor data sends when limit is reached', async () => {
 	settings.config.sensorDataLimit = 15;
 	const c3d = new C3DAnalytics(settings);
 
@@ -116,7 +127,7 @@ test('Sensor Limit Many ', async () => {
 });
 
 
-test('Sense and then set Scene', async () => {
+test('Buffer sensor data before session starts and allow manual send', async () => {
 	settings.config.sensorDataLimit = 15;
 	const c3d = new C3DAnalytics(settings);
 
@@ -137,10 +148,10 @@ test('Sense and then set Scene', async () => {
 	await expect(c3d.endSession()).resolves.toEqual(200);
 });
 
-test('Set Scene then Sense and then then set Scene another scene', async () => {
+test('Flush sensor data when scene changes and end session successfully', async () => {
 	settings.config.sensorDataLimit = 15;
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene');
+	c3d.setScene('BasicScene'); // Set Scene A 
 	c3d.startSession();
 
 	for (var i = 0; i < 5; i++) {
@@ -152,16 +163,16 @@ test('Set Scene then Sense and then then set Scene another scene', async () => {
 		c3d.sensor.recordSensor('test-sensor', i);
 	}
 	expect(c3d.sensor.sensorCount).toBe(10);
-	c3d.setScene('BasicScene');
+	c3d.setScene('AdvancedScene'); // Set Scene B - Scene change
 	expect(c3d.sensor.sensorCount).toBe(0);
 
-	await expect(c3d.endSession()).resolves.toEqual(400); //not valid scene 
+	await expect(c3d.endSession()).resolves.toEqual(200); 
 });
 
-test('Many Sensors', async () => {
+test('Handle large volume sensor data flushing on scene change', async () => {
 	settings.config.sensorDataLimit = 64;
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene');
+	c3d.setScene('BasicScene'); // Set Scene A  
 	c3d.startSession();
 
 	for (var i = 0; i < 10; i++) {
@@ -174,7 +185,7 @@ test('Many Sensors', async () => {
 	}
 	expect(c3d.sensor.sensorCount).toBe(20);
 
-	c3d.setScene('BasicScene');
+	c3d.setScene('AdvancedScene'); // Set Scene B - Scene change 
 	expect(c3d.sensor.sensorCount).toBe(0);
 
 	await expect(c3d.endSession()).resolves.toEqual(200);

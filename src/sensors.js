@@ -30,6 +30,7 @@ class Sensors {
 				return;
 			}
 			if (this.allSensors.length === 0) {
+				console.log('no sensor data')
 				resolve('no sensor data');
 				return;
 			}

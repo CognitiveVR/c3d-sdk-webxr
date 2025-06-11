@@ -9,10 +9,15 @@ export default {
         HMDType: "Meta Quest 2", 
         allSceneData: [
             {
-                sceneName: "", // Replace with your Scene Name from Cog3D dashboard
-                sceneId: "", // Replace with your Scene ID from Cog3D dashboard
+                sceneName: "BasicScene", // Replace with your Scene Name from Cog3D dashboard
+                sceneId: "93f486e4-0e22-4650-946a-e64ce527f915", // Replace with your Scene ID from Cog3D dashboard
                 versionNumber: "1", // Replace with your Scene Version from Cog3D dashboard
             },
+            {
+				sceneName: 'AdvancedScene',
+				sceneId: 'f0e6c0f2-717e-4cca-9fe5-39f88068ea40',
+				versionNumber: '1'
+			}
         ],
     },
 };

@@ -4,10 +4,7 @@ class Config {
 		this.SdkVersion = '0.2.0';
 		this.networkHost = 'data.cognitive3d.com'; // prod gateway
 		//this.networkHost = 'data.c3ddev.com'; // dev gateway 
-
-		//added to the header of the requests
-		this.APIKey = ''; // prod key
-		//this.APIKey = ''; // dev key
+		this.APIKey = ''; // SET APIKEY: Prod or Dev  
 		this.networkVersion = '0';
 		this.sensorDataLimit = 64;
 		this.dynamicDataLimit = 64;
