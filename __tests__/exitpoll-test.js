@@ -4,7 +4,8 @@ import settings from '../settings';
 
 
 //----------------------EXIT POLL TEST -----------------------//
-
+// ENSURE YOU HAVE CREATED A EXIT POLL QUESTION SET ON THE COG3D WEBSITE 
+// Remember to assign a hook to your question set --> requestQuestionSet(assigned hook)
 
 
 // global.console = {
@@ -28,58 +29,130 @@ beforeEach(async() => {
 });
 
 
-test('should not be able to request a question set before starting a session', async () => {
+test('Fail to request Question Set before session start', async () => {
 	await expect(c3d.exitpoll.requestQuestionSet('app_test_js')).rejects.toEqual('ExitPoll.requestQuestionSet failed: no session active');
 });
 
 
-test('should be able to request a question after starting a session', async () => {
+test('Successfully request Question Set after session start', async () => {
 	c3d.startSession();
 	expect(c3d.isSessionActive()).toBe(true);
 	await expect(c3d.exitpoll.requestQuestionSet('app_test_js')).resolves.toEqual(true);
 });
 
 
-test('should be able to return question set as an object', async () => {
-	c3d.startSession();
-	expect(c3d.isSessionActive()).toBe(true);
-	await expect(c3d.exitpoll.requestQuestionSet('app_test_js')).resolves.toEqual(true);
-	expect(c3d.exitpoll.getQuestionSet()).toEqual({"customerId": "placeholder", "id": "testing_app_qs:1", "name": "testing_app_qs", "questions": [{"title": "test_app", "type": "BOOLEAN"}], "status": "active", "title": "testing_app_qs", "version": 1})
+test('Return question set as an object', async () => {
+    c3d.startSession();
+    expect(c3d.isSessionActive()).toBe(true);
+
+    await expect(c3d.exitpoll.requestQuestionSet('app_test_js')).resolves.toEqual(true);
+
+    const questionSet = c3d.exitpoll.getQuestionSet();
+
+    expect(questionSet).toBeInstanceOf(Object);
+
+    expect(questionSet).toHaveProperty('id');
+    expect(typeof questionSet.id).toBe('string');
+
+    expect(questionSet).toHaveProperty('name');
+    expect(typeof questionSet.name).toBe('string');
+
+    expect(questionSet).toHaveProperty('title');
+    expect(typeof questionSet.title).toBe('string');
+
+    expect(questionSet).toHaveProperty('questions');
+    expect(Array.isArray(questionSet.questions)).toBe(true);
+
+    if (questionSet.questions.length > 0) {
+        const firstQuestion = questionSet.questions[0];
+        expect(firstQuestion).toHaveProperty('title');
+        expect(typeof firstQuestion.title).toBe('string');
+        expect(firstQuestion).toHaveProperty('type');
+        expect(typeof firstQuestion.type).toBe('string');
+    }
 });
 
-test('should be able to return question set as a string', async () => {
-	c3d.startSession();
-	expect(c3d.isSessionActive()).toBe(true);
-	await expect(c3d.exitpoll.requestQuestionSet('app_test_js')).resolves.toEqual(true);
-	expect(c3d.exitpoll.getQuestionSetString()).toEqual("{\"id\":\"testing_app_qs:1\",\"name\":\"testing_app_qs\",\"customerId\":\"placeholder\",\"status\":\"active\",\"title\":\"testing_app_qs\",\"version\":1,\"questions\":[{\"type\":\"BOOLEAN\",\"title\":\"test_app\"}]}")
+test('Return question set as a string', async () => {
+    c3d.startSession();
+    expect(c3d.isSessionActive()).toBe(true);
+
+    await expect(c3d.exitpoll.requestQuestionSet('app_test_js')).resolves.toEqual(true);
+
+    const questionSetString = c3d.exitpoll.getQuestionSetString();
+    
+    // Check we received an non-empty string
+    expect(typeof questionSetString).toBe('string');
+    expect(questionSetString.length).toBeGreaterThan(0);
+
+    // Parse string to check structure 
+    let questionSet;
+    try {
+        questionSet = JSON.parse(questionSetString);
+    } catch (e) {
+        // This will fail the test if the string is not valid JSON
+        throw new Error("Failed to parse question set string into JSON");
+    }
+
+    expect(questionSet).toBeInstanceOf(Object);
+    expect(questionSet).toHaveProperty('id');
+    expect(typeof questionSet.id).toBe('string');
+    expect(questionSet).toHaveProperty('name');
+    expect(typeof questionSet.name).toBe('string');
+    expect(questionSet).toHaveProperty('questions');
+    expect(Array.isArray(questionSet.questions)).toBe(true);
+});
+
+test('Full exit poll workflow (String)', async () => {
+    c3d.startSession();
+    expect(c3d.isSessionActive()).toBe(true);
+    await expect(c3d.exitpoll.requestQuestionSet('app_test_js')).resolves.toEqual(true);
+
+    const questionSetString = c3d.exitpoll.getQuestionSetString();
+
+    // Verify valid JSON string
+    let questionSet;
+    try {
+        questionSet = JSON.parse(questionSetString);
+    } catch (e) {
+        throw new Error("Failed to parse question set string into JSON");
+    }
+
+    // Check the structure of the object
+    expect(questionSet).toBeInstanceOf(Object);
+    expect(questionSet).toHaveProperty('id');
+    expect(questionSet).toHaveProperty('questions');
+    expect(Array.isArray(questionSet.questions)).toBe(true);
+
+    
+    expect(c3d.exitpoll.fullResponse.answers).toBe(undefined);
+    c3d.exitpoll.addAnswer('boolean', 1);
+    expect(c3d.exitpoll.fullResponse.answers.length).toBe(1);
+    await expect(c3d.exitpoll.sendAllAnswers()).resolves.toEqual(200)
+    expect(c3d.exitpoll.fullResponse.answers).toBe(undefined);
 });
 
 
-test('Request Then Get string then Answer', async () => {
-	c3d.startSession();
-	expect(c3d.isSessionActive()).toBe(true);
-	await expect(c3d.exitpoll.requestQuestionSet('app_test_js')).resolves.toEqual(true);
-	expect(c3d.exitpoll.getQuestionSetString()).toEqual("{\"id\":\"testing_app_qs:1\",\"name\":\"testing_app_qs\",\"customerId\":\"placeholder\",\"status\":\"active\",\"title\":\"testing_app_qs\",\"version\":1,\"questions\":[{\"type\":\"BOOLEAN\",\"title\":\"test_app\"}]}");
-	expect(c3d.exitpoll.fullResponse.answers).toBe(undefined);
-	c3d.exitpoll.addAnswer('boolean', 1);
-	expect(c3d.exitpoll.fullResponse.answers.length).toBe(1);
-	await expect(c3d.exitpoll.sendAllAnswers()).resolves.toEqual(200)
-	expect(c3d.exitpoll.fullResponse.answers).toBe(undefined);
+
+test('Complete full exit poll workflow (JSON)', async () => {
+    c3d.startSession();
+    expect(c3d.isSessionActive()).toBe(true);
+    await expect(c3d.exitpoll.requestQuestionSet('app_test_js')).resolves.toEqual(true);
+
+    const questionSet = c3d.exitpoll.getQuestionSet();
+
+    expect(questionSet).toBeInstanceOf(Object);
+    expect(questionSet).toHaveProperty('id');
+    expect(typeof questionSet.id).toBe('string');
+    expect(questionSet).toHaveProperty('name');
+    expect(typeof questionSet.name).toBe('string');
+    expect(questionSet).toHaveProperty('questions');
+    expect(Array.isArray(questionSet.questions)).toBe(true);
+
+    expect(c3d.exitpoll.fullResponse.answers).toBe(undefined);
+    c3d.exitpoll.addAnswer('boolean', 1);
+    expect(c3d.exitpoll.fullResponse.answers.length).toBe(1);
+    await expect(c3d.exitpoll.sendAllAnswers()).resolves.toEqual(200)
+    expect(c3d.exitpoll.fullResponse.answers).toBe(undefined);
 });
-
-
-
-test('Request Then Get Json then Answer', async () => {
-	c3d.startSession();
-	expect(c3d.isSessionActive()).toBe(true);
-	await expect(c3d.exitpoll.requestQuestionSet('app_test_js')).resolves.toEqual(true);
-	expect(c3d.exitpoll.getQuestionSet()).toEqual({"customerId": "placeholder", "id": "testing_app_qs:1", "name": "testing_app_qs", "questions": [{"title": "test_app", "type": "BOOLEAN"}], "status": "active", "title": "testing_app_qs", "version": 1});
-	expect(c3d.exitpoll.fullResponse.answers).toBe(undefined);
-	c3d.exitpoll.addAnswer('boolean', 1);
-	expect(c3d.exitpoll.fullResponse.answers.length).toBe(1);
-	await expect(c3d.exitpoll.sendAllAnswers()).resolves.toEqual(200)
-	expect(c3d.exitpoll.fullResponse.answers).toBe(undefined);
-});
-
 
 
