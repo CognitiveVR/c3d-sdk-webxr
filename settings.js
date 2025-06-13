@@ -1,8 +1,8 @@
 export default {
     config: {
-        // Note: the API key below points to a demo project in our Production environment.
-        // You can get your own API key by signing up at https://cognitive3d.com
-        // replace it with your own Application API key to send data to your own project.
+        // You can get your own Application API key by signing up at https://cognitive3d.com
+        // Replace it with your own Application API key to send data to your own project.
+        // Set README.md for more details.
         APIKey: (() => {
             if (!process.env.C3D_APPLICATION_KEY) {
                 throw new Error("Missing C3D_APPLICATION_KEY in environment");
