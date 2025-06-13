@@ -1,7 +1,6 @@
-import C3DAnalytics from '../lib';
+import C3DAnalytics from '../lib/index.cjs.js';
 import settings from '../settings';
-require('es6-promise').polyfill();
-require('isomorphic-fetch');
+
 
 
 //----------------------GAZE TEST FOR SCENE EXPLORER-----------------------//
@@ -18,19 +17,18 @@ require('isomorphic-fetch');
 */
 
 const c3d = new C3DAnalytics(settings);
-// c3d.setScene('tutorial');
 
 beforeEach(async () => {
-	c3d.core.resetNewUserDevicProperties();
+	c3d.core.resetNewUserDeviceProperties();
 	if (c3d.isSessionActive()) {
 		await expect(c3d.endSession()).resolves.toEqual(200);
 	};
 });
 
-test('Gaze then Init Set Scene', async () => {
+test('Buffer gaze data pre-session and clear on session end', async () => {
 	let pos = [0, 0, 0];
 	let rot = [0, 0, 0, 1];
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 
 	for (var i = 0; i < 10; i++) {
 		pos[1] = i;
@@ -40,25 +38,25 @@ test('Gaze then Init Set Scene', async () => {
 
 	c3d.startSession();
 	await c3d.endSession();
-	expect(c3d.gaze.batchedGaze.length).toBe(0);//no scene to send to. endsession clears everything
+	expect(c3d.gaze.batchedGaze.length).toBe(0); // no scene to send to - endSession clears everything
 });
 
-test('Gaze on Dynamic', async () => {
+test('Record gaze data with and without dynamic object ID and send successfully', async () => {
 	let pos = [0, 0, 0];
 	let point = [0, 0, 0];
 	let rot = [0, 0, 0, 1];
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 	for (var i = 0; i < 10; i++) {
 		pos[1] = i;
-		c3d.gaze.recordGaze(pos, rot, point);
+		c3d.gaze.recordGaze(pos, rot, point); // no object id 
 	}
 	expect(c3d.gaze.batchedGaze.length).toBe(10);
-	c3d.dynamicObject.registerObjectCustomId("object1", "block", "1", pos, rot);
+	c3d.dynamicObject.registerObjectCustomId("object1", "block", "1", pos, rot); 
 
 	for (var i = 0; i < 10; i++) {
 		pos[1] = i;
-		c3d.gaze.recordGaze(pos, rot, point, '1');
+		c3d.gaze.recordGaze(pos, rot, point, '1'); // with object id = '1'  
 	}
 	expect(c3d.gaze.batchedGaze.length).toBe(20);
 	await expect(c3d.sendData()).resolves.toEqual(200);

@@ -1,4 +1,4 @@
-import uuid from 'uuid/v4';
+import { v4 as uuidv4 } from 'uuid';
 import Network from './network';
 
 class DynamicObject {
@@ -50,7 +50,7 @@ class DynamicObject {
 
 	registerObject(name, meshname, position, rotation) {
 		let foundRecycledId = false;
-		let newObjectId = this.dynamicObjectId(uuid(), meshname);
+		let newObjectId = this.dynamicObjectId(uuidv4(), meshname);
 
 		if (!foundRecycledId) {
 			this.objectIds.push(newObjectId);

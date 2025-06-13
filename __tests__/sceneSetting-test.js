@@ -1,8 +1,7 @@
-import C3DAnalytics from '../lib';
+import C3DAnalytics from '../lib/index.cjs.js';
 import settings from '../settings';
-require('es6-promise').polyfill();
-require('isomorphic-fetch');
 
+//jest.setTimeout(10000); // 10 seconds
 
 //----------------------SETTING SCENE KEYS FOR SCENE EXPLORER-----------------------//
 
@@ -17,16 +16,38 @@ require('isomorphic-fetch');
 * @jest-environment jsdom
 */
 
+/*
 const c3d = new C3DAnalytics(settings);
 beforeEach(() => {
-	c3d.core.resetNewUserDevicProperties();
+	c3d.core.resetNewUserDeviceProperties();
 	if (c3d.isSessionActive()) {
 		c3d.endSession();
 	};
 });
+*/ 
+
+let c3d; 
+beforeEach(async () => {
+    
+    c3d = new C3DAnalytics(settings);
+    c3d.core.resetNewUserDeviceProperties();
+	
+	
+	//c3d.setScene('BasicScene'); 
+
+    if (c3d.isSessionActive()) {
+        try {
+            await c3d.endSession();
+        } catch (error) {
+            if (error !== 'session is not active') {
+                console.warn('Unexpected error during beforeEach endSession cleanup:', error);
+            }
+        }
+    }
+});
 
 
-test('Pre Session No End', async () => {
+test('Test if SDK can buffer custom events even if no scene is explicitly set', async () => {
 	let pos = [0, 0, 0]
 	c3d.startSession();
 	c3d.customEvent.send('testing', pos);
@@ -38,20 +59,22 @@ test('Pre Session No End', async () => {
 	expect(c3d.core.sceneData.sceneName).toEqual("");
 	expect(c3d.core.sceneData.sceneId).toEqual("");
 	expect(c3d.core.sceneData.versionNumber).toEqual("");
-	expect(c3d.endSession()).rejects.toEqual('no scene selected');
+	await expect(c3d.endSession()).rejects.toEqual('no scene selected');
 });
 
-test('init scenes', async () => {
-	let scene1 = c3d.sceneData('tutorial_test', 'DELETE_ME_1', '0');
-	let scene2 = c3d.sceneData('menu', 'DELETE_ME_2', '0');
-	let scene3 = c3d.sceneData('finalboss', 'DELETE_ME_3', '0');
-	settings.config.allSceneData.push(scene1);
-	settings.config.allSceneData.push(scene2);
-	settings.config.allSceneData.push(scene3);
-	let c3d1 = new C3DAnalytics(settings);
-	c3d1.setScene('tutorial_test');
-	expect(c3d1.core.sceneData.sceneName).toEqual("tutorial_test");
-	expect(c3d1.core.sceneData.sceneId).toEqual("DELETE_ME_1");
-	expect(c3d1.core.sceneData.versionNumber).toEqual("0");
-	expect(c3d.endSession()).rejects.toEqual('session is not active');
+
+test('Should successfully initialize SDK with a configured scene', async () => {
+    c3d.setScene('BasicScene'); 
+    expect(c3d.core.sceneData.sceneName).toEqual("BasicScene");
+    expect(c3d.core.sceneData.sceneId).toEqual("93f486e4-0e22-4650-946a-e64ce527f915"); 
+    expect(c3d.core.sceneData.versionNumber).toEqual("1"); 
+
+    c3d.startSession();
+
+    const testPos = [1.0, 2.0, 3.0];
+    const testProps = { 'item': 'test_object', 'value': 100 };
+    c3d.customEvent.send('TestEventInScene', testPos, testProps);
+
+    // End the session, expecting successful data transmission for the set scene
+    await expect(c3d.endSession()).resolves.toEqual(200); 
 });

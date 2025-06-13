@@ -1,6 +1,4 @@
-import C3DAnalytics from '../lib';
-require('es6-promise').polyfill();
-require('isomorphic-fetch');
+import C3DAnalytics from '../lib/index.cjs.js';
 import settings from '../settings';
 
 
@@ -15,16 +13,16 @@ import settings from '../settings';
 
 
 const c3d = new C3DAnalytics(settings);
-c3d.setScene('tutorial');
+c3d.setScene('BasicScene');
 
 beforeEach(() => {
-	c3d.core.resetNewUserDevicProperties();
+	c3d.core.resetNewUserDeviceProperties();
 	if (c3d.isSessionActive()) {
 		c3d.endSession();
 	}
 });
 
-test('Device Pre Session', async () => {
+test('Apply device properties, set pre-session and end session successfully', async () => {
 	c3d.setDeviceName('7741345684915735');
 	c3d.setDeviceProperty('DeviceMemory', 128);
 	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
@@ -38,7 +36,7 @@ test('Device Pre Session', async () => {
 	expect(endSession).toEqual(200);;
 });
 
-test('Device Post Session', async () => {
+test('Apply device properties, set post-session and send data successfully', async () => {
 	expect(c3d.startSession()).toEqual(true)
 	c3d.setDeviceName('7741345684915735');
 	c3d.setDeviceProperty('DeviceCPU', "i7-4770 CPU @ 3.40GHz");
@@ -51,7 +49,7 @@ test('Device Post Session', async () => {
 	await expect(c3d.sendData()).resolves.toEqual(200);
 });
 
-test('Device Post Session', async () => {
+test('Updating device properties post-session', async () => {
 	c3d.startSession();
 	c3d.setDeviceName('7741345684915735');
 	c3d.setDeviceName('7741345684915736');
@@ -78,7 +76,7 @@ test('Device Post Session', async () => {
 	expect(endSession).toEqual(200);;
 });
 
-test('Device Null Post Session', async () => {
+test('Setting device name to empty string post-session', async () => {
 	expect(c3d.startSession()).toEqual(true);
 	c3d.setDeviceName("");
 	let deviceProperties = c3d.getDeviceProperties();
@@ -87,7 +85,7 @@ test('Device Null Post Session', async () => {
 	expect(endSession).toEqual(200);;
 });
 
-test('Device Null Pre Sesssion', async () => {
+test('Reject ending session if device properties set pre-session without active session', async () => {
 	c3d.setDeviceName('7741345684915735');
 	c3d.setDeviceName('7741345684915736');
 	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
@@ -95,7 +93,7 @@ test('Device Null Pre Sesssion', async () => {
 	expect(c3d.endSession()).rejects.toEqual('session is not active');
 });
 
-test('User Device Post Session', async () => {
+test('Setting user and device properties post-session', async () => {
 	expect(c3d.startSession()).toEqual(true);
 	c3d.setDeviceName("7741345684915735");
 	c3d.setDeviceProperty('DeviceMemory', 128);
@@ -114,7 +112,7 @@ test('User Device Post Session', async () => {
 	expect(endSession).toEqual(200);
 });
 
-test('User Device pre Session', async () => {
+test('Apply user and device properties set pre-session and end session successfully', async () => {
 	c3d.setUserName("john");
 	c3d.setUserProperty("location", "vancouver");
 	c3d.setUserProperty("location", "seattle");

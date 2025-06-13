@@ -1,18 +1,17 @@
 class Config {
 	constructor() {
 		this.LOG = false;
-		this.SdkVersion = '0.2.0';
-		this.networkHost = 'data.cognitive3d.com'; // comment for dev
-		// this.networkHost = 'data.c3ddev.com'; // uncomment for dev
-		//added to the header of the requests
-		this.APIKey = ''; // fill this in with the Application Key for your project on the Cognitive3D dashboard
+		this.SdkVersion = '1.1.0';
+		this.networkHost = 'data.cognitive3d.com'; // prod gateway
+		//this.networkHost = 'data.c3ddev.com'; // dev gateway 
+		this.APIKey = ''; // SET APIKEY: Prod or Dev  
 		this.networkVersion = '0';
 		this.sensorDataLimit = 64;
 		this.dynamicDataLimit = 64;
 		this.customEventBatchSize = 64;
 		this.gazeBatchSize = 64;
 		this.GazeInterval = 0.1; // this corresponds to 10 Hz
-		this.HMDType = ''; // set this based on the headset hardware
+		this.HMDType = 'Quest 2'; // set this based on the headset hardware
 		this.allSceneData = [];
 	}
 	sceneData(sceneName, sceneId, versionNumber) {

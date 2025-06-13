@@ -1,33 +1,33 @@
 export default {
-	config: {
-		APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
-		gazeBatchSize: 64,
-		dynamicDataLimit: 64,
-		customEventBatchSize: 64,
-		HMDType: 'rift',
-		sensorDataLimit: 64,
-		allSceneData: [
-			{
-				sceneName: 'test_scene1',
-				sceneId: 'test_id1',
-				versionNumber: 'version1'
-			},
-			{
-				sceneName: 'test_scene2',
-				sceneId: 'test_id2',
-				versionNumber: 'version2'
-			},
-			{
-				sceneName: 'nawar',
-				sceneId: 'nawar_id2',
-				versionNumber: '9'
-			},
-			{
-				sceneName: 'tutorial',
-				sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-				versionNumber: '3'
+    config: {
+        // You can get your own Application API key by signing up at https://cognitive3d.com
+        // Replace it with your own Application API key to send data to your own project.
+        // Set README.md for more details.
+        APIKey: (() => {
+            if (!process.env.C3D_APPLICATION_KEY) {
+                throw new Error("Missing C3D_APPLICATION_KEY in environment");
+            }
+            return process.env.C3D_APPLICATION_KEY;
+        })(),
+		networkHost: 'data.cognitive3d.com', // data.cognitive3d.com is prod, data.c3ddev.com is dev 
+        gazeBatchSize: 64,
+        dynamicDataLimit: 64,
+        customEventBatchSize: 64,
+        sensorDataLimit: 64,
+        HMDType: "Meta Quest 2", 
+        // Note: Replace `allSceneData` with your own scene data.
+        // You can find your Scene Name, Scene ID, and Version Number in the Cognitive3D dashboard for your project.
+        allSceneData: [
+            {
+                sceneName: "BasicScene", // Replace with your Scene Name from Cog3D dashboard
+                sceneId: "93f486e4-0e22-4650-946a-e64ce527f915", // Replace with your Scene ID from Cog3D dashboard
+                versionNumber: "1", // Replace with your Scene Version from Cog3D dashboard
+            },
+            {
+				sceneName: 'AdvancedScene',
+				sceneId: 'f0e6c0f2-717e-4cca-9fe5-39f88068ea40',
+				versionNumber: '1'
 			}
-		]
-		//if a config is not spicificed then use the default value.
-	},
-}
+        ],
+    },
+};

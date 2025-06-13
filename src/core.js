@@ -28,8 +28,8 @@ class CognitiveVRAnalyticsCore {
 			DeviceGPUDriver: 'cvr.device.gpu.driver',
 			DeviceGPUVendor: 'cvr.device.gpu.vendor',
 			DeviceGPUMemory: 'cvr.device.gpu.memory',
-			DeviceScreenHeight: 'cvr.device.sceen.height',
-			DeviceScreenWidth: 'cvr.device.sceen.width',
+			DeviceScreenHeight: 'cvr.device.screen.height',
+			DeviceScreenWidth: 'cvr.device.screen.width',
 			VRModel: 'cvr.vr.model',
 			VRVendor: 'cvr.vr.vendor',
 		};
@@ -120,7 +120,7 @@ class CognitiveVRAnalyticsCore {
 	devicePropertyString(property, value) {
 		return this.devicePropertyMap[property] ? this.devicePropertyMap[property] : "unknown.property";
 	};
-	resetNewUserDevicProperties() {
+	resetNewUserDeviceProperties() {
 		this.newUserProperties = {};
 		this.newDeviceProperties = {};
 	}

@@ -2,10 +2,19 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
 import terser from '@rollup/plugin-terser';
-import pkg from './package.json';
+import { builtinModules } from 'module';
+import fs from 'fs';
+import path from 'path';
+
+const pkg = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf-8'));
 
 const input = 'src/index.js';
-const external = Object.keys(pkg.dependencies || {});
+
+// Include all Node built-ins as external to avoid bundling them
+const external = [
+  ...Object.keys(pkg.dependencies || {}),
+  ...builtinModules
+];
 
 // Shared plugins
 const plugins = [

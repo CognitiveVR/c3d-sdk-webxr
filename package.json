@@ -1,6 +1,6 @@
 {
   "name": "@cognitive3d/analytics",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "This SDK allows you to integrate your Javascript Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project.",
   "main": "lib/index.cjs.js",
   "module": "lib/index.esm.js",
@@ -45,22 +45,22 @@
   },
   "homepage": "https://github.com/CognitiveVR/cvr-sdk-js#readme",
   "devDependencies": {
-    "@babel/core": "^7.21.0",
-    "@babel/preset-env": "^7.20.2",
-    "@rollup/plugin-babel": "^6.0.3",
-    "@rollup/plugin-commonjs": "^24.0.1",
-    "@rollup/plugin-node-resolve": "^15.0.1",
-    "@rollup/plugin-terser": "^0.4.0",
+    "@babel/core": "^7.27.4",
+    "@babel/preset-env": "^7.27.2",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "rollup": "^2.79.1"
+    "rollup": "^4.43.0"
   },
   "dependencies": {
-    "uuid": "^3.4.0",
-    "cross-fetch": "^3.1.5"
+    "cross-fetch": "^4.1.0",
+    "uuid": "^11.1.0"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=20.0.0"
   },
   "browserslist": [
     ">0.2%",

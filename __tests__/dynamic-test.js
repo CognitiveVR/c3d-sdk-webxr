@@ -1,7 +1,5 @@
-import C3DAnalytics from '../lib';
+import C3DAnalytics from '../lib/index.cjs.js';
 import settings from '../settings';
-require('es6-promise').polyfill();
-require('isomorphic-fetch');
 
 
 //---------------------- DYNAMICS  -----------------------//
@@ -18,16 +16,16 @@ require('isomorphic-fetch');
 */
 
 const c3d = new C3DAnalytics(settings);
-c3d.setScene('tutorial');
+c3d.setScene('BasicScene');
 
 beforeEach(async () => {
-	c3d.core.resetNewUserDevicProperties();
+	c3d.core.resetNewUserDeviceProperties();
 	if (c3d.isSessionActive()) {
 		await expect(c3d.endSession()).resolves.toEqual(200);
 	};
 });
 
-test('Init Register Send', async () => {
+test('Initialize Session, Register Objects, and Send Data', async () => {
 	c3d.startSession();
 	let pos = [0, 0, 0];
 	let rot = [0, 0, 0, 1];
@@ -36,10 +34,10 @@ test('Init Register Send', async () => {
 	expect(c3d.dynamicObject.fullManifest.length).toBe(2);
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
 	expect(c3d.dynamicObject.snapshots.length).toBe(2);
-	// await expect(c3d.endSession()).resolves.toEqual(200);
+	await expect(c3d.endSession()).resolves.toEqual(200);
 });
 
-test('Init Register Send Add Snapshot ', async () => {
+test('Register Objects, Add Snapshots, and Then Send Data', async () => {
 	c3d.startSession();
 	let pos = [0, 0, 0];
 	let rot = [0, 0, 0, 1];
@@ -73,9 +71,9 @@ test('Init Register Send Add Snapshot ', async () => {
 });
 
 
-test('Init Register Scene Add', async () => {
+test('Register Objects in One Scene, Add Snapshots, and Then Send Data', async () => {
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 	let pos = [0, 0, 0];
 	let rot = [0, 0, 0, 1];
@@ -116,52 +114,10 @@ test('Init Register Scene Add', async () => {
 
 
 
-test('Init Register Scene Add snapshot', async () => {
-	let settings = {
-		config: {
-			APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
-			gazeBatchSize: 64,
-			dynamicDataLimit: 64,
-			customEventBatchSize: 64,
-			HMDType: 'rift',
-			sensorDataLimit: 64,
-			allSceneData: [
-				{
-					sceneName: 'test_scene1',
-					sceneId: 'test_id1',
-					versionNumber: 'version1'
-				},
-				{
-					sceneName: 'test_scene2',
-					sceneId: 'test_id2',
-					versionNumber: 'version2'
-				},
-				{
-					sceneName: 'nawar',
-					sceneId: 'nawar_id2',
-					versionNumber: '9'
-				},
-				{
-					sceneName: 'tutorial',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'one',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'two',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-			]
-			//if a config is not spicificed then use the default value.
-		},
-	};
+test('Register Objects and Add Snapshots with Custom Settings', async () => {
+
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('tutorial');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 	let pos = [0, 0, 0];
 	let rot = [0, 0, 0, 1];
@@ -200,53 +156,10 @@ test('Init Register Scene Add snapshot', async () => {
 	await expect(c3d.endSession()).resolves.toEqual(200);
 });
 
-test('Reset ObjectIds Scene Change', async () => {
-	let settings = {
-		config: {
-			APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
-			gazeBatchSize: 64,
-			dynamicDataLimit: 64,
-			customEventBatchSize: 64,
-			HMDType: 'rift',
-			sensorDataLimit: 64,
-			allSceneData: [
-				{
-					sceneName: 'test_scene1',
-					sceneId: 'test_id1',
-					versionNumber: 'version1'
-				},
-				{
-					sceneName: 'test_scene2',
-					sceneId: 'test_id2',
-					versionNumber: 'version2'
-				},
-				{
-					sceneName: 'nawar',
-					sceneId: 'nawar_id2',
-					versionNumber: '9'
-				},
-				{
-					sceneName: 'tutorial',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'one',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'two',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-			]
-			//if a config is not spicificed then use the default value.
-		},
-	};
+test('Reset Object Manifest on Scene Change', async () => {
 
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('one');
+	c3d.setScene('BasicScene'); // Set Scene A 
 	c3d.startSession();
 	const pos = [0, 0, 0];
 	const rot = [0, 0, 0, 1];
@@ -261,7 +174,7 @@ test('Reset ObjectIds Scene Change', async () => {
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot, props);
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);
-	c3d.setScene('two');//refreshes object manifest
+	c3d.setScene('AdvancedScene'); // Set Scene B, refreshes object manifest
 
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
 
@@ -277,53 +190,10 @@ test('Reset ObjectIds Scene Change', async () => {
 });
 
 
-test('Custom Id', async () => {
-	let settings = {
-		config: {
-			APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
-			gazeBatchSize: 64,
-			dynamicDataLimit: 64,
-			customEventBatchSize: 64,
-			HMDType: 'rift',
-			sensorDataLimit: 64,
-			allSceneData: [
-				{
-					sceneName: 'test_scene1',
-					sceneId: 'test_id1',
-					versionNumber: 'version1'
-				},
-				{
-					sceneName: 'test_scene2',
-					sceneId: 'test_id2',
-					versionNumber: 'version2'
-				},
-				{
-					sceneName: 'nawar',
-					sceneId: 'nawar_id2',
-					versionNumber: '9'
-				},
-				{
-					sceneName: 'tutorial',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'one',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'two',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-			]
-			//if a config is not spicificed then use the default value.
-		},
-	};
+test('Register Objects with Custom IDs and Send Data', async () => {
 
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('one');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 	const pos = [0, 0, 0];
 	const rot = [0, 0, 0, 1];
@@ -344,54 +214,10 @@ test('Custom Id', async () => {
 
 });
 
-test('CustomId Multiples', async () => {
-	let settings = {
-		config: {
-			APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
-			gazeBatchSize: 64,
-			dynamicDataLimit: 64,
-			customEventBatchSize: 64,
-			HMDType: 'rift',
-			sensorDataLimit: 64,
-			allSceneData: [
-				{
-					sceneName: 'test_scene1',
-					sceneId: 'test_id1',
-					versionNumber: 'version1'
-				},
-				{
-					sceneName: 'test_scene2',
-					sceneId: 'test_id2',
-					versionNumber: 'version2'
-				},
-				{
-					sceneName: 'nawar',
-					sceneId: 'nawar_id2',
-					versionNumber: '9'
-				},
-				{
-					sceneName: 'tutorial',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'one',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'two',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-			]
-			//if a config is not spicificed then use the default value.
-		},
-	};
-
+test('Register Multiple Objects with Custom IDs', async () => {
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('one');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 	const pos = [0, 0, 0];
 	const rot = [0, 0, 0, 1];
@@ -413,55 +239,12 @@ test('CustomId Multiples', async () => {
 
 
 
-test('Limit Snapshots ', async () => {
-	let settings = {
-		config: {
-			APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
-			gazeBatchSize: 64,
-			dynamicDataLimit: 64,
-			customEventBatchSize: 64,
-			HMDType: 'rift',
-			sensorDataLimit: 64,
-			allSceneData: [
-				{
-					sceneName: 'test_scene1',
-					sceneId: 'test_id1',
-					versionNumber: 'version1'
-				},
-				{
-					sceneName: 'test_scene2',
-					sceneId: 'test_id2',
-					versionNumber: 'version2'
-				},
-				{
-					sceneName: 'nawar',
-					sceneId: 'nawar_id2',
-					versionNumber: '9'
-				},
-				{
-					sceneName: 'tutorial',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'one',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'two',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-			]
-			//if a config is not spicificed then use the default value.
-		},
-	};
-	settings.config.dynamicDataLimit = 5;
+test('Automatically Send Snapshots When Batch Limit is Reached', async () => { 
 
+	settings.config.dynamicDataLimit = 5; // keep custom config here
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('one');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 	const pos = [0, 0, 0];
 	const rot = [0, 0, 0, 1];
@@ -485,56 +268,12 @@ test('Limit Snapshots ', async () => {
 });
 
 
-test('Limit Register ', async () => {
-	let settings = {
-		config: {
-			APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
-			gazeBatchSize: 64,
-			dynamicDataLimit: 64,
-			customEventBatchSize: 64,
-			HMDType: 'rift',
-			sensorDataLimit: 64,
-			allSceneData: [
-				{
-					sceneName: 'test_scene1',
-					sceneId: 'test_id1',
-					versionNumber: 'version1'
-				},
-				{
-					sceneName: 'test_scene2',
-					sceneId: 'test_id2',
-					versionNumber: 'version2'
-				},
-				{
-					sceneName: 'nawar',
-					sceneId: 'nawar_id2',
-					versionNumber: '9'
-				},
-				{
-					sceneName: 'tutorial',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'one',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'two',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-			]
-			//if a config is not spicificed then use the default value.
-		},
-	};
-
-	settings.config.dynamicDataLimit = 5;
+test('Automatically Send Manifest When Batch Limit is Reached', async () => { 
+	settings.config.dynamicDataLimit = 5; // custom config 
 
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('one');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 	const pos = [0, 0, 0];
 	const rot = [0, 0, 0, 1];
@@ -556,56 +295,12 @@ test('Limit Register ', async () => {
 });
 
 
-test('Limit Pre Session', async () => {
-	let settings = {
-		config: {
-			APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
-			gazeBatchSize: 64,
-			dynamicDataLimit: 64,
-			customEventBatchSize: 64,
-			HMDType: 'rift',
-			sensorDataLimit: 64,
-			allSceneData: [
-				{
-					sceneName: 'test_scene1',
-					sceneId: 'test_id1',
-					versionNumber: 'version1'
-				},
-				{
-					sceneName: 'test_scene2',
-					sceneId: 'test_id2',
-					versionNumber: 'version2'
-				},
-				{
-					sceneName: 'nawar',
-					sceneId: 'nawar_id2',
-					versionNumber: '9'
-				},
-				{
-					sceneName: 'tutorial',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'one',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'two',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-			]
-			//if a config is not spicificed then use the default value.
-		},
-	};
-
+test('Buffer Objects Registered Before a Session Starts and Send on Start', async () => {
 	settings.config.dynamicDataLimit = 5;
 
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('one');
+	c3d.setScene('BasicScene');
 	const pos = [0, 0, 0];
 	const rot = [0, 0, 0, 1];
 
@@ -614,7 +309,7 @@ test('Limit Pre Session', async () => {
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(1);
 	c3d.dynamicObject.registerObjectCustomId("object2", "lamp", '2', pos, rot);
 	c3d.dynamicObject.registerObjectCustomId("object3", "lamp", '3', pos, rot); //limit send
-	c3d.dynamicObject.registerObjectCustomId("object4", "lampa", '4', pos, rot);
+	c3d.dynamicObject.registerObjectCustomId("object4", "lamp", '4', pos, rot);
 	c3d.dynamicObject.registerObjectCustomId("object5", "lamp", '5', pos, rot);
 	c3d.dynamicObject.registerObjectCustomId("object6", "lamp", '6', pos, rot);
 
@@ -627,125 +322,9 @@ test('Limit Pre Session', async () => {
 	await expect(c3d.endSession()).resolves.toEqual(200);
 });
 
-
-test('Limit Register ', async () => {
-	let settings = {
-		config: {
-			APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
-			gazeBatchSize: 64,
-			dynamicDataLimit: 64,
-			customEventBatchSize: 64,
-			HMDType: 'rift',
-			sensorDataLimit: 64,
-			allSceneData: [
-				{
-					sceneName: 'test_scene1',
-					sceneId: 'test_id1',
-					versionNumber: 'version1'
-				},
-				{
-					sceneName: 'test_scene2',
-					sceneId: 'test_id2',
-					versionNumber: 'version2'
-				},
-				{
-					sceneName: 'nawar',
-					sceneId: 'nawar_id2',
-					versionNumber: '9'
-				},
-				{
-					sceneName: 'tutorial',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'one',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'two',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-			]
-			//if a config is not spicificed then use the default value.
-		},
-	};
-
-	settings.config.dynamicDataLimit = 5;
-
+test('Handle Engagements for Objects That Are Not Yet Registered', async () => {
 	const c3d = new C3DAnalytics(settings);
-
-	c3d.setScene('one');
-	c3d.startSession();
-	const pos = [0, 0, 0];
-	const rot = [0, 0, 0, 1];
-
-
-	c3d.dynamicObject.registerObjectCustomId("object1", "lamp", '1', pos, rot);
-	expect(c3d.dynamicObject.manifestEntries.length).toBe(1);
-	c3d.dynamicObject.registerObjectCustomId("object2", "lamp", '2', pos, rot);
-	c3d.dynamicObject.registerObjectCustomId("object3", "lamp", '3', pos, rot); //limit send
-	expect(c3d.dynamicObject.manifestEntries.length).toBe(0);
-
-	c3d.dynamicObject.registerObjectCustomId("object4", "lamp", '4', pos, rot);
-	expect(c3d.dynamicObject.manifestEntries.length).toBe(1);
-
-	c3d.dynamicObject.registerObjectCustomId("object5", "lamp", '5', pos, rot);
-	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
-
-	await expect(c3d.endSession()).resolves.toEqual(200);
-});
-
-
-test('Engagement Never Register', async () => {
-	let settings = {
-		config: {
-			APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
-			gazeBatchSize: 64,
-			dynamicDataLimit: 64,
-			customEventBatchSize: 64,
-			HMDType: 'rift',
-			sensorDataLimit: 64,
-			allSceneData: [
-				{
-					sceneName: 'test_scene1',
-					sceneId: 'test_id1',
-					versionNumber: 'version1'
-				},
-				{
-					sceneName: 'test_scene2',
-					sceneId: 'test_id2',
-					versionNumber: 'version2'
-				},
-				{
-					sceneName: 'nawar',
-					sceneId: 'nawar_id2',
-					versionNumber: '9'
-				},
-				{
-					sceneName: 'tutorial',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'one',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'two',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-			]
-			//if a config is not spicificed then use the default value.
-		},
-	};
-
-	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('one');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 
 	const pos = [0, 0, 0];
@@ -770,53 +349,9 @@ test('Engagement Never Register', async () => {
 });
 
 
-test('Engagement Scenes', async () => {
-	let settings = {
-		config: {
-			APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
-			gazeBatchSize: 64,
-			dynamicDataLimit: 64,
-			customEventBatchSize: 64,
-			HMDType: 'rift',
-			sensorDataLimit: 64,
-			allSceneData: [
-				{
-					sceneName: 'test_scene1',
-					sceneId: 'test_id1',
-					versionNumber: 'version1'
-				},
-				{
-					sceneName: 'test_scene2',
-					sceneId: 'test_id2',
-					versionNumber: 'version2'
-				},
-				{
-					sceneName: 'nawar',
-					sceneId: 'nawar_id2',
-					versionNumber: '9'
-				},
-				{
-					sceneName: 'tutorial',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'one',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'two',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-			]
-			//if a config is not spicificed then use the default value.
-		},
-	};
-
+test('Track Engagements Across Multiple Scene Changes', async () => {
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('one');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 
 	const pos = [0, 0, 0];
@@ -836,7 +371,7 @@ test('Engagement Scenes', async () => {
 	expect(Object.keys(c3d.dynamicObject.activeEngagements).length).toBe(1);
 	expect(Object.keys(c3d.dynamicObject.allEngagements).length).toBe(1);
 
-	c3d.setScene('two');
+	c3d.setScene('AdvancedScene');
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
 	c3d.dynamicObject.beginEngagement(object1Id, 'grab', 'right_hand');
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);
@@ -854,53 +389,9 @@ test('Engagement Scenes', async () => {
 	await expect(c3d.endSession()).resolves.toEqual(200);
 });
 
-test('Engagement Remove', async () => {
-	let settings = {
-		config: {
-			APIKey: 'L3NAURENC320TQTFBROTMKBN2QUMNWCJ',
-			gazeBatchSize: 64,
-			dynamicDataLimit: 64,
-			customEventBatchSize: 64,
-			HMDType: 'rift',
-			sensorDataLimit: 64,
-			allSceneData: [
-				{
-					sceneName: 'test_scene1',
-					sceneId: 'test_id1',
-					versionNumber: 'version1'
-				},
-				{
-					sceneName: 'test_scene2',
-					sceneId: 'test_id2',
-					versionNumber: 'version2'
-				},
-				{
-					sceneName: 'nawar',
-					sceneId: 'nawar_id2',
-					versionNumber: '9'
-				},
-				{
-					sceneName: 'tutorial',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'one',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-				{
-					sceneName: 'two',
-					sceneId: 'b9d33399-1e13-428e-9559-7d15f28e9683',
-					versionNumber: '3'
-				},
-			]
-			//if a config is not spicificed then use the default value.
-		},
-	};
-
+test('End Engagements When an Object is Removed from the Scene', async () => {
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('one');
+	c3d.setScene('BasicScene');
 	c3d.startSession();
 
 	const pos = [0, 0, 0];
