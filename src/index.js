@@ -123,11 +123,16 @@ class C3D {
     this.core.allSceneData = allSceneData;
   }
 
-  sendData() {
+   sendData() {
     return new Promise((resolve, reject) => {
       if (!this.core.isSessionActive) {
         console.log("Cognitive3DAnalyticsCore::SendData failed: no session active");
         resolve("Cognitive3DAnalyticsCore::SendData failed: no session active");
+        return;
+      }
+      
+      if (!this.core.sceneData.sceneId) {  // Check for a scene ID before attempting to send any data
+        reject('no scene selected'); 
         return;
       }
 
