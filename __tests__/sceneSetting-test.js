@@ -16,6 +16,7 @@ import settings from '../settings';
 * @jest-environment jsdom
 */
 
+/*
 const c3d = new C3DAnalytics(settings);
 beforeEach(() => {
 	c3d.core.resetNewUserDeviceProperties();
@@ -23,8 +24,8 @@ beforeEach(() => {
 		c3d.endSession();
 	};
 });
+*/ 
 
-/*
 let c3d; 
 beforeEach(async () => {
     
@@ -44,9 +45,9 @@ beforeEach(async () => {
         }
     }
 });
-*/ 
 
-test('Test if SDK can buffer custom events even if no scene is explicitly set and if ending a session without scene id results in error', async () => {
+
+test('Test if SDK can buffer custom events even if no scene is explicitly set', async () => {
 	let pos = [0, 0, 0]
 	c3d.startSession();
 	c3d.customEvent.send('testing', pos);
@@ -58,28 +59,9 @@ test('Test if SDK can buffer custom events even if no scene is explicitly set an
 	expect(c3d.core.sceneData.sceneName).toEqual("");
 	expect(c3d.core.sceneData.sceneId).toEqual("");
 	expect(c3d.core.sceneData.versionNumber).toEqual("");
-	expect(c3d.endSession()).rejects.toEqual('no scene selected');
+	await expect(c3d.endSession()).rejects.toEqual('no scene selected');
 });
-/*
-test('init scenes', async () => {
-	let scene1 = c3d.sceneData('BasicScene', 'DELETE_ME_1', '0'); // name, id, version 
-	let scene2 = c3d.sceneData('menu', 'DELETE_ME_2', '0');
-	let scene3 = c3d.sceneData('finalboss', 'DELETE_ME_3', '0');
-	settings.config.allSceneData.push(scene1);
-	settings.config.allSceneData.push(scene2);
-	settings.config.allSceneData.push(scene3);
-	let c3d1 = new C3DAnalytics(settings);
-	c3d1.setScene('BasicScene');
-	expect(c3d1.core.sceneData.sceneName).toEqual("BasicScene");
-	expect(c3d1.core.sceneData.sceneId).toEqual("DELETE_ME_1");
-	expect(c3d1.core.sceneData.versionNumber).toEqual("0");
-	await expect(c3d.endSession()).rejects.toEqual(400);
-	//await expect(c3d.endSession()).rejects.toEqual('no scene selected'); // await expect promise to reject 
 
-});
-*/ 
-
-// Replacemant the old init scenes test TODO
 
 test('Should successfully initialize SDK with a configured scene', async () => {
     c3d.setScene('BasicScene'); 
