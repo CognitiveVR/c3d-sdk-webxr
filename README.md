@@ -20,6 +20,10 @@ The documentation explains how to integrate the SDK, track your users' experienc
 
 > Note: The test suite points to a project on our Production platform with two scenes already set up. It uses the Application API Key, already in code, to run tests against that project. If you want to set up equivalent scenes in a different project, be sure to update the Application API Key to point there.
 
+Rather than putting the Application Key in code, use this command instead:
+
+`export C3D_APPLICATION_KEY=R7QW3EYNLG4AYVQ8029R26V30TST6YLE`
+
 Jest is being used to test the sdk to run the test run the following command
 
 `npm run test`
