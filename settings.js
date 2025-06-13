@@ -1,6 +1,6 @@
 export default {
     config: {
-        APIKey: "", // Insert your API Key from the Cog3D dashboard 
+        APIKey: "R7QW3EYNLG4AYVQ8029R26V30TST6YLE", // Insert your API Key from the Cog3D dashboard 
 		networkHost: 'data.cognitive3d.com', // data.cognitive3d.com is prod, data.c3ddev.com is dev 
         gazeBatchSize: 64,
         dynamicDataLimit: 64,

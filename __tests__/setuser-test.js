@@ -70,10 +70,10 @@ test('Check if user properties can be defined and correctly exist before session
 });
 
 test('Check if user properties are correctly set and available after a session has started', async () => {
-	settings.config.APIKey = ''; 			// SET API KEY HERE, overrides and should work even if APIKEY was not set in config or settings  
+	settings.config.APIKey = 'R7QW3EYNLG4AYVQ8029R26V30TST6YLE'; 			// SET API KEY HERE, overrides and should work even if APIKEY was not set in config or settings  
 	let c3d = new C3DAnalytics(settings);
 	let currentAPI = c3d.getApiKey();
-	expect(currentAPI).toEqual(''); 		// SET API KEY HERE 
+	expect(currentAPI).toEqual('R7QW3EYNLG4AYVQ8029R26V30TST6YLE'); 		// SET API KEY HERE 
 	c3d.setScene('BasicScene');
 	c3d.startSession();
 	c3d.setUserName("ali");
