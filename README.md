@@ -22,7 +22,7 @@ The documentation explains how to integrate the SDK, track your users' experienc
 
 Rather than putting the Application Key in code, use this command instead:
 
-`export C3D_APPLICATION_KEY=R7QW3EYNLG4AYVQ8029R26V30TST6YLE`
+`export C3D_APPLICATION_KEY=<Contact us for the application key>`
 
 Jest is being used to test the sdk to run the test run the following command
 
