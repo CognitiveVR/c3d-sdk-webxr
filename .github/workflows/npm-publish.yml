@@ -34,6 +34,7 @@ jobs: # 2 jobs
             package.json
             README.md
 
+
   publish-npm: # If prev job completes and passes, download the bundled packaged created in previous job and publish using the NPM_TOKEN
     needs: build-and-test
     runs-on: ubuntu-latest
