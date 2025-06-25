@@ -25,20 +25,21 @@ npm install @cognitive3d/analytics
 ```
 ### Option 2. Install from source code
 If you want the entire source code, whether that be to run tests, make modifications, you can clone this repository by
-#### a. Clone the repo
+#### A) Clone the repo
 ```
 git clone https://github.com/CognitiveVR/c3d-sdk-webxr.git
 cd c3d-sdk-webxr
 ```
-#### b. Install the dependencies
+#### B) Install the dependencies
 ```
 npm install
 ```
-#### c. Build the sdk
+#### C) Build the sdk
+This will transpile the SDK src files into a `/lib` folder
 ```
 npm run build
 ```
-#### d. Install the local sdk to your project 
+#### D) Install the local sdk to your project 
 ```
 npm install /pathTo/c3d-sdk-webxr
 ```
@@ -46,10 +47,10 @@ npm install /pathTo/c3d-sdk-webxr
 The SDK comes with a full test suite using Jest. The tests are configured to run against a live project on the Cognitive3D platform. Therefore, to successfully run these tests, you must first configure your own project on the Cognitive3D platform.
 
 ### 1. Configuration for testing 
-#### a. Get your API Key
+#### A) Get your API Key
 The SDK and tests scripts require a valid API Key to send data to a Cognitive3D project. Sign up at Cognitive3D.com, create a new project, and find your Application API Key on your dashboard.
-#### b. Set the environment variable (API Key) 
-The SDK's test configuration in settings.js reads your API key from an environment variable named C3D_APPLICATION_KEY. You must set this variable in your terminal before running the tests. 
+#### B) Set the environment variable (API Key) 
+The SDK's test configuration in `settings.js` reads your API key from an environment variable named `C3D_APPLICATION_KEY`. You must set this variable in your terminal before running the tests. 
 ##### On Windows (powershell) 
 ```
 $env:C3D_APPLICATION_KEY="YOUR_API_KEY"
@@ -58,29 +59,69 @@ $env:C3D_APPLICATION_KEY="YOUR_API_KEY"
 ```
 export C3D_APPLICATION_KEY="YOUR_API_KEY"
 ```
-#### c. Setup a scene on the Cognitive3D Dashboard (data-only with c3d-upload-tools) 
-To view your projects analytics, you also need a "Scene" set up in your Cognitive3D account. This gives our platform a place to store the data you send from your application. You can create a scene and get the necessary Scene Name, Scene ID, and Scene Version by using our command-line utility.
+#### C) Setup a scene on the Cognitive3D Dashboard (with c3d-upload-tools) 
+To view your projects analytics, you also need a "Scene" set up in your Cognitive3D account. This gives our platform a place to store the data you send from your application. You can create a scene and get the necessary `Scene Name`, `Scene ID`, and `Scene Version` by using our command-line utility.
 
 Please following the instructions here: https://github.com/CognitiveVR/c3d-upload-tools
 
+#### D) Update SDK's Scene Information 
+Now that you have created obtained an API KEY and setup a "Scene" on Cognititve3D, you now have to update `settings.js` to point to scenes within your own Cognitive3D Project. 
 
+Open `settings.js` and modify the `allSceneData` array to match the `Scene Name`, `Scene ID`, and `Scene Version` from your own Cogntitve3D dashboard. Example: 
+```
+// settings.js
+allSceneData: [
+    { // Scene 1 
+        sceneName: "YOUR_SCENE_NAME", 
+        sceneId: "YOUR_SCENE_ID", 
+        versionNumber: "YOUR_SCENE_VERSION",
+    },
+    { // Scene 2 
+        sceneName: "YOUR_SECOND_SCENE_NAME",
+        sceneId: "YOUR_SECOND_SCENE_ID",
+        versionNumber: "YOUR_SECOND_SCENE_VERSION"
+    }
+],
+```
+Note: Depending on how many scenes you have, you can duplicate entrys or remove them from the array.
 
-## Testing
+### 2. Testing the SDK 
+There are currently 56 tests within 9 test suites located inside of `__tests__`. These tests provide comprehensive coverage for the SDK's core features, including:
 
-> Note: The test suite points to a project on our Production platform with two scenes already set up. It uses the Application API Key, already in code, to run tests against that project. If you want to set up equivalent scenes in a different project, be sure to update the Application API Key to point there.
+- Session initialization and lifecycle management.
+- Sending custom events, gaze data, and sensor data.
+- Registering and tracking dynamic objects.
+- Requesting and submitting Exit Polls.
 
-Rather than putting the Application Key in code, use this command instead:
+*Note: Please be aware that a some tests currently contain hardcoded values that you will need to change to match your specific setup.* For example:
 
-`export C3D_APPLICATION_KEY=<Contact us for the application key>`
+- `__tests__/dynamic-test.js` expects scenes named "BasicScene" and "AdvancedScene".
 
-Jest is being used to test the sdk to run the test run the following command
+- `__tests__/exitpoll-test.js` uses a specific hook named "app_test_js". Therefore, please create your own Exit Poll on your Cognitive3D dashboard and replace this hook with your own. 
 
-`npm run test`
+#### A) Build the SDK with configured settings 
+Once your API KEY and scene information is set. We have to again build the SDK: 
+```
+npm run build
+```
+#### B) Run the test suites  
+```
+npm run test
+```
+If everything is setup correctly, you should see all 9 test suites pass. 
 
-that will assume source code is being transpiled into lib folder. I.e. use `npm run build` before running the tests.
+## Usage
 
-## Build
+The SDK is designed to be flexible and can be integrated into various JavaScript projects. The build process creates multiple module formats in the `/lib` folder to support different environments.
+- index.umd.js (Universal Module Definition): One-size-fits-all for direct use in browsers. It's designed to be dropped into a <script> tag on a webpage. 
+- index.esm.js (ES Module): The modern module standard for JavaScript. It's used by default in most web bundlers and modern Node.js.
+- index.cjs.js (CommonJS): The module format for older Node.js environments.
 
-To ensure broader browser compatibility, source code written in ES6 needs to be transpiled. Run the following command to use Babel for this task:
+### Playcanvas integration 
+You can upload the built `/lib/index.umd.js` to a PlayCanvas project. 
 
-`npm run build`
+### ThreeJS Integration 
+Inside your ThreeJS project, run  `npm install @cognitive3d/analytics` or if you have the sdk locally: `npm install /pathTo/c3d-sdk-webxr`  
+
+## Examples Projects
+For more detailed examples and complete project integrations, please see our sample applications repository at: https://github.com/CognitiveVR/c3d-webxr-sample-apps 
