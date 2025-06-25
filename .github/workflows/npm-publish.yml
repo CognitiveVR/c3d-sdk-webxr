@@ -1,7 +1,7 @@
 # When a push is made to the main branch,
 # this workflow will run tests using node and 
 # if all tests pass, publish the package to NPM. 
-
+# The version #.#.# has to be greater than what is currently published to npm, check package.json
 name: Build & Test then Publish to NPM
 
 on:
