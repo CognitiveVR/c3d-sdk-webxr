@@ -16,7 +16,10 @@ import settings from '../settings';
 */
 
 const c3d = new C3DAnalytics(settings);
-c3d.setScene('BasicScene');
+
+const scene1 = settings.config.allSceneData[0].sceneName;
+const scene2 = settings.config.allSceneData[1].sceneName;
+c3d.setScene(scene1);
 
 beforeEach(async () => {
 	c3d.core.resetNewUserDeviceProperties();
@@ -73,7 +76,7 @@ test('Register Objects, Add Snapshots, and Then Send Data', async () => {
 
 test('Register Objects in One Scene, Add Snapshots, and Then Send Data', async () => {
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 	let pos = [0, 0, 0];
 	let rot = [0, 0, 0, 1];
@@ -117,7 +120,7 @@ test('Register Objects in One Scene, Add Snapshots, and Then Send Data', async (
 test('Register Objects and Add Snapshots with Custom Settings', async () => {
 
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 	let pos = [0, 0, 0];
 	let rot = [0, 0, 0, 1];
@@ -159,7 +162,7 @@ test('Register Objects and Add Snapshots with Custom Settings', async () => {
 test('Reset Object Manifest on Scene Change', async () => {
 
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene'); // Set Scene A 
+	c3d.setScene(scene1); // Set Scene A 
 	c3d.startSession();
 	const pos = [0, 0, 0];
 	const rot = [0, 0, 0, 1];
@@ -193,7 +196,7 @@ test('Reset Object Manifest on Scene Change', async () => {
 test('Register Objects with Custom IDs and Send Data', async () => {
 
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 	const pos = [0, 0, 0];
 	const rot = [0, 0, 0, 1];
@@ -217,7 +220,7 @@ test('Register Objects with Custom IDs and Send Data', async () => {
 test('Register Multiple Objects with Custom IDs', async () => {
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 	const pos = [0, 0, 0];
 	const rot = [0, 0, 0, 1];
@@ -244,7 +247,7 @@ test('Automatically Send Snapshots When Batch Limit is Reached', async () => {
 	settings.config.dynamicDataLimit = 5; // keep custom config here
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 	const pos = [0, 0, 0];
 	const rot = [0, 0, 0, 1];
@@ -273,7 +276,7 @@ test('Automatically Send Manifest When Batch Limit is Reached', async () => {
 
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 	const pos = [0, 0, 0];
 	const rot = [0, 0, 0, 1];
@@ -300,7 +303,7 @@ test('Buffer Objects Registered Before a Session Starts and Send on Start', asyn
 
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	const pos = [0, 0, 0];
 	const rot = [0, 0, 0, 1];
 
@@ -324,7 +327,7 @@ test('Buffer Objects Registered Before a Session Starts and Send on Start', asyn
 
 test('Handle Engagements for Objects That Are Not Yet Registered', async () => {
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 
 	const pos = [0, 0, 0];
@@ -351,7 +354,7 @@ test('Handle Engagements for Objects That Are Not Yet Registered', async () => {
 
 test('Track Engagements Across Multiple Scene Changes', async () => {
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 
 	const pos = [0, 0, 0];
@@ -391,7 +394,7 @@ test('Track Engagements Across Multiple Scene Changes', async () => {
 
 test('End Engagements When an Object is Removed from the Scene', async () => {
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 
 	const pos = [0, 0, 0];

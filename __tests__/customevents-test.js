@@ -12,6 +12,9 @@ import settings from '../settings';
 
 
 const c3d = new C3DAnalytics(settings);
+const scene1 = settings.config.allSceneData[0].sceneName;
+const scene2 = settings.config.allSceneData[1].sceneName;
+
 beforeEach(() => {
 	c3d.core.resetNewUserDeviceProperties();
 	if (c3d.isSessionActive()) {
@@ -25,7 +28,7 @@ test('Buffer custom events before session starts and not send prematurely', () =
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	c3d.customEvent.send('testing1', pos);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 	c3d.endSession();
 });
@@ -36,7 +39,7 @@ test('Send pre-session custom events and clear buffer on session end', async () 
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	c3d.customEvent.send('testing1', pos);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 	let endSession = await c3d.endSession();
 	expect(endSession).toEqual(200)
@@ -51,7 +54,7 @@ test('Manually send pre-session buffered custom events and allow new sessions', 
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
 	c3d.startSession();
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(2);
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 
 	expect(c3d.sendData()).resolves.toEqual(200);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
@@ -67,11 +70,11 @@ test('Send pre-session custom events with attached properties', async () => {
 		age: 21,
 		location: 'vancouver'
 	};
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.customEvent.send('testing1', pos, props)
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
 	// c3d.customEvent.send('testing1', pos);
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(2);
 	// expect(c3d.customEvent.batchedCustomEvents.length).toBe(2);
@@ -86,7 +89,7 @@ test('Auto-send custom events when session start hits batch limit', async () => 
 	settings.config.customEventBatchSize = 4 //on the third transaction it should send
 	let c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	
 	c3d.customEvent.send('testing1', pos);
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(1);
@@ -106,7 +109,7 @@ test('Auto-send pre-session custom events when batch limit is reached', async ()
 	let pos = [0, 0, 0];
 	settings.config.customEventBatchSize = 3 //on the third transaction it should send
 	let c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.customEvent.send('testing1', pos);
 	c3d.startSession();
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(2);
@@ -121,7 +124,7 @@ test('Auto-send custom events multiple times during active session', async () =>
 	let pos = [0, 0, 0];
 	settings.config.customEventBatchSize = 3 //on the third transaction it should send
 	let c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 
 	c3d.startSession();
 	c3d.customEvent.send('testing1', pos);

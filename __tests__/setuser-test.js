@@ -23,6 +23,9 @@ beforeEach(() => {
 
 
 let c3d;
+const scene1 = settings.config.allSceneData[0].sceneName;
+const scene2 = settings.config.allSceneData[1].sceneName;
+
 beforeEach(async () => { 
 
     c3d = new C3DAnalytics(settings);
@@ -69,25 +72,8 @@ test('Check if user properties can be defined and correctly exist before session
 	expect(Object.keys(userProperties).length).toEqual(3); // name, age and location 
 });
 
-/* This test will fail in the CI Workflow as it requires setting the APIKEY (and not use the env.APIKEY), it was replaced by the next test 
-test('Check if user properties are correctly set and available after a session has started', async () => {
-	settings.config.APIKey = 'R7QW3EYNLG4AYVQ8029R26V30TST6YLE'; 			// SET API KEY HERE, overrides and should work even if APIKEY was not set in config or settings  
-	let c3d = new C3DAnalytics(settings);
-	let currentAPI = c3d.getApiKey();
-	expect(currentAPI).toEqual('R7QW3EYNLG4AYVQ8029R26V30TST6YLE'); 		// SET API KEY HERE 
-	c3d.setScene('BasicScene');
-	c3d.startSession();
-	c3d.setUserName("ali");
-	c3d.setUserProperty('age', 30);
-	c3d.setUserProperty('location', 'toronto');
-	//
-	await expect(c3d.sendData()).resolves.toEqual(200);
-	let userProperties = c3d.getUserProperties();
-	expect(Object.keys(userProperties).length).toEqual(3);
-});
-*/ 
 test('User properties are correctly set and available on the instance after a session has started', () => {
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 
 	// Set user properties after the session has started 
@@ -105,7 +91,7 @@ test('User properties are correctly set and available on the instance after a se
 	});
 });
 test('Examine behavior of sendData() and endSession with null user', async () => {
-	c3d.setScene('BasicScene')
+	c3d.setScene(scene1)
 	c3d.startSession();
 	await expect(c3d.sendData()).resolves.toEqual(200);
 	let endSession = await c3d.endSession();

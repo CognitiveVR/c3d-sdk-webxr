@@ -15,7 +15,9 @@ import settings from '../settings';
 */
 
 const c3d = new C3DAnalytics(settings); 
-//c3d.setScene('BasicScene');
+const scene1 = settings.config.allSceneData[0].sceneName;
+const scene2 = settings.config.allSceneData[1].sceneName;
+
 
 beforeEach(async () => {
 	c3d.core.resetNewUserDeviceProperties();
@@ -36,7 +38,7 @@ beforeEach(async () => {
 });
 */
 test('Buffer sensor data before session starts and send successfully after', async () => {
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 
 	for (var i = 0; i < 10; i++) {
 		c3d.sensor.recordSensor('test-sensor', i);
@@ -51,7 +53,7 @@ test('Buffer sensor data before session starts and send successfully after', asy
 
 
 test('Record sensor data when session is inactive', async () => {
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 	await expect(c3d.endSession()).resolves.toEqual(200);
 
@@ -66,7 +68,7 @@ test('Automatically send sensor data when batch limit is reached (single overflo
 	settings.config.sensorDataLimit = 10;
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 
 	for (var i = 0; i < 5; i++) {
@@ -83,7 +85,7 @@ test('Automatically send sensor data when batch limit is reached (exact multiple
 	settings.config.sensorDataLimit = 15;
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 
 	for (var i = 0; i < 5; i++) {
@@ -106,7 +108,7 @@ test('Handle multiple automatic sensor data sends when limit is reached', async 
 	settings.config.sensorDataLimit = 15;
 	const c3d = new C3DAnalytics(settings);
 
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 
 	for (var i = 0; i < 5; i++) {
@@ -151,7 +153,7 @@ test('Buffer sensor data before session starts and allow manual send', async () 
 test('Flush sensor data when scene changes and end session successfully', async () => {
 	settings.config.sensorDataLimit = 15;
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene'); // Set Scene A 
+	c3d.setScene(scene1); // Set Scene A 
 	c3d.startSession();
 
 	for (var i = 0; i < 5; i++) {
@@ -163,7 +165,7 @@ test('Flush sensor data when scene changes and end session successfully', async 
 		c3d.sensor.recordSensor('test-sensor', i);
 	}
 	expect(c3d.sensor.sensorCount).toBe(10);
-	c3d.setScene('AdvancedScene'); // Set Scene B - Scene change
+	c3d.setScene(scene2); // Set Scene B - Scene change
 	expect(c3d.sensor.sensorCount).toBe(0);
 
 	await expect(c3d.endSession()).resolves.toEqual(200); 
@@ -172,7 +174,7 @@ test('Flush sensor data when scene changes and end session successfully', async 
 test('Handle large volume sensor data flushing on scene change', async () => {
 	settings.config.sensorDataLimit = 64;
 	const c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene'); // Set Scene A  
+	c3d.setScene(scene1); // Set Scene A  
 	c3d.startSession();
 
 	for (var i = 0; i < 10; i++) {
@@ -185,7 +187,7 @@ test('Handle large volume sensor data flushing on scene change', async () => {
 	}
 	expect(c3d.sensor.sensorCount).toBe(20);
 
-	c3d.setScene('AdvancedScene'); // Set Scene B - Scene change 
+	c3d.setScene(scene2); // Set Scene B - Scene change 
 	expect(c3d.sensor.sensorCount).toBe(0);
 
 	await expect(c3d.endSession()).resolves.toEqual(200);

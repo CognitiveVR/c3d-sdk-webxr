@@ -6,9 +6,12 @@ import settings from '../settings';
 * @jest-environment jsdom
 */
 
+const scene1 = settings.config.allSceneData[0].sceneName;
+const scene2 = settings.config.allSceneData[1].sceneName;
+
 test('Prevent starting multiple sessions simultaneously', async () => {
 	let c3d = new C3DAnalytics(settings);
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	expect(c3d.startSession()).toBe(true);
 	expect(c3d.startSession()).toBe(false);
 	expect(c3d.startSession()).toBe(false);
