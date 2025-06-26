@@ -43,7 +43,7 @@ npm run build
 ```bash
 npm install /pathTo/c3d-sdk-webxr
 ```
-## Testing the SDK 
+## Using the SDK 
 The SDK comes with a full test suite using Jest. The tests are configured to run against a live project on the Cognitive3D platform. Therefore, to successfully run these tests, you must first configure your own project on the Cognitive3D platform.
 
 ### 1. Configuration for testing 
