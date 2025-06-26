@@ -16,7 +16,7 @@ import settings from '../settings';
 
 const c3d = new C3DAnalytics(settings); 
 const scene1 = settings.config.allSceneData[0].sceneName;
-const scene2 = settings.config.allSceneData[1].sceneName;
+const scene2 = settings.config.allSceneData.length > 1 ? settings.config.allSceneData[1].sceneName : null;
 
 
 beforeEach(async () => {
@@ -150,7 +150,7 @@ test('Buffer sensor data before session starts and allow manual send', async () 
 	await expect(c3d.endSession()).resolves.toEqual(200);
 });
 
-test('Flush sensor data when scene changes and end session successfully', async () => {
+(scene2 ? test : test.skip)('Flush sensor data when scene changes and end session successfully', async () => {
 	settings.config.sensorDataLimit = 15;
 	const c3d = new C3DAnalytics(settings);
 	c3d.setScene(scene1); // Set Scene A 
@@ -171,7 +171,7 @@ test('Flush sensor data when scene changes and end session successfully', async 
 	await expect(c3d.endSession()).resolves.toEqual(200); 
 });
 
-test('Handle large volume sensor data flushing on scene change', async () => {
+(scene2 ? test : test.skip)('Handle large volume sensor data flushing on scene change', async () => {
 	settings.config.sensorDataLimit = 64;
 	const c3d = new C3DAnalytics(settings);
 	c3d.setScene(scene1); // Set Scene A  

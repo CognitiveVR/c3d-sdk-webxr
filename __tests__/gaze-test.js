@@ -18,7 +18,6 @@ import settings from '../settings';
 
 const c3d = new C3DAnalytics(settings);
 const scene1 = settings.config.allSceneData[0].sceneName;
-const scene2 = settings.config.allSceneData[1].sceneName;
 
 beforeEach(async () => {
 	c3d.core.resetNewUserDeviceProperties();

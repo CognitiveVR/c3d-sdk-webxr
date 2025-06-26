@@ -18,7 +18,8 @@ import settings from '../settings';
 const c3d = new C3DAnalytics(settings);
 
 const scene1 = settings.config.allSceneData[0].sceneName;
-const scene2 = settings.config.allSceneData[1].sceneName;
+const scene2 = settings.config.allSceneData.length > 1 ? settings.config.allSceneData[1].sceneName : null;
+
 c3d.setScene(scene1);
 
 beforeEach(async () => {
@@ -159,8 +160,7 @@ test('Register Objects and Add Snapshots with Custom Settings', async () => {
 	await expect(c3d.endSession()).resolves.toEqual(200);
 });
 
-test('Reset Object Manifest on Scene Change', async () => {
-
+(scene2 ? test : test.skip)('Reset Object Manifest on Scene Change', async () => {
 	const c3d = new C3DAnalytics(settings);
 	c3d.setScene(scene1); // Set Scene A 
 	c3d.startSession();
@@ -177,7 +177,7 @@ test('Reset Object Manifest on Scene Change', async () => {
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot, props);
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);
-	c3d.setScene('AdvancedScene'); // Set Scene B, refreshes object manifest
+	c3d.setScene(scene2); // Set Scene B, refreshes object manifest
 
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
 
@@ -351,8 +351,7 @@ test('Handle Engagements for Objects That Are Not Yet Registered', async () => {
 	await expect(c3d.endSession()).resolves.toEqual(200);
 });
 
-
-test('Track Engagements Across Multiple Scene Changes', async () => {
+(scene2 ? test : test.skip)('Track Engagements Across Multiple Scene Changes', async () => {
 	const c3d = new C3DAnalytics(settings);
 	c3d.setScene(scene1);
 	c3d.startSession();
@@ -374,7 +373,7 @@ test('Track Engagements Across Multiple Scene Changes', async () => {
 	expect(Object.keys(c3d.dynamicObject.activeEngagements).length).toBe(1);
 	expect(Object.keys(c3d.dynamicObject.allEngagements).length).toBe(1);
 
-	c3d.setScene('AdvancedScene');
+	c3d.setScene(scene2);
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(2);
 	c3d.dynamicObject.beginEngagement(object1Id, 'grab', 'right_hand');
 	c3d.dynamicObject.addSnapshot(object1Id, pos, rot);

@@ -24,7 +24,6 @@ beforeEach(() => {
 
 let c3d;
 const scene1 = settings.config.allSceneData[0].sceneName;
-const scene2 = settings.config.allSceneData[1].sceneName;
 
 beforeEach(async () => { 
 

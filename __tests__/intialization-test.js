@@ -7,7 +7,6 @@ import settings from '../settings';
 */
 
 const scene1 = settings.config.allSceneData[0].sceneName;
-const scene2 = settings.config.allSceneData[1].sceneName;
 
 test('Prevent starting multiple sessions simultaneously', async () => {
 	let c3d = new C3DAnalytics(settings);
