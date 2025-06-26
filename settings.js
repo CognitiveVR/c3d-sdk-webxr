@@ -24,7 +24,7 @@ export default {
                 versionNumber: "1", // Replace with your Scene Version from Cog3D dashboard
             },
             {
-				sceneName: 'AdvancedScene',
+				sceneName: 'AdvancedScene', // Add or remove scenes, at least 2 scenes are required to pass all 56 cases. 
 				sceneId: 'f0e6c0f2-717e-4cca-9fe5-39f88068ea40',
 				versionNumber: '1'
 			}

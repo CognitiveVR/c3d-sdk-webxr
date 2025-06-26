@@ -27,14 +27,13 @@ beforeEach(() => {
 */ 
 
 let c3d; 
+const scene1 = settings.config.allSceneData[0].sceneName;
+
 beforeEach(async () => {
     
     c3d = new C3DAnalytics(settings);
     c3d.core.resetNewUserDeviceProperties();
 	
-	
-	//c3d.setScene('BasicScene'); 
-
     if (c3d.isSessionActive()) {
         try {
             await c3d.endSession();
@@ -64,7 +63,7 @@ test('Test if SDK can buffer custom events even if no scene is explicitly set', 
 
 
 test('Should successfully initialize SDK with a configured scene', async () => {
-    c3d.setScene('BasicScene'); 
+    c3d.setScene(scene1); 
     expect(c3d.core.sceneData.sceneName).toEqual("BasicScene");
     expect(c3d.core.sceneData.sceneId).toEqual("93f486e4-0e22-4650-946a-e64ce527f915"); 
     expect(c3d.core.sceneData.versionNumber).toEqual("1"); 

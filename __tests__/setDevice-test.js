@@ -13,7 +13,9 @@ import settings from '../settings';
 
 
 const c3d = new C3DAnalytics(settings);
-c3d.setScene('BasicScene');
+const scene1 = settings.config.allSceneData[0].sceneName;
+
+c3d.setScene(scene1);
 
 beforeEach(() => {
 	c3d.core.resetNewUserDeviceProperties();
