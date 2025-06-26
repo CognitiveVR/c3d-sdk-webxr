@@ -17,6 +17,7 @@ import settings from '../settings';
 */
 
 const c3d = new C3DAnalytics(settings);
+const scene1 = settings.config.allSceneData[0].sceneName;
 
 beforeEach(async () => {
 	c3d.core.resetNewUserDeviceProperties();
@@ -28,7 +29,7 @@ beforeEach(async () => {
 test('Buffer gaze data pre-session and clear on session end', async () => {
 	let pos = [0, 0, 0];
 	let rot = [0, 0, 0, 1];
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 
 	for (var i = 0; i < 10; i++) {
 		pos[1] = i;
@@ -45,7 +46,7 @@ test('Record gaze data with and without dynamic object ID and send successfully'
 	let pos = [0, 0, 0];
 	let point = [0, 0, 0];
 	let rot = [0, 0, 0, 1];
-	c3d.setScene('BasicScene');
+	c3d.setScene(scene1);
 	c3d.startSession();
 	for (var i = 0; i < 10; i++) {
 		pos[1] = i;
