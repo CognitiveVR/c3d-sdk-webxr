@@ -2,6 +2,7 @@
 
 Welcome!  This SDK allows you to integrate your Javascript and WebXR Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project.  In addition, Cognitive3D empowers you to take actions that will improve users' engagement with your experience.
 
+
 [![Build Status](https://travis-ci.org/CognitiveVR/cvr-sdk-js.svg?branch=master)](https://travis-ci.org/CognitiveVR/cvr-sdk-js)
 
 ## Quickstart
@@ -65,7 +66,7 @@ To view your projects analytics, you also need a "Scene" set up in your Cognitiv
 Please following the instructions here: https://github.com/CognitiveVR/c3d-upload-tools
 
 #### D) Update SDK's Scene Information 
-Now that you have created obtained an API KEY and setup a "Scene" on Cognititve3D, you now have to update `settings.js` to point to scenes within your own Cognitive3D Project. 
+Now that you have created and obtained an API KEY and setup a "Scene" on Cognititve3D, you now have to update `settings.js` to point to scenes within your own Cognitive3D Project. 
 
 Open `settings.js` and modify the `allSceneData` array to match the `Scene Name`, `Scene ID`, and `Scene Version` from your own Cogntitve3D dashboard. Example: 
 ```javascript
@@ -93,9 +94,7 @@ There are currently 56 tests within 9 test suites located inside of `__tests__`.
 - Registering and tracking dynamic objects.
 - Requesting and submitting Exit Polls.
 
-*Note: Please be aware that a some tests currently contain hardcoded values that you will need to change to match your specific setup.* For example:
-
-- `__tests__/dynamic-test.js` expects scenes named "BasicScene" and "AdvancedScene".
+*Note: Please be aware that to pass all 56 tests, you must configure at least 2 scenes in `settings.js` (as well as on Cognitive3D), otherwise (4) tests are skipped. Also `exitpoll-test.js` requires additional setup on the Cognitive3D dashboard:* 
 
 - `__tests__/exitpoll-test.js` uses a specific hook named "app_test_js". Therefore, please create your own Exit Poll on your Cognitive3D dashboard and replace this hook with your own. 
 
