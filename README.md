@@ -172,5 +172,5 @@ c3d.startSession();
 ```
 *Note: Ensure all properties are included as shown above, otherwise you may not see a valid session on the Cognitive3D dashboard* 
 
-## Examples Projects
+## Sample Projects
 For more detailed examples and complete project integrations, please see our sample applications repository at: https://github.com/CognitiveVR/c3d-webxr-sample-apps 
