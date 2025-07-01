@@ -30,6 +30,9 @@ class CognitiveVRAnalyticsCore {
 			DeviceGPUMemory: 'cvr.device.gpu.memory',
 			DeviceScreenHeight: 'cvr.device.screen.height',
 			DeviceScreenWidth: 'cvr.device.screen.width',
+			NetworkEffectiveType: 'cvr.network.effectiveType', 
+    		NetworkDownlink: 'cvr.network.downlink',
+    		NetworkRTT: 'cvr.network.rtt',
 			VRModel: 'cvr.vr.model',
 			VRVendor: 'cvr.vr.vendor',
 		};

@@ -11,7 +11,9 @@ import {
   getScreenHeight,
   getScreenWidth,
   getPlatformType,
-  getOS
+  getOS,
+  getHardwareConcurrency,
+  getConnection
 } from './utils/environment';
 
 class C3D {
@@ -47,6 +49,17 @@ class C3D {
       this.setDeviceProperty('DeviceScreenWidth', screenWidth);
     }
 
+    const hardwareConcurrency = getHardwareConcurrency();
+    if (hardwareConcurrency) {
+      this.setDeviceProperty('DeviceCPUCores', hardwareConcurrency);
+    }
+
+    const connection = getConnection();
+    if (connection) {
+        this.setDeviceProperty('NetworkEffectiveType', connection.effectiveType);
+        this.setDeviceProperty('NetworkDownlink', connection.downlink);
+        this.setDeviceProperty('NetworkRTT', connection.rtt);
+    }
     this.setDeviceProperty('DevicePlatform', getPlatformType());
     this.setDeviceProperty('DeviceOS', getOS());
   }
