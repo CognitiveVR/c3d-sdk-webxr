@@ -15,6 +15,7 @@ import {
   getHardwareConcurrency,
   getConnection
 } from './utils/environment';
+import { getHMDInfo } from './utils/webxr';
 
 class C3D {
   constructor(settings) {
@@ -64,8 +65,28 @@ class C3D {
     this.setDeviceProperty('DeviceOS', getOS());
   }
 
-  startSession() {
+  startSession(xrSession) { // Developers will need to pass the live xr session to c3d.startsession
     if (this.core.isSessionActive) { return false; }
+    
+    if (xrSession && xrSession.inputSources) { // check what is connected right now 
+        const hmdInfo = getHMDInfo(xrSession.inputSources);
+        if (hmdInfo) {
+            this.setDeviceProperty('VRModel', hmdInfo.VRModel);
+            this.setDeviceProperty('VRVendor', hmdInfo.VRVendor);
+        } else {
+            this.setDeviceProperty('VRModel', 'Unknown VR Headset');
+            this.setDeviceProperty('VRVendor', 'Unknown Vendor');
+
+        }
+
+        xrSession.addEventListener('inputsourceschange', (event) => { // if controllers were previously off, check now 
+            const newHmdInfo = getHMDInfo(event.session.inputSources);
+            if (newHmdInfo) {
+                this.setDeviceProperty('VRModel', newHmdInfo.VRModel);
+                this.setDeviceProperty('VRVendor', newHmdInfo.VRVendor);
+            }
+        });
+    }
 
     this.core.setSessionStatus = true;
     this.core.getSessionTimestamp();
@@ -228,5 +249,6 @@ class C3D {
     return this.core.sceneData.sceneId;
   }
 }
+
 
 export default C3D;

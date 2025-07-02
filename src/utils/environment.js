@@ -42,7 +42,7 @@ export const getScreenWidth = () =>
 export const getUserAgent = () =>
   safeWindowAccess(() => navigator.userAgent, '');
 
-export const getHardwareConcurrency = () => // CPU Cores 
+export const getHardwareConcurrency = () => // CPU threads  
     safeWindowAccess(() => navigator.hardwareConcurrency, null);
 
 export const getConnection = () =>

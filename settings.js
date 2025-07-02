@@ -14,7 +14,6 @@ export default {
         dynamicDataLimit: 64,
         customEventBatchSize: 64,
         sensorDataLimit: 64,
-        HMDType: "Meta Quest 2", 
         // Note: Replace `allSceneData` with your own scene data.
         // You can find your Scene Name, Scene ID, and Version Number in the Cognitive3D dashboard for your project.
         allSceneData: [
