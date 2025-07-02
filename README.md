@@ -11,11 +11,9 @@ Welcome!  This SDK allows you to integrate your Javascript and WebXR Application
 
 [![Build Status](https://travis-ci.org/CognitiveVR/cvr-sdk-js.svg?branch=master)](https://travis-ci.org/CognitiveVR/cvr-sdk-js)
 
-## Quickstart
-
-> Requirement of Node.js v20 or higher
->
-> * We currently require a version of Node.js of 20 or higher for this SDK. If this doesn't match your needs, let us know.
+## Requirement(s)
+Node.js version 20 or higher
+* We currently require a version of Node.js of 20 or higher for this SDK. If this doesn't match your needs, let us know.
 
 ## Cognitive3D Documentation
 
@@ -47,6 +45,7 @@ This will transpile the SDK src files into a `/lib` folder
 npm run build
 ```
 #### D) Install the local sdk to your project 
+Navigate to your projects directory, and then run the following command
 ```bash
 npm install /pathTo/c3d-sdk-webxr
 ```
