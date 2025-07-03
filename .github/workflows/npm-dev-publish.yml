@@ -1,0 +1,53 @@
+# When a push is made to the development branch,
+# this workflow will run tests using node and 
+# if all tests pass, publish the private package to NPM. 
+
+name: Test and Publish Private Dev Package
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  build-test-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org' 
+
+      - name: Clean Install Dependencies for Testing
+        run: npm ci
+
+      - name: Build SDK
+        run: npm run build
+
+      - name: Run Tests
+        run: npm test
+        env:
+          C3D_APPLICATION_KEY: ${{ secrets.C3D_APPLICATION_KEY }}
+
+      - name: Prepare for Publishing   # 'npm install' since we need to modify package.json and remove node_modules 
+
+        run: |
+          rm -rf node_modules
+          npm pkg set private=true
+          npm pkg set version="$(npm view . version)-dev"
+      
+      - name: Install Dependencies for Publishing
+        run: npm install
+
+      - name: Publish to NPM Registry
+        run: npm publish --tag dev
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
