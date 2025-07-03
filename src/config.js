@@ -11,7 +11,6 @@ class Config {
 		this.customEventBatchSize = 64;
 		this.gazeBatchSize = 64;
 		this.GazeInterval = 0.1; // this corresponds to 10 Hz
-		this.HMDType = 'Quest 2'; // set this based on the headset hardware
 		this.allSceneData = [];
 	}
 	sceneData(sceneName, sceneId, versionNumber) {

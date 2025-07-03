@@ -7,11 +7,9 @@ import ExitPoll from './exitpoll';
 import DynamicObject from './dynamicobject';
 import {
   getDeviceMemory,
-  getPlatform,
   getScreenHeight,
   getScreenWidth,
-  getPlatformType,
-  getOS,
+  getSystemInfo,// getOS, getplatform and getPlatformType
   getHardwareConcurrency,
   getConnection
 } from './utils/environment';
@@ -34,10 +32,17 @@ class C3D {
     if (deviceMemory) {
       this.setDeviceProperty('DeviceMemory', deviceMemory * 1000);
     }
+    const systemInfo = getSystemInfo() 
+    if(systemInfo){ 
+      this.setDeviceProperty('DevicePlatform', getSystemInfo().deviceType);
+      this.setDeviceProperty('DeviceOS', getSystemInfo().os);
+      this.setDeviceProperty('Browser', getSystemInfo().browser)
+    }
+    
+    const platform = getSystemInfo().deviceType;
 
-    const platform = getPlatform();
     if (platform) {
-      this.setDeviceProperty('DeviceType', platform);
+      this.setDeviceProperty('DeviceType', getSystemInfo().deviceType);
     }
 
     const screenHeight = getScreenHeight();
@@ -61,8 +66,11 @@ class C3D {
         this.setDeviceProperty('NetworkDownlink', connection.downlink);
         this.setDeviceProperty('NetworkRTT', connection.rtt);
     }
+    /*
     this.setDeviceProperty('DevicePlatform', getPlatformType());
     this.setDeviceProperty('DeviceOS', getOS());
+    */ 
+
   }
 
   startSession(xrSession) { // Developers will need to pass the live xr session to c3d.startsession

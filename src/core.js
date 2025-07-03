@@ -16,6 +16,7 @@ class CognitiveVRAnalyticsCore {
 			AppVersion: 'cvr.app.version',
 			AppEngine: 'cvr.app.engine',
 			AppEngineVersion: 'cvr.app.engine.version',
+			Browser: 'c3d.device.browser',
 			DeviceType: 'cvr.device.type',
 			DeviceModel: 'cvr.device.model',
 			DeviceMemory: 'cvr.device.memory',

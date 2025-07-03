@@ -30,9 +30,14 @@ export const safeWindowAccess = (accessor, defaultValue) => {
 export const getDeviceMemory = () =>
   safeWindowAccess(() => navigator.deviceMemory, null);
 
+/*
 export const getPlatform = () =>
   safeWindowAccess(() => navigator.platform, 'unknown');
-
+*/ 
+/*
+getOperatingSystem().then(os => {
+  console.log(`The operating system is: ${os}`);
+});*/ 
 export const getScreenHeight = () =>
   safeWindowAccess(() => window.screen.height, null);
 
@@ -49,6 +54,7 @@ export const getConnection = () =>
     safeWindowAccess(() => navigator.connection, null);
 
 // OS detection
+/*
 export const getOS = () => {
   if (!isBrowser) return 'unknown';
 
@@ -73,8 +79,102 @@ export const getOS = () => {
 
   return 'unknown';
 };
+*/
+
+/*
+// ********* NEW 
+export const getOS = async () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') { // if not in a browser 
+    return 'unknown';
+  }
+
+  // First, try the modern, promise-based API.
+  if (navigator.userAgentData) {
+    try {
+      const highEntropyValues = await navigator.userAgentData.getHighEntropyValues(['platform']);
+      // The platform property gives a clean string like "Windows", "macOS", etc.
+      return highEntropyValues.platform;
+    } catch (error) {
+      console.error('Could not retrieve platform from userAgentData:', error);
+      // Fall through to the legacy method if it fails.
+    }
+  }
+
+  // Fallback to parsing the userAgent string for older browsers.
+  const userAgent = navigator.userAgent;
+  if (userAgent.includes('Win')) return 'Windows';
+  if (userAgent.includes('Mac')) return 'macOS';
+  if (userAgent.includes('Linux')) return 'Linux';
+  if (userAgent.includes('Android')) return 'Android';
+  // A common way to detect iOS on iPads and iPhones.
+  if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) return 'iOS';
+
+  return 'unknown';
+};
+
+*/ 
+
+export const getSystemInfo = async () => {
+  const isBrowser = typeof window !== 'undefined' && typeof navigator !== 'undefined'; // if not in a browser 
+  if (!isBrowser) {
+    return { os: 'unknown', deviceType: 'unknown', browser: "unknown" };
+  }
+
+  if (navigator.userAgentData) { // if userAgentData supported 
+    const platformData = await navigator.userAgentData.getHighEntropyValues(['platform']);
+    const os = platformData.platform || 'unknown';
+    const deviceType = navigator.userAgentData.mobile ? 'Mobile' : 'Desktop';
+
+    let browser = 'unknown';
+    if (navigator.userAgentData.brands){
+        if (navigator.userAgentData.brands.some(b => b.brand === 'Opera')) {
+        browser = 'Opera';
+      } else if (navigator.userAgentData.brands.some(b => b.brand === 'Microsoft Edge')) {
+        browser = 'Edge';
+      } else if (navigator.userAgentData.brands.some(b => b.brand === 'Google Chrome')) {
+        browser = 'Chrome';
+      }
+    } 
+
+    return { os, deviceType, browser };
+  }
+  
+  const userAgent = navigator.userAgent;   // Fallback as UserAgentData not support on Firefox, Safari (and older browsers)
+  let os = 'unknown';
+  let deviceType = 'unknown';
+  let browser = 'unknown'
+
+  // OS Detection
+  if (/Windows/.test(userAgent)) os = 'Windows';
+  else if (/Macintosh|MacIntel|MacPPC|Mac68K/.test(userAgent)) os = 'macOS';
+  else if (/Android/.test(userAgent)) os = 'Android';
+  else if (/iPhone|iPad|iPod/.test(userAgent)) os = 'iOS';
+  else if (/Linux/.test(userAgent)) os = 'Linux';
+
+  // Device Type Detection
+  if (/Mobi|Android|iPhone/.test(userAgent)) {
+    deviceType = 'Mobile';
+  } else if (/iPad/.test(userAgent)) {
+    deviceType = 'Tablet';     // iPads on recent iOS versions may reported as a Mac
+  }
+
+  // Browser Detection 
+  if (/Firefox/i.test(userAgent)) {
+    browser = 'Firefox';
+  } else if (/OPR|Opera/i.test(userAgent)) {
+    browser = 'Opera';
+  } else if (/Edg/i.test(userAgent)) {
+    browser = 'Edge';
+  } else if (/Chrome/i.test(userAgent)) {
+    browser = 'Chrome';
+  } else if (/Safari/i.test(userAgent)) {
+    browser = 'Safari';
+  }
+  return { os, deviceType, browser};
+};
 
 // Platform type detection
+/*
 export const getPlatformType = () => {
   if (!isBrowser) return 'unknown';
 
@@ -88,6 +188,6 @@ export const getPlatformType = () => {
     return 'Desktop';
   }
 };
-
+*/ 
 // Universal fetch implementation (works in both browser and Node)
 export { default as fetch } from 'cross-fetch';
