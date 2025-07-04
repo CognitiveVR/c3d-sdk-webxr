@@ -11,7 +11,8 @@ import {
   getScreenWidth,
   getSystemInfo,// getOS, getplatform and getPlatformType
   getHardwareConcurrency,
-  getConnection
+  getConnection,
+  getGPUInfo
 } from './utils/environment';
 import { getHMDInfo } from './utils/webxr';
 
@@ -65,6 +66,11 @@ class C3D {
         this.setDeviceProperty('NetworkEffectiveType', connection.effectiveType);
         this.setDeviceProperty('NetworkDownlink', connection.downlink);
         this.setDeviceProperty('NetworkRTT', connection.rtt);
+    }
+    const gpuInfo = getGPUInfo();
+    if (gpuInfo) {
+      this.setDeviceProperty('DeviceGPU', gpuInfo.renderer);
+      this.setDeviceProperty('DeviceGPUVendor', gpuInfo.vendor);
     }
     /*
     this.setDeviceProperty('DevicePlatform', getPlatformType());
