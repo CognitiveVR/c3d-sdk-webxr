@@ -2,6 +2,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
 import terser from '@rollup/plugin-terser';
+import replace from '@rollup/plugin-replace';
 import { builtinModules } from 'module';
 import fs from 'fs';
 import path from 'path';
@@ -18,6 +19,11 @@ const external = [
 
 // Shared plugins
 const plugins = [
+  replace({
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+    '__SDK_VERSION__': JSON.stringify(pkg.version),
+    preventAssignment: true,
+  }),
   babel({
     babelHelpers: 'bundled',
     presets: [

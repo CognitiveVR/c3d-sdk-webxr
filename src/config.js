@@ -1,10 +1,11 @@
 class Config {
 	constructor() {
 		this.LOG = false;
-		this.SdkVersion = '1.1.0';
-		this.networkHost = 'data.cognitive3d.com'; // prod gateway
-		//this.networkHost = 'data.c3ddev.com'; // dev gateway 
-		this.APIKey = ''; // SET APIKEY: Prod or Dev  
+		this.SDKVersion = __SDK_VERSION__;
+		this.networkHost = (process.env.NODE_ENV === 'production')
+			? 'data.cognitive3d.com'
+			: 'data.c3ddev.com';
+		this.APIKey = ''; // SET APIKEY for PROD or DEV
 		this.networkVersion = '0';
 		this.sensorDataLimit = 64;
 		this.dynamicDataLimit = 64;
@@ -24,8 +25,8 @@ class Config {
 		if (settings.LOG) {
 			this.LOG = settings.LOG;
 		}
-		if (settings.SdkVersion) {
-			this.SdkVersion = settings.SdkVersion;
+		if (settings.SDKVersion) {
+			this.SDKVersion = settings.SDKVersion;
 		}
 		if (settings.networkHost) {
 			this.networkHost = settings.networkHost;

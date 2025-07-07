@@ -16,7 +16,7 @@ class CognitiveVRAnalyticsCore {
 			AppVersion: 'cvr.app.version',
 			AppEngine: 'cvr.app.engine',
 			AppEngineVersion: 'cvr.app.engine.version',
-			Browser: 'c3d.device.browser',
+			Browser: 'cvr.device.browser',
 			DeviceType: 'cvr.device.type',
 			DeviceModel: 'cvr.device.model',
 			DeviceMemory: 'cvr.device.memory',
@@ -34,6 +34,7 @@ class CognitiveVRAnalyticsCore {
 			NetworkEffectiveType: 'cvr.network.effectiveType', 
     		NetworkDownlink: 'cvr.network.downlink',
     		NetworkRTT: 'cvr.network.rtt',
+			SDKVersion: 'cvr.sdk.version',
 			VRModel: 'cvr.vr.model',
 			VRVendor: 'cvr.vr.vendor',
 		};

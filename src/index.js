@@ -21,6 +21,9 @@ class C3D {
     this.core = CognitiveVRAnalyticsCore;
     if (settings) { this.core.config.settings = settings.config; }
 
+    //this.setDeviceProperty("SDKVersion", this.core.config.SDKVersion);  
+    this.setUserProperty("c3d.version", this.core.config.SDKVersion);  
+
     this.network = new Network(this.core);
     this.gaze = new GazeTracker(this.core);
     this.customEvent = new CustomEvent(this.core);
