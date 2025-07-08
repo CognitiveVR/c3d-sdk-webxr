@@ -275,11 +275,11 @@ class C3D {
 
   setUserName(name) {
     this.core.setUserId = name;
-    this.setUserProperty('cvr.name', name);
+    this.setUserProperty('c3d.name', name);
   }
 
   setSessionName(name) {
-    this.setUserProperty('cvr.sessionname', name);
+    this.setUserProperty('c3d.sessionname', name);
   }
 
   setLobbyId(id) {
@@ -288,7 +288,7 @@ class C3D {
 
   setDeviceName(name) {
     this.core.setDeviceId = name;
-    this.core.newDeviceProperties['cvr.device.name'] = name;
+    this.core.newDeviceProperties['c3d.device.name'] = name;
   }
 
   setDeviceProperty(property, value) {
