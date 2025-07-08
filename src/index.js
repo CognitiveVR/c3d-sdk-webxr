@@ -5,6 +5,7 @@ import Network from './network';
 import Sensor from './sensors';
 import ExitPoll from './exitpoll';
 import DynamicObject from './dynamicobject';
+
 import {
   getDeviceMemory,
   getScreenHeight,
@@ -14,16 +15,20 @@ import {
   getConnection,
   getGPUInfo
 } from './utils/environment';
-import { getHMDInfo } from './utils/webxr';
+
+import { 
+  XRSessionManager,
+  getHMDInfo 
+} from './utils/webxr';
 
 class C3D {
   constructor(settings) {
     this.core = CognitiveVRAnalyticsCore;
     if (settings) { this.core.config.settings = settings.config; }
 
-    //this.setDeviceProperty("SDKVersion", this.core.config.SDKVersion);  
-    this.setUserProperty("c3d.version", this.core.config.SDKVersion);  
+    this.xrSessionManager = null; 
 
+    this.setUserProperty("c3d.version", this.core.config.SDKVersion);  
     this.network = new Network(this.core);
     this.gaze = new GazeTracker(this.core);
     this.customEvent = new CustomEvent(this.core);
@@ -81,10 +86,10 @@ class C3D {
     */ 
 
   }
-
+  
   startSession(xrSession) { // Developers will need to pass the live xr session to c3d.startsession
     if (this.core.isSessionActive) { return false; }
-    
+  
     if (xrSession && xrSession.inputSources) { // check what is connected right now 
         const hmdInfo = getHMDInfo(xrSession.inputSources);
         if (hmdInfo) {
@@ -113,14 +118,50 @@ class C3D {
     this.customEvent.send('Session Start', [0, 0, 0]);
     return true;
   }
+  
+  startSession(xrSession) { // Developers will need to pass the live xr session to c3d.startsession
+    if (this.core.isSessionActive) { return false; }
 
+    if (xrSession) {  
+      this.xrSessionManager = new XRSessionManager(this.gaze, xrSession);
+      this.xrSessionManager.start();
+
+      const hmdInfo = getHMDInfo(xrSession.inputSources);
+      if (hmdInfo) {                                                // check what is connected right now
+        this.setDeviceProperty('VRModel', hmdInfo.model);
+        this.setDeviceProperty('VRVendor', hmdInfo.vendor);
+      } else {
+        this.setDeviceProperty('VRModel', 'Unknown VR Headset');
+      }
+      xrSession.addEventListener('inputsourceschange', (event) => { // listener for if controllers were previously off, check now 
+        const newHmdInfo = getHMDInfo(event.session.inputSources);
+        if (newHmdInfo) {
+          this.setDeviceProperty('VRModel', newHmdInfo.model);
+          this.setDeviceProperty('VRVendor', newHmdInfo.vendor);
+        }
+      });
+    }
+
+    this.core.setSessionStatus = true;
+    this.core.getSessionTimestamp();
+    this.core.getSessionId();
+    this.customEvent.send('Session Start', [0, 0, 0]);
+    return true;
+  }
+  
+  
   endSession() {
     return new Promise((resolve, reject) => {
       if (!this.core.isSessionActive) {
         reject('session is not active');
         return;
       }
-
+      
+      if (this.xrSessionManager) {
+      this.xrSessionManager.stop();
+      this.xrSessionManager = null;
+      }
+      
       // Calculate session length
       const props = {};
       const endPos = [0, 0, 0];

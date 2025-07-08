@@ -192,6 +192,27 @@ export const getGPUInfo = () => {
   return null;
 };
 
+/* does not work 
+export const getWebEngine = () => {
+  if (typeof window === 'undefined') {
+    return 'unknown';
+  }
+
+  if (window.AFRAME) {
+    return 'A-Frame';
+  } else if (window.pc) {
+    return 'PlayCanvas';
+  } else if (window.BABYLON) {
+    return 'Babylon.js';
+  } else if (window.THREE) {
+    return 'Three.js';
+  }
+
+  // If none are found, the engine is unknown or not exposed globally.
+  return 'unknown';
+};
+*/ 
+
 // Platform type detection
 /*
 export const getPlatformType = () => {

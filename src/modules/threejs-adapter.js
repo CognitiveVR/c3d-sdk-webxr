@@ -8,7 +8,7 @@ class C3DThreeAdapter {
     }
     this.c3d = c3dInstance;
 
-    this.c3d.setDeviceProperty('c3d.app.engine', 'Three.js');
+    this.c3d.setDeviceProperty('AppEngine', 'Three.js');
   }
 
   fromVector3(vec3) { // translate a THREE.Vector3 to a simple array

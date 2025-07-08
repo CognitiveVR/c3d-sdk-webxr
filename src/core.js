@@ -14,7 +14,7 @@ class CognitiveVRAnalyticsCore {
 		this.devicePropertyMap = {
 			AppName: 'cvr.app.name',
 			AppVersion: 'cvr.app.version',
-			AppEngine: 'cvr.app.engine',
+			AppEngine: 'c3d.app.engine',
 			AppEngineVersion: 'cvr.app.engine.version',
 			Browser: 'cvr.device.browser',
 			DeviceType: 'cvr.device.type',

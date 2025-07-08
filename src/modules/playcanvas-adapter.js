@@ -6,7 +6,7 @@ class C3DPlayCanvasAdapter {
       throw new Error("A C3D instance must be provided to the PlayCanvas adapter.");
     }
     this.c3d = c3dInstance;
-    this.c3d.setDeviceProperty('c3d.app.engine', 'PlayCanvas');
+    this.c3d.setDeviceProperty("AppEngine", 'PlayCanvas');
   }
 
   fromVec3(vec3) {
