@@ -2,13 +2,25 @@
   "name": "@cognitive3d/analytics",
   "version": "2.0.0",
   "description": "This SDK allows you to integrate your Javascript Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project.",
-  "main": "lib/index.cjs.js",
-  "module": "lib/index.esm.js",
+  "main": "lib/cjs/index.js",
+  "module": "lib/esm/index.js",
   "exports": {
     ".": {
-      "require": "./lib/index.cjs.js",
-      "import": "./lib/index.esm.js",
+      "import": "./lib/esm/index.js",
+      "require": "./lib/cjs/index.js",
       "browser": "./lib/index.umd.js"
+    },
+    "./adapters/threejs": {
+      "import": "./lib/esm/adapters/threejs-adapter.js",
+      "require": "./lib/cjs/adapters/threejs-adapter.js"
+    },
+    "./adapters/babylon": {
+      "import": "./lib/esm/adapters/babylon-adapter.js",
+      "require": "./lib/cjs/adapters/babylon-adapter.js"
+    },
+    "./adapters/playcanvas": {
+      "import": "./lib/esm/adapters/playcanvas-adapter.js",
+      "require": "./lib/cjs/adapters/playcanvas-adapter.js"
     }
   },
   "files": [
@@ -60,6 +72,22 @@
   "dependencies": {
     "cross-fetch": "^4.1.0",
     "uuid": "^11.1.0"
+  },
+  "peerDependencies": {
+    "three": ">=0.128.0",
+    "babylonjs": ">=5.0.0",
+    "playcanvas": ">=1.50.0"
+  },
+  "peerDependenciesMeta": {
+    "three": {
+      "optional": true
+    },
+    "babylonjs": {
+      "optional": true
+    },
+    "playcanvas": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=20.0.0"

@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 
-
 class C3DThreeAdapter {
   constructor(c3dInstance) {
     if (!c3dInstance) {

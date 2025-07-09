@@ -36,8 +36,8 @@ class CognitiveVRAnalyticsCore {
     		NetworkRTT: 'c3d.network.rtt',
 			SDKType: 'c3d.sdk.type',
 			SDKVersion: 'c3d.sdk.version',
-			VRModel: 'c3d.vr.model',
-			VRVendor: 'c3d.vr.vendor',
+			VRModel: 'c3d.device.hmd.type', // c3d.device.model - generic device 
+			VRVendor: 'c3d.device.vendor', // c3d.device.vendor
 		};
 	}
 
