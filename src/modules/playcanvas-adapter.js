@@ -7,6 +7,8 @@ class C3DPlayCanvasAdapter {
     }
     this.c3d = c3dInstance;
     this.c3d.setDeviceProperty("AppEngine", 'PlayCanvas');
+    this.c3d.setDeviceProperty('AppEngineVersion', pc.VERSION);
+
   }
 
   fromVec3(vec3) {
