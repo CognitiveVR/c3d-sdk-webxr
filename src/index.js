@@ -29,6 +29,7 @@ class C3D {
     this.xrSessionManager = null; 
 
     this.setUserProperty("c3d.version", this.core.config.SDKVersion);  
+    this.setDeviceProperty("SDKType", "WebXR"); 
     this.network = new Network(this.core);
     this.gaze = new GazeTracker(this.core);
     this.customEvent = new CustomEvent(this.core);
@@ -86,10 +87,13 @@ class C3D {
     */ 
 
   }
-  
   startSession(xrSession) { // Developers will need to pass the live xr session to c3d.startsession
     if (this.core.isSessionActive) { return false; }
-  
+
+    if (xrSession) {  
+      this.xrSessionManager = new XRSessionManager(this.gaze, xrSession);
+      this.xrSessionManager.start();
+    }
     if (xrSession && xrSession.inputSources) { // check what is connected right now 
         const hmdInfo = getHMDInfo(xrSession.inputSources);
         if (hmdInfo) {
@@ -108,8 +112,9 @@ class C3D {
                 this.setDeviceProperty('VRVendor', newHmdInfo.VRVendor);
             }
         });
-    }
+    }      
 
+    /* 
     this.core.setSessionStatus = true;
     this.core.getSessionTimestamp();
     this.core.getSessionId();
@@ -117,30 +122,7 @@ class C3D {
     this.gaze.setInterval(this.core.config.GazeInterval);
     this.customEvent.send('Session Start', [0, 0, 0]);
     return true;
-  }
-  
-  startSession(xrSession) { // Developers will need to pass the live xr session to c3d.startsession
-    if (this.core.isSessionActive) { return false; }
-
-    if (xrSession) {  
-      this.xrSessionManager = new XRSessionManager(this.gaze, xrSession);
-      this.xrSessionManager.start();
-
-      const hmdInfo = getHMDInfo(xrSession.inputSources);
-      if (hmdInfo) {                                                // check what is connected right now
-        this.setDeviceProperty('VRModel', hmdInfo.model);
-        this.setDeviceProperty('VRVendor', hmdInfo.vendor);
-      } else {
-        this.setDeviceProperty('VRModel', 'Unknown VR Headset');
-      }
-      xrSession.addEventListener('inputsourceschange', (event) => { // listener for if controllers were previously off, check now 
-        const newHmdInfo = getHMDInfo(event.session.inputSources);
-        if (newHmdInfo) {
-          this.setDeviceProperty('VRModel', newHmdInfo.model);
-          this.setDeviceProperty('VRVendor', newHmdInfo.vendor);
-        }
-      });
-    }
+    */
 
     this.core.setSessionStatus = true;
     this.core.getSessionTimestamp();

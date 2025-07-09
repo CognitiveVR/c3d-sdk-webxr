@@ -34,6 +34,7 @@ class CognitiveVRAnalyticsCore {
 			NetworkEffectiveType: 'c3d.network.effectiveType', 
     		NetworkDownlink: 'c3d.network.downlink',
     		NetworkRTT: 'c3d.network.rtt',
+			SDKType: 'c3d.sdk.type',
 			SDKVersion: 'c3d.sdk.version',
 			VRModel: 'c3d.vr.model',
 			VRVendor: 'c3d.vr.vendor',
