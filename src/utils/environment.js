@@ -53,66 +53,6 @@ export const getHardwareConcurrency = () => // CPU threads
 export const getConnection = () =>
     safeWindowAccess(() => navigator.connection, null);
 
-// OS detection
-/*
-export const getOS = () => {
-  if (!isBrowser) return 'unknown';
-
-  const userAgent = getUserAgent();
-  const platform = getPlatform();
-
-  const macosPlatforms = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'];
-  const windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE'];
-  const iosPlatforms = ['iPhone', 'iPad', 'iPod'];
-
-  if (macosPlatforms.indexOf(platform) !== -1) {
-    return 'MacOS';
-  } else if (iosPlatforms.indexOf(platform) !== -1) {
-    return 'iOS';
-  } else if (windowsPlatforms.indexOf(platform) !== -1) {
-    return 'Windows';
-  } else if (/Android/.test(userAgent)) {
-    return 'Android';
-  } else if (/Linux/.test(platform)) {
-    return 'Linux';
-  }
-
-  return 'unknown';
-};
-*/
-
-/*
-// ********* NEW 
-export const getOS = async () => {
-  if (typeof window === 'undefined' || typeof navigator === 'undefined') { // if not in a browser 
-    return 'unknown';
-  }
-
-  // First, try the modern, promise-based API.
-  if (navigator.userAgentData) {
-    try {
-      const highEntropyValues = await navigator.userAgentData.getHighEntropyValues(['platform']);
-      // The platform property gives a clean string like "Windows", "macOS", etc.
-      return highEntropyValues.platform;
-    } catch (error) {
-      console.error('Could not retrieve platform from userAgentData:', error);
-      // Fall through to the legacy method if it fails.
-    }
-  }
-
-  // Fallback to parsing the userAgent string for older browsers.
-  const userAgent = navigator.userAgent;
-  if (userAgent.includes('Win')) return 'Windows';
-  if (userAgent.includes('Mac')) return 'macOS';
-  if (userAgent.includes('Linux')) return 'Linux';
-  if (userAgent.includes('Android')) return 'Android';
-  // A common way to detect iOS on iPads and iPhones.
-  if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) return 'iOS';
-
-  return 'unknown';
-};
-
-*/ 
 
 export const getSystemInfo = async () => {
   const isBrowser = typeof window !== 'undefined' && typeof navigator !== 'undefined'; // if not in a browser 
@@ -172,8 +112,26 @@ export const getSystemInfo = async () => {
   }
   return { os, deviceType, browser};
 };
+export const getGPUInfo = async () => {
+  if (!isBrowser) {
+    return null;
+  }
+  if (navigator.gpu) {  // Modern WebGPU API approach.
+    try {
+      const adapter = await navigator.gpu.requestAdapter(); 
+      if (adapter) {
+        const info = await adapter.requestAdapterInfo();
+        return {
+          vendor: info.vendor || 'unknown',
+          renderer: info.description || 'unknown'
+        };
+      }
+    } catch (e) {
+      console.warn('WebGPU request failed:', e);
+    }
+  }
 
-export const getGPUInfo = () => {
+  // Fallback to the WebGL method
   try {
     const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
@@ -183,6 +141,28 @@ export const getGPUInfo = () => {
       if (debugInfo) {
         const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
         const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+
+        return { vendor, renderer };
+      }
+    }
+  } catch (e) {
+    console.warn("WebGL is not supported", e);
+  }
+
+  return null;
+};
+/*
+export const getGPUInfo = () => {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+    if (gl && gl instanceof WebGLRenderingContext) {
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      if (debugInfo) {
+        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL); // gpu 
+
         return { vendor, renderer };
       }
     }
@@ -191,6 +171,8 @@ export const getGPUInfo = () => {
   }
   return null;
 };
+*/
+
 
 /* does not work 
 export const getWebEngine = () => {
