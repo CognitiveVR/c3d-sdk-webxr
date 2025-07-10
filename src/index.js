@@ -5,12 +5,13 @@ import Network from './network';
 import Sensor from './sensors';
 import ExitPoll from './exitpoll';
 import DynamicObject from './dynamicobject';
+import FPSTracker from './utils/Framerate';
 
 import {
   getDeviceMemory,
   getScreenHeight,
   getScreenWidth,
-  getSystemInfo,// getOS, getplatform and getPlatformType
+  getSystemInfo,
   getHardwareConcurrency,
   getConnection,
   getGPUInfo
@@ -36,6 +37,7 @@ class C3D {
     this.sensor = new Sensor(this.core);
     this.exitpoll = new ExitPoll(this.core, this.customEvent);
     this.dynamicObject = new DynamicObject(this.core, this.customEvent);
+    this.fpsTracker = new FPSTracker(); 
 
     // Set default device properties using environment utils
     const deviceMemory = getDeviceMemory();
@@ -81,14 +83,13 @@ class C3D {
       this.setDeviceProperty('DeviceGPU', gpuInfo.renderer);
       this.setDeviceProperty('DeviceGPUVendor', gpuInfo.vendor);
     }
-    /*
-    this.setDeviceProperty('DevicePlatform', getPlatformType());
-    this.setDeviceProperty('DeviceOS', getOS());
-    */ 
-
   }
   startSession(xrSession) { // Developers will need to pass the live xr session to c3d.startsession
     if (this.core.isSessionActive) { return false; }
+    
+    this.fpsTracker.start(fps => {
+      this.sensor.recordSensor('c3d.fps.avg', fps);
+    });
 
     if (xrSession) {  
       this.xrSessionManager = new XRSessionManager(this.gaze, xrSession);
@@ -114,16 +115,6 @@ class C3D {
         });
     }      
 
-    /* 
-    this.core.setSessionStatus = true;
-    this.core.getSessionTimestamp();
-    this.core.getSessionId();
-    this.gaze.setHMDType(this.core.config.HMDType);
-    this.gaze.setInterval(this.core.config.GazeInterval);
-    this.customEvent.send('Session Start', [0, 0, 0]);
-    return true;
-    */
-
     this.core.setSessionStatus = true;
     this.core.getSessionTimestamp();
     this.core.getSessionId();
@@ -138,7 +129,8 @@ class C3D {
         reject('session is not active');
         return;
       }
-      
+      this.fpsTracker.stop(); 
+
       if (this.xrSessionManager) {
       this.xrSessionManager.stop();
       this.xrSessionManager = null;

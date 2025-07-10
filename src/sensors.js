@@ -8,7 +8,6 @@ class Sensors {
 		this.sensorCount = 0;
 		this.jsonPart = 1;
 	}
-
 	recordSensor(name, value) {
 		let point = [this.core.getTimestamp(), value];
 		let sensor = this.allSensors.find(sensor => sensor.name === name);
