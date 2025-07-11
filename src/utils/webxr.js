@@ -12,7 +12,7 @@ export class XRSessionManager {
     this.animationFrameHandle = null;
     this.onXRFrame = this.onXRFrame.bind(this);
   }
-
+/*
   async start() {  // Starts the gaze tracking loop.
     if (this.isTracking) return;
 
@@ -21,7 +21,28 @@ export class XRSessionManager {
     this.animationFrameHandle = this.xrSession.requestAnimationFrame(this.onXRFrame);
     console.log('Cog3D-XR-Session-Manager: Gaze tracking started.');
   }
+*/
+async start() {
+    if (this.isTracking) return;
 
+    try {
+        this.referenceSpace = await this.xrSession.requestReferenceSpace('local-floor'); // local floor works in threejs but not playcanvas 
+        console.log('Cog3D-XR-Session-Manager: Using "local-floor" reference space.');
+    } catch (error) {
+        console.warn('Cog3D-XR-Session-Manager: "local-floor" not supported, falling back to "local".', error);
+        try {
+            this.referenceSpace = await this.xrSession.requestReferenceSpace('local'); // local is more common 
+            console.log('Cog3D-XR-Session-Manager: Using "local" reference space.');
+        } catch (fallbackError) {
+            console.error('Cog3D-XR-Session-Manager: Failed to get any supported reference space.', fallbackError);
+            return; 
+        }
+    }
+
+    this.isTracking = true;
+    this.animationFrameHandle = this.xrSession.requestAnimationFrame(this.onXRFrame);
+    console.log('Cog3D-XR-Session-Manager: Gaze tracking started.');
+}
 
   stop() { // Stop the gaze tracking loop.
     if (!this.isTracking) return;
