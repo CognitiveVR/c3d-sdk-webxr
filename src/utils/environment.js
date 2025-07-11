@@ -112,46 +112,7 @@ export const getSystemInfo = async () => {
   }
   return { os, deviceType, browser};
 };
-export const getGPUInfo = async () => {
-  if (!isBrowser) {
-    return null;
-  }
-  if (navigator.gpu) {  // Modern WebGPU API approach.
-    try {
-      const adapter = await navigator.gpu.requestAdapter(); 
-      if (adapter) {
-        const info = await adapter.requestAdapterInfo();
-        return {
-          vendor: info.vendor || 'unknown',
-          renderer: info.description || 'unknown'
-        };
-      }
-    } catch (e) {
-      console.warn('WebGPU request failed:', e);
-    }
-  }
 
-  // Fallback to the WebGL method
-  try {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-
-    if (gl && gl instanceof WebGLRenderingContext) {
-      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-      if (debugInfo) {
-        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
-        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-
-        return { vendor, renderer };
-      }
-    }
-  } catch (e) {
-    console.warn("WebGL is not supported", e);
-  }
-
-  return null;
-};
-/*
 export const getGPUInfo = () => {
   try {
     const canvas = document.createElement('canvas');
@@ -161,8 +122,7 @@ export const getGPUInfo = () => {
       const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
       if (debugInfo) {
         const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
-        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL); // gpu 
-
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
         return { vendor, renderer };
       }
     }
@@ -171,45 +131,54 @@ export const getGPUInfo = () => {
   }
   return null;
 };
+
+/*
+export const getGPUInfo = async () => {
+  if (!isBrowser) {
+    return null;
+  }
+   if (navigator.gpu) { // webgpu does not provide much info 
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      if (adapter) {
+        const info = adapter.info;
+        console.log("Vendor:", info.vendor); // For debugging
+        console.log("Description:", info.description); // For debugging
+        console.log("GPU Architecture:", info.architecture);
+        console.log("GPU Device ID:", info.device);
+
+        // Corrected return statement
+        return {
+          vendor: info.vendor || 'unknown',
+          renderer: info.description || 'unknown'
+        };
+      }
+    } catch (e) {
+      console.warn('WebGPU request failed:', e);
+    }
+  } 
+  // WebGL method
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+    if (gl && gl instanceof WebGLRenderingContext) {
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      if (debugInfo) {
+        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        //console.log("Vendor:", vendor); 
+        //console.log("Description:", renderer);
+        return { vendor, renderer };
+      }
+    }
+  } catch (e) {
+    console.warn("WebGL is not supported", e);
+  }
+
+  return null;
+};
 */
 
-
-/* does not work 
-export const getWebEngine = () => {
-  if (typeof window === 'undefined') {
-    return 'unknown';
-  }
-
-  if (window.AFRAME) {
-    return 'A-Frame';
-  } else if (window.pc) {
-    return 'PlayCanvas';
-  } else if (window.BABYLON) {
-    return 'Babylon.js';
-  } else if (window.THREE) {
-    return 'Three.js';
-  }
-
-  // If none are found, the engine is unknown or not exposed globally.
-  return 'unknown';
-};
-*/ 
-
-// Platform type detection
-/*
-export const getPlatformType = () => {
-  if (!isBrowser) return 'unknown';
-
-  const userAgent = getUserAgent();
-
-  if (userAgent.match(/mobile/i)) {
-    return 'Mobile';
-  } else if (userAgent.match(/iPad|Android|Touch/i)) {
-    return 'Tablet';
-  } else {
-    return 'Desktop';
-  }
-};
-*/ 
 // Universal fetch implementation (works in both browser and Node)
 export { default as fetch } from 'cross-fetch';

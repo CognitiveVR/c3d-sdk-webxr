@@ -88,5 +88,23 @@ export default [
       ...commonPlugins,
       terser()
     ]
+  },
+    // UMD build for PlayCanvas Adapter
+  {
+    input: 'src/adapters/playcanvas-adapter.js',
+    output: {
+      name: 'C3DPlayCanvasAdapter',
+      file: 'lib/playcanvas-adapter.umd.js',
+      format: 'umd',
+      sourcemap: true,
+      globals: {
+        'playcanvas': 'pc'
+      }
+    },
+    plugins: [
+      ...commonPlugins,
+      terser()
+    ]
   }
+  
 ];
