@@ -2,10 +2,13 @@
 
 Welcome!  This SDK allows you to integrate your Javascript and WebXR Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project.  In addition, Cognitive3D empowers you to take actions that will improve users' engagement with your experience.
 
-
-
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/8ee7db62-c8f5-4948-a6cd-53dfb57ae77f" alt="Cognitive3D Logo" width="80%">
+  <a href="https://www.cognitive3d.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/C3D-Primary-Logo-WhiteText-4k.png" >
+      <img alt="Cognitive3D Logo" src="assets/C3D-Primary-Logo-BlackText-4k.png" width="80%">
+    </picture>
+  </a>
   <img src="https://github.com/user-attachments/assets/4815254c-d89f-4504-9c4d-944ed40cfb43" alt="Javascript Logo" width="16%">
 </div>
 
