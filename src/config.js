@@ -1,7 +1,7 @@
 class Config {
 	constructor() {
 		this.LOG = false;
-		this.SDKVersion = __SDK_VERSION__;
+		this.SDKVersion = typeof __SDK_VERSION__ !== 'undefined' ? __SDK_VERSION__ : 'dev';
 		this.networkHost = (process.env.NODE_ENV === 'production')
 			? 'data.cognitive3d.com'
 			: 'data.c3ddev.com';
