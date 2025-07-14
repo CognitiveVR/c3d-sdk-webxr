@@ -2,20 +2,21 @@
 
 Welcome!  This SDK allows you to integrate your Javascript and WebXR Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project.  In addition, Cognitive3D empowers you to take actions that will improve users' engagement with your experience.
 
-
-
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/8ee7db62-c8f5-4948-a6cd-53dfb57ae77f" alt="Cognitive3D Logo" width="80%">
+  <a href="https://www.cognitive3d.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/C3D-Primary-Logo-WhiteText-4k.png" >
+      <img alt="Cognitive3D Logo" src="assets/C3D-Primary-Logo-BlackText-4k.png" width="80%">
+    </picture>
+  </a>
   <img src="https://github.com/user-attachments/assets/4815254c-d89f-4504-9c4d-944ed40cfb43" alt="Javascript Logo" width="16%">
 </div>
 
 [![Build Status](https://travis-ci.org/CognitiveVR/cvr-sdk-js.svg?branch=master)](https://travis-ci.org/CognitiveVR/cvr-sdk-js)
 
-## Quickstart
-
-> Requirement of Node.js v20 or higher
->
-> * We currently require a version of Node.js of 20 or higher for this SDK. If this doesn't match your needs, let us know.
+## Requirement(s)
+Node.js version 20 or higher
+* We currently require a version of Node.js of 20 or higher for this SDK. If this doesn't match your needs, let us know.
 
 ## Cognitive3D Documentation
 
@@ -47,6 +48,7 @@ This will transpile the SDK src files into a `/lib` folder
 npm run build
 ```
 #### D) Install the local sdk to your project 
+Navigate to your projects directory, and then run the following command
 ```bash
 npm install /pathTo/c3d-sdk-webxr
 ```
@@ -121,13 +123,6 @@ The SDK is designed to be flexible and can be integrated into various JavaScript
 - index.umd.js (Universal Module Definition): One-size-fits-all for direct use in browsers. It's designed to be dropped into a <script> tag on a webpage. 
 - index.esm.js (ES Module): The modern module standard for JavaScript. It's used by default in most web bundlers and modern Node.js.
 - index.cjs.js (CommonJS): The module format for older Node.js environments.
-
-### Playcanvas integration 
-You can upload the built `/lib/index.umd.js` to a PlayCanvas project. 
-
-### ThreeJS Integration 
-Inside your ThreeJS project, run  `npm install @cognitive3d/analytics` or if you have the sdk locally: `npm install /pathTo/c3d-sdk-webxr`  
-
 ### Initializing the Cognitive3D SDK in your JavaScript project
 ```javascript
 // MyApp.js 
@@ -157,13 +152,11 @@ c3d.userId = 'userid' + Date.now();
 c3d.setUserName('SDK_Test_User');
 c3d.setDeviceName('WindowsPCBrowserVR');
 c3d.setDeviceProperty("AppName", "ThreeJS_WebXR_SDK_Test_App");
-c3d.setUserProperty("c3d.version", "1.0");
 c3d.setUserProperty("c3d.app.version", "0.2");
-c3d.setUserProperty("c3d.app.engine", "Three.js");
 c3d.setUserProperty("c3d.deviceid", 'threejs_windows_device_' + Date.now());
 
 // 4.Start the C3D Session
-c3d.startSession();
+c3d.startSession(xrSession); // Pass the XR session for gaze tracking
 
 // 5. Insert code here to track other events, gaze, etc.
 
@@ -172,5 +165,21 @@ c3d.startSession();
 ```
 *Note: Ensure all properties are included as shown above, otherwise you may not see a valid session on the Cognitive3D dashboard* 
 
+### Playcanvas integration 
+1. To integrate with Playcanvas, upload the built main sdk library `/lib/index.umd.js` and the adapter script `playcanvas-adapter.umd.js` to your PlayCanvas project.
+2. The adapter depends on the main SDK, so the SDK must be loaded first. In the PlayCanvas editor, go to Settings > Script Loading Order. Drag `index.umd.js` above `playcanvas-adapter.umd.js` to ensure it loads first.
+
+### ThreeJS Integration 
+1. Inside your ThreeJS project, run  `npm install @cognitive3d/analytics` or if you have the sdk locally: `npm install /pathTo/c3d-sdk-webxr`.
+2. Import the sdk and threeJS adapter within your threeJS project:
+```javascript
+import C3DAnalytics from '@cognitive3d/analytics';
+import C3DThreeAdapter from '@cognitive3d/analytics/adapters/threejs';
+```
+3. Initialize the main SDK first, then the threeJS adapter
+```javascript
+const c3d = new C3D(your_sdk_settings);
+const c3dAdapter = new C3DThreeAdapter(c3d);
+```
 ## Sample Projects
 For more detailed examples and complete project integrations, please see our sample applications repository at: https://github.com/CognitiveVR/c3d-webxr-sample-apps 

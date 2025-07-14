@@ -1,14 +1,26 @@
 {
   "name": "@cognitive3d/analytics",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "description": "This SDK allows you to integrate your Javascript Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project.",
-  "main": "lib/index.cjs.js",
-  "module": "lib/index.esm.js",
+  "main": "lib/cjs/index.js",
+  "module": "lib/esm/index.js",
   "exports": {
     ".": {
-      "require": "./lib/index.cjs.js",
-      "import": "./lib/index.esm.js",
+      "import": "./lib/esm/index.js",
+      "require": "./lib/cjs/index.js",
       "browser": "./lib/index.umd.js"
+    },
+    "./adapters/threejs": {
+      "import": "./lib/esm/adapters/threejs-adapter.js",
+      "require": "./lib/cjs/adapters/threejs-adapter.js"
+    },
+    "./adapters/babylon": {
+      "import": "./lib/esm/adapters/babylon-adapter.js",
+      "require": "./lib/cjs/adapters/babylon-adapter.js"
+    },
+    "./adapters/playcanvas": {
+      "import": "./lib/esm/adapters/playcanvas-adapter.js",
+      "require": "./lib/cjs/adapters/playcanvas-adapter.js"
     }
   },
   "files": [
@@ -20,7 +32,7 @@
     "test": "__tests__"
   },
   "scripts": {
-    "build": "rollup -c",
+    "build": "cross-env NODE_ENV=production rollup -c",
     "dev": "rollup -c -w",
     "prepare": "npm run build",
     "test": "jest",
@@ -41,16 +53,18 @@
   "author": "Cognitive3D support@cognitive3d.com",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/CognitiveVR/cvr-sdk-js/issues"
+    "url": "https://github.com/CognitiveVR/c3d-sdk-webxr/issues"
   },
-  "homepage": "https://github.com/CognitiveVR/cvr-sdk-js#readme",
+  "homepage": "https://github.com/CognitiveVR/c3d-sdk-webxr#readme",
   "devDependencies": {
     "@babel/core": "^7.27.4",
     "@babel/preset-env": "^7.27.2",
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-replace": "^6.0.2",
     "@rollup/plugin-terser": "^0.4.4",
+    "cross-env": "^7.0.3",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "rollup": "^4.43.0"
@@ -58,6 +72,22 @@
   "dependencies": {
     "cross-fetch": "^4.1.0",
     "uuid": "^11.1.0"
+  },
+  "peerDependencies": {
+    "three": ">=0.128.0",
+    "babylonjs": ">=5.0.0",
+    "playcanvas": ">=1.50.0"
+  },
+  "peerDependenciesMeta": {
+    "three": {
+      "optional": true
+    },
+    "babylonjs": {
+      "optional": true
+    },
+    "playcanvas": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=20.0.0"

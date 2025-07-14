@@ -30,9 +30,14 @@ export const safeWindowAccess = (accessor, defaultValue) => {
 export const getDeviceMemory = () =>
   safeWindowAccess(() => navigator.deviceMemory, null);
 
+/*
 export const getPlatform = () =>
   safeWindowAccess(() => navigator.platform, 'unknown');
-
+*/ 
+/*
+getOperatingSystem().then(os => {
+  console.log(`The operating system is: ${os}`);
+});*/ 
 export const getScreenHeight = () =>
   safeWindowAccess(() => window.screen.height, null);
 
@@ -42,46 +47,138 @@ export const getScreenWidth = () =>
 export const getUserAgent = () =>
   safeWindowAccess(() => navigator.userAgent, '');
 
-// OS detection
-export const getOS = () => {
-  if (!isBrowser) return 'unknown';
+export const getHardwareConcurrency = () => // CPU threads  
+    safeWindowAccess(() => navigator.hardwareConcurrency, null);
 
-  const userAgent = getUserAgent();
-  const platform = getPlatform();
+export const getConnection = () =>
+    safeWindowAccess(() => navigator.connection, null);
 
-  const macosPlatforms = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'];
-  const windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE'];
-  const iosPlatforms = ['iPhone', 'iPad', 'iPod'];
 
-  if (macosPlatforms.indexOf(platform) !== -1) {
-    return 'MacOS';
-  } else if (iosPlatforms.indexOf(platform) !== -1) {
-    return 'iOS';
-  } else if (windowsPlatforms.indexOf(platform) !== -1) {
-    return 'Windows';
-  } else if (/Android/.test(userAgent)) {
-    return 'Android';
-  } else if (/Linux/.test(platform)) {
-    return 'Linux';
+export const getSystemInfo = async () => {
+  const isBrowser = typeof window !== 'undefined' && typeof navigator !== 'undefined'; // if not in a browser 
+  if (!isBrowser) {
+    return { os: 'unknown', deviceType: 'unknown', browser: "unknown" };
   }
 
-  return 'unknown';
-};
+  if (navigator.userAgentData) { // if userAgentData supported 
+    const platformData = await navigator.userAgentData.getHighEntropyValues(['platform']);
+    const os = platformData.platform || 'unknown';
+    const deviceType = navigator.userAgentData.mobile ? 'Mobile' : 'Desktop';
 
-// Platform type detection
-export const getPlatformType = () => {
-  if (!isBrowser) return 'unknown';
+    let browser = 'unknown';
+    if (navigator.userAgentData.brands){
+        if (navigator.userAgentData.brands.some(b => b.brand === 'Opera')) {
+        browser = 'Opera';
+      } else if (navigator.userAgentData.brands.some(b => b.brand === 'Microsoft Edge')) {
+        browser = 'Edge';
+      } else if (navigator.userAgentData.brands.some(b => b.brand === 'Google Chrome')) {
+        browser = 'Chrome';
+      }
+    } 
 
-  const userAgent = getUserAgent();
-
-  if (userAgent.match(/mobile/i)) {
-    return 'Mobile';
-  } else if (userAgent.match(/iPad|Android|Touch/i)) {
-    return 'Tablet';
-  } else {
-    return 'Desktop';
+    return { os, deviceType, browser };
   }
+  
+  const userAgent = navigator.userAgent;   // Fallback as UserAgentData not support on Firefox, Safari (and older browsers)
+  let os = 'unknown';
+  let deviceType = 'unknown';
+  let browser = 'unknown'
+
+  // OS Detection
+  if (/Windows/.test(userAgent)) os = 'Windows';
+  else if (/Macintosh|MacIntel|MacPPC|Mac68K/.test(userAgent)) os = 'macOS';
+  else if (/Android/.test(userAgent)) os = 'Android';
+  else if (/iPhone|iPad|iPod/.test(userAgent)) os = 'iOS';
+  else if (/Linux/.test(userAgent)) os = 'Linux';
+
+  // Device Type Detection
+  if (/Mobi|Android|iPhone/.test(userAgent)) {
+    deviceType = 'Mobile';
+  } else if (/iPad/.test(userAgent)) {
+    deviceType = 'Tablet';     // iPads on recent iOS versions may reported as a Mac
+  }
+
+  // Browser Detection 
+  if (/Firefox/i.test(userAgent)) {
+    browser = 'Firefox';
+  } else if (/OPR|Opera/i.test(userAgent)) {
+    browser = 'Opera';
+  } else if (/Edg/i.test(userAgent)) {
+    browser = 'Edge';
+  } else if (/Chrome/i.test(userAgent)) {
+    browser = 'Chrome';
+  } else if (/Safari/i.test(userAgent)) {
+    browser = 'Safari';
+  }
+  return { os, deviceType, browser};
 };
+
+export const getGPUInfo = () => {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+    if (gl && gl instanceof WebGLRenderingContext) {
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      if (debugInfo) {
+        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        return { vendor, renderer };
+      }
+    }
+  } catch (e) {
+    console.warn("WebGL is not supported", e);
+  }
+  return null;
+};
+
+/*
+export const getGPUInfo = async () => {
+  if (!isBrowser) {
+    return null;
+  }
+   if (navigator.gpu) { // webgpu does not provide much info 
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      if (adapter) {
+        const info = adapter.info;
+        console.log("Vendor:", info.vendor); // For debugging
+        console.log("Description:", info.description); // For debugging
+        console.log("GPU Architecture:", info.architecture);
+        console.log("GPU Device ID:", info.device);
+
+        // Corrected return statement
+        return {
+          vendor: info.vendor || 'unknown',
+          renderer: info.description || 'unknown'
+        };
+      }
+    } catch (e) {
+      console.warn('WebGPU request failed:', e);
+    }
+  } 
+  // WebGL method
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+    if (gl && gl instanceof WebGLRenderingContext) {
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      if (debugInfo) {
+        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        //console.log("Vendor:", vendor); 
+        //console.log("Description:", renderer);
+        return { vendor, renderer };
+      }
+    }
+  } catch (e) {
+    console.warn("WebGL is not supported", e);
+  }
+
+  return null;
+};
+*/
 
 // Universal fetch implementation (works in both browser and Node)
 export { default as fetch } from 'cross-fetch';

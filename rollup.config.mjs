@@ -2,28 +2,25 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
 import terser from '@rollup/plugin-terser';
+import replace from '@rollup/plugin-replace';
 import { builtinModules } from 'module';
 import fs from 'fs';
 import path from 'path';
 
 const pkg = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf-8'));
 
-const input = 'src/index.js';
-
-// Include all Node built-ins as external to avoid bundling them
-const external = [
-  ...Object.keys(pkg.dependencies || {}),
-  ...builtinModules
-];
-
-// Shared plugins
-const plugins = [
+const commonPlugins = [
+  replace({
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+    '__SDK_VERSION__': JSON.stringify(pkg.version),
+    preventAssignment: true,
+  }),
   babel({
     babelHelpers: 'bundled',
     presets: [
       ['@babel/preset-env', {
         targets: {
-          node: '14',
+          node: '20', 
           browsers: pkg.browserslist,
         },
       }]
@@ -37,35 +34,51 @@ const plugins = [
   commonjs()
 ];
 
+const input = {
+  'index': 'src/index.js',
+  'adapters/threejs-adapter': 'src/adapters/threejs-adapter.js',
+  'adapters/babylon-adapter': 'src/adapters/babylon-adapter.js',
+  'adapters/playcanvas-adapter': 'src/adapters/playcanvas-adapter.js',
+};
+const external = [
+  ...Object.keys(pkg.dependencies || {}),
+  ...builtinModules,
+  'playcanvas', 
+  'three', 
+  'babylonjs'
+];
+
 export default [
-  // ESM build (for modern bundlers like webpack, rollup, etc.)
+  // ESM build
   {
     input,
     output: {
-      file: pkg.module,
+      dir: 'lib/esm',
       format: 'esm',
-      sourcemap: true
+      sourcemap: true,
+      entryFileNames: '[name].js'
     },
-    external,
-    plugins
+    plugins: [...commonPlugins], 
+    external
   },
 
-  // CommonJS build (for Node.js)
+  // CommonJS build
   {
     input,
     output: {
-      file: pkg.main,
+      dir: 'lib/cjs',
       format: 'cjs',
       sourcemap: true,
-      exports: 'auto'
+      exports: 'auto',
+      entryFileNames: '[name].js'
     },
-    external,
-    plugins
+    plugins: [...commonPlugins],
+    external
   },
 
-  // UMD build (for browsers)
+  // UMD build (main SDK only)
   {
-    input,
+    input: 'src/index.js',
     output: {
       name: 'cognitive3d',
       file: 'lib/index.umd.js',
@@ -77,8 +90,63 @@ export default [
       }
     },
     plugins: [
-      ...plugins,
+      ...commonPlugins,
       terser()
     ]
+  },
+     // UMD build for PlayCanvas Adapter
+  {
+    input: 'src/adapters/playcanvas-adapter.js',
+    output: {
+      name: 'C3DPlayCanvasAdapter',
+      file: 'lib/playcanvas-adapter.umd.js',
+      format: 'umd',
+      sourcemap: true,
+      globals: {
+        'playcanvas': 'pc'
+      }
+    },
+    external: ['playcanvas'],
+    plugins: [
+      ...commonPlugins,
+      terser()
+    ]
+  },
+  // UMD build for Three.js Adapter
+  {
+    input: 'src/adapters/threejs-adapter.js',
+    output: {
+        name: 'C3DThreeAdapter',
+        file: 'lib/threejs-adapter.umd.js',
+        format: 'umd',
+        sourcemap: true,
+        globals: {
+            'three': 'THREE'
+        }
+    },
+    external: ['three'],
+    plugins: [
+        ...commonPlugins,
+        terser()
+    ]
+  },
+  // UMD build for Babylon.js Adapter
+  {
+      input: 'src/adapters/babylon-adapter.js',
+      output: {
+          name: 'C3DBabylonAdapter',
+          file: 'lib/babylon-adapter.umd.js',
+          format: 'umd',
+          sourcemap: true,
+          globals: {
+              'babylonjs': 'BABYLON'
+          }
+      },
+      external: ['babylonjs'],
+      plugins: [
+          ...commonPlugins,
+          terser()
+      ]
   }
+  
 ];

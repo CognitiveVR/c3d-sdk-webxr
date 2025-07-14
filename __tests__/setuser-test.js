@@ -1,4 +1,4 @@
-import C3DAnalytics from '../lib/index.cjs.js';
+import C3DAnalytics from '../lib/cjs/index.js'; 
 import settings from '../settings';
 
 
@@ -84,7 +84,7 @@ test('User properties are correctly set and available on the instance after a se
 	const userProperties = c3d.getUserProperties();
 	expect(Object.keys(userProperties).length).toEqual(3);
 	expect(userProperties).toEqual({
-		'cvr.name': 'Ali',
+		'c3d.name': 'Ali',
 		'age': 30,
 		'location': 'Toronto'
 	});

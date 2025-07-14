@@ -1,4 +1,4 @@
-import C3DAnalytics from '../lib/index.cjs.js';
+import C3DAnalytics from '../lib/cjs/index.js'; 
 import settings from '../settings';
 
 
@@ -32,7 +32,7 @@ test('Apply device properties, set pre-session and end session successfully', as
 	let deviceProperties = c3d.getDeviceProperties();
 	expect(Object.keys(deviceProperties).length).toEqual(4);
 
-	expect(deviceProperties['cvr.device.name']).toEqual('7741345684915735');
+	expect(deviceProperties['c3d.device.name']).toEqual('7741345684915735');
 	expect(c3d.startSession()).toEqual(true);
 	let endSession = await c3d.endSession();
 	expect(endSession).toEqual(200);;
@@ -67,12 +67,12 @@ test('Updating device properties post-session', async () => {
 	let deviceProperties = c3d.getDeviceProperties();
 	expect(Object.keys(deviceProperties).length).toEqual(6);
 	expect(deviceProperties).toEqual({
-		"cvr.device.name": "7741345684915736",
-		'cvr.device.cpu': "i7-4770 CPU @ 3.40GHz",
-		'cvr.device.gpu': "GeForce GTX 970",
-		'cvr.device.memory': 128,
-		'cvr.device.platform': 'Desktop',
-		'cvr.device.os': "chrome os 16.9f"
+		"c3d.device.name": "7741345684915736",
+		'c3d.device.cpu': "i7-4770 CPU @ 3.40GHz",
+		'c3d.device.gpu': "GeForce GTX 970",
+		'c3d.device.memory': 128,
+		'c3d.device.platform': 'Desktop',
+		'c3d.device.os': "chrome os 16.9f"
 	});
 	let endSession = await c3d.endSession();
 	expect(endSession).toEqual(200);;
@@ -82,7 +82,7 @@ test('Setting device name to empty string post-session', async () => {
 	expect(c3d.startSession()).toEqual(true);
 	c3d.setDeviceName("");
 	let deviceProperties = c3d.getDeviceProperties();
-	expect(deviceProperties['cvr.device.name']).toEqual("");
+	expect(deviceProperties['c3d.device.name']).toEqual("");
 	let endSession = await c3d.endSession();
 	expect(endSession).toEqual(200);;
 });

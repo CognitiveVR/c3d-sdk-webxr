@@ -1,0 +1,49 @@
+# When a push is made to the development branch,
+# this workflow will run tests using node and 
+# if all tests pass, publish the package to NPM with the -dev tag. 
+
+name: Test and Publish Dev Package
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  build-test-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org' 
+
+      - name: Clean Install Dependencies for Testing
+        run: npm ci
+
+      - name: Build SDK
+        run: npm run build
+
+      - name: Run Tests
+        run: npm test
+        env:
+          C3D_APPLICATION_KEY: ${{ secrets.C3D_APPLICATION_KEY }}
+
+      - name: Prepare and Publishing Dev Package  
+        # Following needed because npm cannot publish same exact version twice (example 2.0.0 twice)
+        run: | # Grabs the first 7 characters of the commit id ~ SHA, retrieves version number, combines to create a new string and updates package.json version to this new string
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          npm version --no-git-tag-version "$(npm pkg get version | sed 's/"//g')-dev.${SHORT_SHA}"
+      
+      - name: Publish to NPM Registry
+        run: npm publish --tag dev
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

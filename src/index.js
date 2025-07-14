@@ -5,36 +5,56 @@ import Network from './network';
 import Sensor from './sensors';
 import ExitPoll from './exitpoll';
 import DynamicObject from './dynamicobject';
+import FPSTracker from './utils/Framerate';
+
 import {
   getDeviceMemory,
-  getPlatform,
   getScreenHeight,
   getScreenWidth,
-  getPlatformType,
-  getOS
+  getSystemInfo,
+  getHardwareConcurrency,
+  getConnection,
+  getGPUInfo
 } from './utils/environment';
+
+import { 
+  XRSessionManager,
+  getHMDInfo 
+} from './utils/webxr';
 
 class C3D {
   constructor(settings) {
     this.core = CognitiveVRAnalyticsCore;
     if (settings) { this.core.config.settings = settings.config; }
 
+    this.xrSessionManager = null; 
+
+    this.setUserProperty("c3d.version", this.core.config.SDKVersion);  
+    this.setDeviceProperty("SDKType", "WebXR"); 
     this.network = new Network(this.core);
     this.gaze = new GazeTracker(this.core);
     this.customEvent = new CustomEvent(this.core);
     this.sensor = new Sensor(this.core);
     this.exitpoll = new ExitPoll(this.core, this.customEvent);
     this.dynamicObject = new DynamicObject(this.core, this.customEvent);
+    this.fpsTracker = new FPSTracker(); 
 
     // Set default device properties using environment utils
     const deviceMemory = getDeviceMemory();
     if (deviceMemory) {
       this.setDeviceProperty('DeviceMemory', deviceMemory * 1000);
     }
+    const systemInfo = getSystemInfo() 
+    if(systemInfo){ 
+      this.setDeviceProperty('DevicePlatform', getSystemInfo().deviceType);
+      this.setDeviceProperty('DeviceOS', getSystemInfo().os);
+      this.setDeviceProperty('Browser', getSystemInfo().browser)
+    }
+    
+    const platform = getSystemInfo().deviceType;
 
-    const platform = getPlatform();
     if (platform) {
-      this.setDeviceProperty('DeviceType', platform);
+      this.setDeviceProperty('DeviceType', getSystemInfo().deviceType);
     }
 
     const screenHeight = getScreenHeight();
@@ -47,29 +67,75 @@ class C3D {
       this.setDeviceProperty('DeviceScreenWidth', screenWidth);
     }
 
-    this.setDeviceProperty('DevicePlatform', getPlatformType());
-    this.setDeviceProperty('DeviceOS', getOS());
-  }
+    const hardwareConcurrency = getHardwareConcurrency();
+    if (hardwareConcurrency) {
+      this.setDeviceProperty('DeviceCPUCores', hardwareConcurrency);
+    }
 
-  startSession() {
+    const connection = getConnection();
+    if (connection) {
+        this.setDeviceProperty('NetworkEffectiveType', connection.effectiveType);
+        this.setDeviceProperty('NetworkDownlink', connection.downlink);
+        this.setDeviceProperty('NetworkRTT', connection.rtt);
+    }
+    const gpuInfo = getGPUInfo();
+    if (gpuInfo) {
+      this.setDeviceProperty('DeviceGPU', gpuInfo.renderer);
+      this.setDeviceProperty('DeviceGPUVendor', gpuInfo.vendor);
+    }
+  }
+  startSession(xrSession) { // Developers will need to pass the live xr session to c3d.startsession
     if (this.core.isSessionActive) { return false; }
+    
+    this.fpsTracker.start(fps => {
+      this.sensor.recordSensor('c3d.fps.avg', fps);
+    });
+
+    if (xrSession) {  
+      this.xrSessionManager = new XRSessionManager(this.gaze, xrSession);
+      this.xrSessionManager.start();
+    }
+    if (xrSession && xrSession.inputSources) { // check what is connected right now 
+        const hmdInfo = getHMDInfo(xrSession.inputSources);
+        if (hmdInfo) {
+            this.setDeviceProperty('VRModel', hmdInfo.VRModel);
+            this.setDeviceProperty('VRVendor', hmdInfo.VRVendor);
+        } else {
+            this.setDeviceProperty('VRModel', 'Unknown VR Headset');
+            this.setDeviceProperty('VRVendor', 'Unknown Vendor');
+
+        }
+
+        xrSession.addEventListener('inputsourceschange', (event) => { // if controllers were previously off, check now 
+            const newHmdInfo = getHMDInfo(event.session.inputSources);
+            if (newHmdInfo) {
+                this.setDeviceProperty('VRModel', newHmdInfo.VRModel);
+                this.setDeviceProperty('VRVendor', newHmdInfo.VRVendor);
+            }
+        });
+    }      
 
     this.core.setSessionStatus = true;
     this.core.getSessionTimestamp();
     this.core.getSessionId();
-    this.gaze.setHMDType(this.core.config.HMDType);
-    this.gaze.setInterval(this.core.config.GazeInterval);
     this.customEvent.send('Session Start', [0, 0, 0]);
     return true;
   }
-
+  
+  
   endSession() {
     return new Promise((resolve, reject) => {
       if (!this.core.isSessionActive) {
         reject('session is not active');
         return;
       }
+      this.fpsTracker.stop(); 
 
+      if (this.xrSessionManager) {
+      this.xrSessionManager.stop();
+      this.xrSessionManager = null;
+      }
+      
       // Calculate session length
       const props = {};
       const endPos = [0, 0, 0];
@@ -183,11 +249,11 @@ class C3D {
 
   setUserName(name) {
     this.core.setUserId = name;
-    this.setUserProperty('cvr.name', name);
+    this.setUserProperty('c3d.name', name);
   }
 
   setSessionName(name) {
-    this.setUserProperty('cvr.sessionname', name);
+    this.setUserProperty('c3d.sessionname', name);
   }
 
   setLobbyId(id) {
@@ -196,7 +262,7 @@ class C3D {
 
   setDeviceName(name) {
     this.core.setDeviceId = name;
-    this.core.newDeviceProperties['cvr.device.name'] = name;
+    this.core.newDeviceProperties['c3d.device.name'] = name;
   }
 
   setDeviceProperty(property, value) {
@@ -215,5 +281,6 @@ class C3D {
     return this.core.sceneData.sceneId;
   }
 }
+
 
 export default C3D;
