@@ -42,7 +42,10 @@ const input = {
 };
 const external = [
   ...Object.keys(pkg.dependencies || {}),
-  ...builtinModules
+  ...builtinModules,
+  'playcanvas', 
+  'three', 
+  'babylonjs'
 ];
 
 export default [
@@ -55,7 +58,8 @@ export default [
       sourcemap: true,
       entryFileNames: '[name].js'
     },
-    plugins: [...commonPlugins]
+    plugins: [...commonPlugins], 
+    external
   },
 
   // CommonJS build
@@ -68,7 +72,8 @@ export default [
       exports: 'auto',
       entryFileNames: '[name].js'
     },
-    plugins: [...commonPlugins]
+    plugins: [...commonPlugins],
+    external
   },
 
   // UMD build (main SDK only)
@@ -89,7 +94,7 @@ export default [
       terser()
     ]
   },
-    // UMD build for PlayCanvas Adapter
+     // UMD build for PlayCanvas Adapter
   {
     input: 'src/adapters/playcanvas-adapter.js',
     output: {
@@ -101,10 +106,47 @@ export default [
         'playcanvas': 'pc'
       }
     },
+    external: ['playcanvas'],
     plugins: [
       ...commonPlugins,
       terser()
     ]
+  },
+  // UMD build for Three.js Adapter
+  {
+    input: 'src/adapters/threejs-adapter.js',
+    output: {
+        name: 'C3DThreeAdapter',
+        file: 'lib/threejs-adapter.umd.js',
+        format: 'umd',
+        sourcemap: true,
+        globals: {
+            'three': 'THREE'
+        }
+    },
+    external: ['three'],
+    plugins: [
+        ...commonPlugins,
+        terser()
+    ]
+  },
+  // UMD build for Babylon.js Adapter
+  {
+      input: 'src/adapters/babylon-adapter.js',
+      output: {
+          name: 'C3DBabylonAdapter',
+          file: 'lib/babylon-adapter.umd.js',
+          format: 'umd',
+          sourcemap: true,
+          globals: {
+              'babylonjs': 'BABYLON'
+          }
+      },
+      external: ['babylonjs'],
+      plugins: [
+          ...commonPlugins,
+          terser()
+      ]
   }
   
 ];
