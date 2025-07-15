@@ -1,26 +1,26 @@
 {
   "name": "@cognitive3d/analytics",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "This SDK allows you to integrate your Javascript Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project.",
-  "main": "lib/cjs/index.js",
-  "module": "lib/esm/index.js",
+  "main": "lib/cjs/index.cjs.js",
+  "module": "lib/esm/index.esm.js",
   "exports": {
     ".": {
-      "import": "./lib/esm/index.js",
-      "require": "./lib/cjs/index.js",
-      "browser": "./lib/index.umd.js"
+      "import": "./lib/esm/index.esm.js",
+      "require": "./lib/cjs/index.cjs.js",
+      "browser": "./lib/c3d.umd.js"
     },
     "./adapters/threejs": {
-      "import": "./lib/esm/adapters/threejs-adapter.js",
-      "require": "./lib/cjs/adapters/threejs-adapter.js"
+      "import": "./lib/esm/adapters/threejs-adapter.esm.js",
+      "require": "./lib/cjs/adapters/threejs-adapter.cjs.js"
     },
     "./adapters/babylon": {
-      "import": "./lib/esm/adapters/babylon-adapter.js",
-      "require": "./lib/cjs/adapters/babylon-adapter.js"
+      "import": "./lib/esm/adapters/babylon-adapter.esm.js",
+      "require": "./lib/cjs/adapters/babylon-adapter.cjs.js"
     },
     "./adapters/playcanvas": {
-      "import": "./lib/esm/adapters/playcanvas-adapter.js",
-      "require": "./lib/cjs/adapters/playcanvas-adapter.js"
+      "import": "./lib/esm/adapters/playcanvas-adapter.esm.js",
+      "require": "./lib/cjs/adapters/playcanvas-adapter.cjs.js"
     }
   },
   "files": [

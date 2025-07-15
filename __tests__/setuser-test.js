@@ -1,4 +1,4 @@
-import C3DAnalytics from '../lib/cjs/index.js'; 
+import C3DAnalytics from '../lib/cjs/index.cjs.js'; 
 import settings from '../settings';
 
 
