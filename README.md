@@ -166,8 +166,8 @@ c3d.startSession(xrSession); // Pass the XR session for gaze tracking
 *Note: Ensure all properties are included as shown above, otherwise you may not see a valid session on the Cognitive3D dashboard* 
 
 ### Playcanvas integration 
-1. To integrate with Playcanvas, upload the built main sdk library `/lib/index.umd.js` and the adapter script `playcanvas-adapter.umd.js` to your PlayCanvas project.
-2. The adapter depends on the main SDK, so the SDK must be loaded first. In the PlayCanvas editor, go to Settings > Script Loading Order. Drag `index.umd.js` above `playcanvas-adapter.umd.js` to ensure it loads first.
+1. To integrate with Playcanvas, upload the built main sdk library `/lib/c3d.umd.js` and the adapter script `/lib/c3d-playcanvas-adapter.umd.js` to your PlayCanvas project.
+2. The adapter depends on the main SDK, so the SDK must be loaded first. In the PlayCanvas editor, go to Settings > Script Loading Order. Drag `c3d.umd.js` above `c3d-playcanvas-adapter.umd.js` to ensure it loads first.
 
 ### ThreeJS Integration 
 1. Inside your ThreeJS project, run  `npm install @cognitive3d/analytics` or if you have the sdk locally: `npm install /pathTo/c3d-sdk-webxr`.

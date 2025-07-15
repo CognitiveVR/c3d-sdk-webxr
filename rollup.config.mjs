@@ -56,7 +56,7 @@ export default [
       dir: 'lib/esm',
       format: 'esm',
       sourcemap: true,
-      entryFileNames: '[name].js'
+      entryFileNames: '[name].esm.js'
     },
     plugins: [...commonPlugins], 
     external
@@ -70,18 +70,18 @@ export default [
       format: 'cjs',
       sourcemap: true,
       exports: 'auto',
-      entryFileNames: '[name].js'
+      entryFileNames: '[name].cjs.js'
     },
     plugins: [...commonPlugins],
     external
   },
 
-  // UMD build (main SDK only)
+  // UMD build for Main SDK
   {
     input: 'src/index.js',
     output: {
-      name: 'cognitive3d',
-      file: 'lib/index.umd.js',
+      name: 'C3D',
+      file: 'lib/c3d.umd.js',
       format: 'umd',
       sourcemap: true,
       globals: {
@@ -99,7 +99,7 @@ export default [
     input: 'src/adapters/playcanvas-adapter.js',
     output: {
       name: 'C3DPlayCanvasAdapter',
-      file: 'lib/playcanvas-adapter.umd.js',
+      file: 'lib/c3d-playcanvas-adapter.umd.js',
       format: 'umd',
       sourcemap: true,
       globals: {
@@ -117,7 +117,7 @@ export default [
     input: 'src/adapters/threejs-adapter.js',
     output: {
         name: 'C3DThreeAdapter',
-        file: 'lib/threejs-adapter.umd.js',
+        file: 'lib/c3d-threejs-adapter.umd.js',
         format: 'umd',
         sourcemap: true,
         globals: {
@@ -135,7 +135,7 @@ export default [
       input: 'src/adapters/babylon-adapter.js',
       output: {
           name: 'C3DBabylonAdapter',
-          file: 'lib/babylon-adapter.umd.js',
+          file: 'lib/c3d-babylon-adapter.umd.js',
           format: 'umd',
           sourcemap: true,
           globals: {
