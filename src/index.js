@@ -84,7 +84,7 @@ class C3D {
       this.setDeviceProperty('DeviceGPUVendor', gpuInfo.vendor);
     }
   }
-  startSession(xrSession) { // Developers will need to pass the live xr session to c3d.startsession
+  startSession(xrSession = null) { 
     if (this.core.isSessionActive) { return false; }
     
     this.fpsTracker.start(fps => {
@@ -95,6 +95,10 @@ class C3D {
       this.xrSessionManager = new XRSessionManager(this.gaze, xrSession);
       this.xrSessionManager.start();
     }
+    else{
+        console.log("C3D: No XR session was provided. Gaze data will not be tracked for this session. This session will be tagged as junk on the Cognitive3D Dashboard, find the session under Test Mode.");
+    }
+
     if (xrSession && xrSession.inputSources) { // check what is connected right now 
         const hmdInfo = getHMDInfo(xrSession.inputSources);
         if (hmdInfo) {
