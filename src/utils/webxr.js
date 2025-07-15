@@ -12,16 +12,7 @@ export class XRSessionManager {
     this.animationFrameHandle = null;
     this.onXRFrame = this.onXRFrame.bind(this);
   }
-/*
-  async start() {  // Starts the gaze tracking loop.
-    if (this.isTracking) return;
 
-    this.referenceSpace = await this.xrSession.requestReferenceSpace('local-floor'); // headsets position and orientation relative to floor
-    this.isTracking = true;
-    this.animationFrameHandle = this.xrSession.requestAnimationFrame(this.onXRFrame);
-    console.log('Cog3D-XR-Session-Manager: Gaze tracking started.');
-  }
-*/
 async start() {
     if (this.isTracking) return;
 
