@@ -54,7 +54,7 @@ async start() {
       const { position, orientation } = viewerPose.transform;
       this.gazeTracker.recordGaze(
         [position.x, position.y, position.z],
-        [orientation.x, orientation.y, orientation.z, orientation.w]
+        [-orientation.x, -orientation.y, -orientation.z, orientation.w]
       );
     }
 
