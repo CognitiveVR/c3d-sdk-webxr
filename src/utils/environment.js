@@ -123,6 +123,9 @@ export const getGPUInfo = () => {
       if (debugInfo) {
         const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
         const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        if (!vendor && renderer.includes("Adreno")) {
+          gpuInfo.vendor = "Qualcomm";
+        }
         return { vendor, renderer };
       }
     }
