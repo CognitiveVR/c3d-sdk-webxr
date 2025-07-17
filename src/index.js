@@ -144,9 +144,11 @@ class C3D {
       const props = {};
       const endPos = [0, 0, 0];
       const sessionLength = this.core.getTimestamp() - this.core.sessionTimestamp;
-      props['sessionLength'] = sessionLength;
+      props['sessionlength'] = sessionLength;
+      props['Reason'] = "User exited the application";
 
-      this.customEvent.send('Session End', endPos, props);
+
+      this.customEvent.send('c3d.sessionEnd', endPos, props);
 
       this.sendData()
         .then(res => {
