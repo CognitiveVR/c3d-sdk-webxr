@@ -50,13 +50,13 @@ class C3D {
       this.setDeviceProperty('DeviceOS', getSystemInfo().os);
       this.setDeviceProperty('Browser', getSystemInfo().browser)
     }
-    
+  /*  
     const platform = getSystemInfo().deviceType;
 
     if (platform) {
       this.setDeviceProperty('DeviceType', getSystemInfo().deviceType);
     }
-
+*/
     const screenHeight = getScreenHeight();
     if (screenHeight) {
       this.setDeviceProperty('DeviceScreenHeight', screenHeight);
@@ -87,8 +87,10 @@ class C3D {
   startSession(xrSession = null) { 
     if (this.core.isSessionActive) { return false; }
     
-    this.fpsTracker.start(fps => {
-      this.sensor.recordSensor('c3d.fps.avg', fps);
+    this.fpsTracker.start(metrics => {
+      this.sensor.recordSensor('c3d.fps.avg', metrics.avg);
+      this.sensor.recordSensor('c3d.fps.1pl', metrics['1pl']);
+
     });
 
     if (xrSession) {  
