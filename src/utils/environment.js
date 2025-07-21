@@ -47,7 +47,7 @@ export const getScreenWidth = () =>
 export const getUserAgent = () =>
   safeWindowAccess(() => navigator.userAgent, '');
 
-export const getHardwareConcurrency = () => // CPU threads  
+export const getHardwareConcurrency = () => // CPU threads that I have access to 
     safeWindowAccess(() => navigator.hardwareConcurrency, null);
 
 export const getConnection = () =>
@@ -114,6 +114,9 @@ export const getSystemInfo = async () => {
 };
 
 export const getGPUInfo = () => {
+    if (!isBrowser) {
+    return null;
+  }
   try {
     const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
@@ -121,10 +124,10 @@ export const getGPUInfo = () => {
     if (gl && gl instanceof WebGLRenderingContext) {
       const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
       if (debugInfo) {
-        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
-        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-        if (!vendor && renderer.includes("Adreno")) {
-          gpuInfo.vendor = "Qualcomm";
+        let vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+        let renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        if (renderer.toLowerCase().includes("adreno")) {
+          vendor = "Qualcomm";
         }
         return { vendor, renderer };
       }
@@ -134,54 +137,6 @@ export const getGPUInfo = () => {
   }
   return null;
 };
-
-/*
-export const getGPUInfo = async () => {
-  if (!isBrowser) {
-    return null;
-  }
-   if (navigator.gpu) { // webgpu does not provide much info 
-    try {
-      const adapter = await navigator.gpu.requestAdapter();
-      if (adapter) {
-        const info = adapter.info;
-        console.log("Vendor:", info.vendor); // For debugging
-        console.log("Description:", info.description); // For debugging
-        console.log("GPU Architecture:", info.architecture);
-        console.log("GPU Device ID:", info.device);
-
-        // Corrected return statement
-        return {
-          vendor: info.vendor || 'unknown',
-          renderer: info.description || 'unknown'
-        };
-      }
-    } catch (e) {
-      console.warn('WebGPU request failed:', e);
-    }
-  } 
-  // WebGL method
-  try {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-
-    if (gl && gl instanceof WebGLRenderingContext) {
-      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-      if (debugInfo) {
-        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
-        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-        //console.log("Vendor:", vendor); 
-        //console.log("Description:", renderer);
-        return { vendor, renderer };
-      }
-    }
-  } catch (e) {
-    console.warn("WebGL is not supported", e);
-  }
-
-  return null;
-};
-*/
 
 // Universal fetch implementation (works in both browser and Node)
 export { default as fetch } from 'cross-fetch';

@@ -23,7 +23,7 @@ class CognitiveVRAnalyticsCore {
 			DeviceOS: 'c3d.device.os',
 			DevicePlatform: 'c3d.device.platform',
 			DeviceCPU: 'c3d.device.cpu',
-			DeviceCPUCores: 'c3d.device.cpu.cores',
+			DeviceCPUCores: 'c3d.device.available.cpu.threads',
 			DeviceCPUVendor: 'c3d.device.cpu.vendor',
 			DeviceGPU: 'c3d.device.gpu',
 			DeviceGPUDriver: 'c3d.device.gpu.driver',

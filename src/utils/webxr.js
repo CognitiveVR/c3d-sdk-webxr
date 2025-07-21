@@ -67,12 +67,13 @@ export const getHMDInfo = (inputSources) => { // Get info about users head mount
     for (const source of inputSources) {
         if (source.profiles) {
             for (const profile of source.profiles) {
-                
-                if (profile.includes('oculus') || profile.includes('meta-quest')) {
+                const lowerCaseProfile = profile.toLowerCase();
+                console.log("HMD Profiles: ", lowerCaseProfile);
+                if (lowerCaseProfile.includes('oculus') || lowerCaseProfile.includes('meta-quest')) {
                     const VRVendor = 'Meta';
-                    if (profile.includes('meta-quest-touch-pro')) return { VRModel: 'Quest Pro', VRVendor };
-                    if (profile.includes('meta-quest-touch-plus')) return { VRModel: 'Quest 3', VRVendor }; 
-                    if (profile.includes('oculus-touch-v3')) return { VRModel: 'Quest 2', VRVendor };
+                    if (lowerCaseProfile.includes('meta-quest-touch-pro')) return { VRModel: 'Quest Pro', VRVendor };
+                    if (lowerCaseProfile.includes('meta-quest-touch-plus')) return { VRModel: 'Quest 3', VRVendor }; 
+                    if (lowerCaseProfile.includes('oculus-touch-v3')) return { VRModel: 'Quest 2', VRVendor };
 
                     return { VRModel: 'Quest', VRVendor }; // fallback for future devices if none of the above 
                 }
