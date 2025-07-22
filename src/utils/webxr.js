@@ -63,6 +63,7 @@ async start() {
 }
 
 
+
 export const getHMDInfo = (inputSources) => { // Get info about users head mounted display  
     for (const source of inputSources) {
         if (source.profiles) {
@@ -85,4 +86,19 @@ export const getHMDInfo = (inputSources) => { // Get info about users head mount
         }
     }
     return null; 
+};
+
+export const getEnabledFeatures = (xrSession) => {
+    const enabledFeatures = xrSession.enabledFeatures || [];
+
+    const handTracking = enabledFeatures.includes('hand-tracking');
+    const eyeTracking = enabledFeatures.includes('eye-tracking');
+
+    console.log(`Cog3D-XR-Session-Manager: Hand Tracking feature is ${handTracking ? 'enabled' : 'disabled'}.`);
+    console.log(`Cog3D-XR-Session-Manager: Eye Tracking feature is ${eyeTracking ? 'enabled' : 'disabled'}.`);
+
+    return {
+        handTracking,
+        eyeTracking
+    };
 };

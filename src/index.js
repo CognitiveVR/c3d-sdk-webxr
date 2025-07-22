@@ -19,7 +19,8 @@ import {
 
 import { 
   XRSessionManager,
-  getHMDInfo 
+  getHMDInfo,
+  getEnabledFeatures 
 } from './utils/webxr';
 
 class C3D {
@@ -31,6 +32,7 @@ class C3D {
 
     this.setUserProperty("c3d.version", this.core.config.SDKVersion);  
     this.setDeviceProperty("SDKType", "WebXR"); 
+    this.lastInputType = 'none'; // Can be 'none', 'hand', or 'controller'
     this.network = new Network(this.core);
     this.gaze = new GazeTracker(this.core);
     this.customEvent = new CustomEvent(this.core);
@@ -96,6 +98,10 @@ class C3D {
     if (xrSession) {  
       this.xrSessionManager = new XRSessionManager(this.gaze, xrSession);
       this.xrSessionManager.start();
+
+      const features = getEnabledFeatures(xrSession);
+      this.setDeviceProperty("HandTracking", features.handTracking);
+      this.setDeviceProperty("EyeTracking", features.eyeTracking);
     }
     else{
         console.log("C3D: No XR session was provided. Gaze data will not be tracked for this session. This session will be tagged as junk on the Cognitive3D Dashboard, find the session under Test Mode.");
@@ -106,13 +112,35 @@ class C3D {
         if (hmdInfo) {
             this.setDeviceProperty('VRModel', hmdInfo.VRModel);
             this.setDeviceProperty('VRVendor', hmdInfo.VRVendor);
-        } else {
-            this.setDeviceProperty('VRModel', 'Unknown VR Headset');
-            this.setDeviceProperty('VRVendor', 'Unknown Vendor');
+        } 
 
-        }
+  const checkInputType = (sources) => {
+            const hasHand = Array.from(sources).some(source => source.hand);
+            const hasController = Array.from(sources).some(source => !source.hand && source.targetRayMode === 'tracked-pointer');
+            
+            let currentInputType = 'none';
+            if (hasHand) {
+                currentInputType = 'hand';
+            } else if (hasController) {
+                currentInputType = 'controller';
+            }
 
-        xrSession.addEventListener('inputsourceschange', (event) => { // if controllers were previously off, check now 
+            if (currentInputType !== this.lastInputType) {
+                console.log(`Cognitive3D: Input changed from '${this.lastInputType}' to '${currentInputType}'.`);
+                this.customEvent.send('c3d.input.tracking.changed', [0,0,0], {
+                    "Previously Tracking": this.lastInputType,
+                    "Now Tracking": currentInputType
+                });
+                this.lastInputType = currentInputType;
+            }
+        };
+
+        checkInputType(xrSession.inputSources);
+
+        xrSession.addEventListener('inputsourceschange', (event) => {  // Check whenever the input sources change
+            checkInputType(event.session.inputSources);
+            
+            // HMD info might change
             const newHmdInfo = getHMDInfo(event.session.inputSources);
             if (newHmdInfo) {
                 this.setDeviceProperty('VRModel', newHmdInfo.VRModel);
@@ -171,7 +199,13 @@ class C3D {
         .catch(err => reject(err));
     });
   }
-
+  /**
+   * Checks the current primary input method.
+   * @returns {'hand' | 'controller' | 'none'} The current input type.
+   */
+  getCurrentInputType() {
+      return this.lastInputType;
+  }
   sceneData(name, id, version) {
     return this.core.getSceneData(name, id, version);
   }
