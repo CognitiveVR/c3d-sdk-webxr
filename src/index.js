@@ -6,6 +6,8 @@ import Sensor from './sensors';
 import ExitPoll from './exitpoll';
 import DynamicObject from './dynamicobject';
 import FPSTracker from './utils/Framerate';
+import HMDOrientationTracker from './utils/HMDOrientation';
+import ControllerTracker from './utils/ControllerTracker'; 
 
 import {
   getDeviceMemory,
@@ -36,6 +38,8 @@ class C3D {
     this.network = new Network(this.core);
     this.gaze = new GazeTracker(this.core);
     this.customEvent = new CustomEvent(this.core);
+    this.hmdOrientation = new HMDOrientationTracker();
+    this.controllerTracker = new ControllerTracker(this);
     this.sensor = new Sensor(this.core);
     this.exitpoll = new ExitPoll(this.core, this.customEvent);
     this.dynamicObject = new DynamicObject(this.core, this.customEvent);
@@ -86,7 +90,7 @@ class C3D {
       this.setDeviceProperty('DeviceGPUVendor', gpuInfo.vendor);
     }
   }
-  startSession(xrSession = null) { 
+  async startSession(xrSession = null) { 
     if (this.core.isSessionActive) { return false; }
     
     this.fpsTracker.start(metrics => {
@@ -97,8 +101,22 @@ class C3D {
 
     if (xrSession) {  
       this.xrSessionManager = new XRSessionManager(this.gaze, xrSession);
-      this.xrSessionManager.start();
-
+      
+      await this.xrSessionManager.start();
+      this.controllerTracker.start(xrSession);
+      const referenceSpace = this.xrSessionManager.referenceSpace;
+      if (referenceSpace) {
+        this.hmdOrientation.start(
+          xrSession,
+          referenceSpace,
+          (orientation) => {
+            this.sensor.recordSensor('c3d.hmd.pitch', orientation.pitch);
+            this.sensor.recordSensor('c3d.hmd.yaw', orientation.yaw);
+          }
+        );
+      } else {
+        console.warn('C3D: Could not start HMD orientation tracking, no reference space available.');
+      }
       const features = getEnabledFeatures(xrSession);
       this.setDeviceProperty("HandTracking", features.handTracking);
       this.setDeviceProperty("EyeTracking", features.eyeTracking);
@@ -164,6 +182,9 @@ class C3D {
         return;
       }
       this.fpsTracker.stop(); 
+      if (this.controllerTracker) {
+          this.controllerTracker.stop();
+      }
 
       if (this.xrSessionManager) {
       this.xrSessionManager.stop();
