@@ -50,24 +50,11 @@ class C3D {
     // Set default device properties using environment utils
     const deviceMemory = getDeviceMemory();
     if (deviceMemory) {
-      this.setDeviceProperty('DeviceMemory', deviceMemory * 1000);
+      this.setDeviceProperty('DeviceMemory', deviceMemory * 1000); 
     }
-    const systemInfo = getSystemInfo() 
-    if(systemInfo){ 
-      this.setDeviceProperty('DevicePlatform', getSystemInfo().deviceType);
-      this.setDeviceProperty('DeviceOS', getSystemInfo().os);
-      this.setDeviceProperty('Browser', getSystemInfo().browser)
-    }
-     if (renderer) {
+    if (renderer) {
         this.profiler.start(renderer); 
     }
-  /*  
-    const platform = getSystemInfo().deviceType;
-
-    if (platform) {
-      this.setDeviceProperty('DeviceType', getSystemInfo().deviceType);
-    }
-*/
     const screenHeight = getScreenHeight();
     if (screenHeight) {
       this.setDeviceProperty('DeviceScreenHeight', screenHeight);
