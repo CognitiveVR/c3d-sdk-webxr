@@ -31,6 +31,8 @@ class CognitiveVRAnalyticsCore {
 			DeviceGPUMemory: 'c3d.device.gpu.memory',
 			DeviceScreenHeight: 'c3d.device.screen.height',
 			DeviceScreenWidth: 'c3d.device.screen.width',
+			EyeTracking: 'c3d.device.eyetracking.enabled',
+			HandTracking: 'c3d.app.handtracking.enabled',
 			NetworkEffectiveType: 'c3d.network.effectiveType', 
     		NetworkDownlink: 'c3d.network.downlink',
     		NetworkRTT: 'c3d.network.rtt',

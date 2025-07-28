@@ -128,12 +128,13 @@ The SDK is designed to be flexible and can be integrated into various JavaScript
 // MyApp.js 
 import C3D from '@cognitive3d/analytics';
 
-// 1. Define your project's configuration, replace these values with the ones from your project
+// 1. DEFINE YOUR PROJECT'S CONFIGURATION, REPLACE VALUES WITH THE ONES FROM YOUR OWN PROJECT. 
 const settings = {
     config: {
         APIKey: "YOUR_APPLICATION_KEY_HERE",
         allSceneData: [
             {
+                networkHost: "data.c3ddev.com", // data.cognitive3d.com is prod, data.c3ddev.com is dev 
                 sceneName: "YOUR_SCENE",
                 sceneId: "YOUR_SCENE_ID_",
                 versionNumber: "1"
@@ -142,10 +143,10 @@ const settings = {
     }
 };
 
-// 2. Initialize the C3D Analytics
-const c3d = new C3D(settings);
+// 2. INITIALIZE C3D ANALYTICS 
+const c3d = new C3D(settings /*, renderer */); // renderer will provide additional profiler sensor recordings (if provided) 
 
-// 3. Set properties that identify the user and device
+// 3. SET PROPERTIES THAT IDENTIFY THE USER/ DEVICE
 
 c3d.setScene('BasicScene'); // Replace with your Scene name
 c3d.userId = 'userid' + Date.now();
@@ -155,15 +156,25 @@ c3d.setDeviceProperty("AppName", "ThreeJS_WebXR_SDK_Test_App");
 c3d.setUserProperty("c3d.app.version", "0.2");
 c3d.setUserProperty("c3d.deviceid", 'threejs_windows_device_' + Date.now());
 
-// 4.Start the C3D Session
-c3d.startSession(xrSession); // Pass the XR session for gaze tracking
+// 4. START THE C3D SESSION, Example using a WebXR 'sessionstart' event listener:
+renderer.xr.addEventListener('sessionstart', async () => {
+    const xrSession = renderer.xr.getSession();
 
-// 5. Insert code here to track other events, gaze, etc.
+    // Use 'await' to ensure the session is fully initialized before proceeding.
+    await c3d.startSession(xrSession); // Pass the XR session for gaze tracking
 
-// 6. End the C3D session 
- c3d.endSession(); 
+    console.log("Cognitive3D Session Started Successfully!");
+
+    // 5. INSERT CODE HERE TO TRACK OTHER EVENTS, SENSORS, ETC...
+});
+
+// 6. END THE C3D SESSION, Example using a WebXR 'sessionend' event listener:
+renderer.xr.addEventListener('sessionend', () => {
+    c3d.endSession();
+    console.log("Cognitive3D Session Ended.");
+});
 ```
-*Note: Ensure all properties are included as shown above, otherwise you may not see a valid session on the Cognitive3D dashboard* 
+*Note: Ensure all properties are included as shown above, otherwise you may not see a valid session on the Cognitive3D dashboard. Check browser console for logs.* 
 
 ### Playcanvas integration 
 1. To integrate with Playcanvas, upload the built main sdk library `/lib/c3d.umd.js` and the adapter script `/lib/c3d-playcanvas-adapter.umd.js` to your PlayCanvas project.

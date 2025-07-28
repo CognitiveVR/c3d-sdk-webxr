@@ -8,6 +8,7 @@ class FPSTracker {
     this.elapsedTime = 0;
     this.samplePeriod = 1000; // 1 second
     this.deltaTimes = []; // delta take for each frame in a sample period 
+    this.lastDeltaTime = 0;
 
     this._loop = this._loop.bind(this);
   }
@@ -21,6 +22,7 @@ class FPSTracker {
   _loop(currentTime, callback) { 
     if (this.lastTime > 0) {
       const deltaTime = currentTime - this.lastTime;
+      this.lastDeltaTime = deltaTime;
       this.elapsedTime += deltaTime;
       this.frameCount++;
       this.deltaTimes.push(deltaTime); // Record the time for this frame

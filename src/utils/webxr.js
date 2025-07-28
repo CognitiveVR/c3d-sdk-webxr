@@ -13,27 +13,25 @@ export class XRSessionManager {
     this.onXRFrame = this.onXRFrame.bind(this);
   }
 
-async start() {
-    if (this.isTracking) return;
-
-    try {
-        this.referenceSpace = await this.xrSession.requestReferenceSpace('local-floor'); // local floor works in threejs but not playcanvas 
-        console.log('Cog3D-XR-Session-Manager: Using "local-floor" reference space.');
-    } catch (error) {
-        console.warn('Cog3D-XR-Session-Manager: "local-floor" not supported, falling back to "local".', error);
-        try {
-            this.referenceSpace = await this.xrSession.requestReferenceSpace('local'); // local is more common 
-            console.log('Cog3D-XR-Session-Manager: Using "local" reference space.');
-        } catch (fallbackError) {
-            console.error('Cog3D-XR-Session-Manager: Failed to get any supported reference space.', fallbackError);
-            return; 
-        }
-    }
-
-    this.isTracking = true;
-    this.animationFrameHandle = this.xrSession.requestAnimationFrame(this.onXRFrame);
-    console.log('Cog3D-XR-Session-Manager: Gaze tracking started.');
-}
+  async start() {
+      if (this.isTracking) return;
+      try {
+          this.referenceSpace = await this.xrSession.requestReferenceSpace('local-floor'); // local floor works in threejs but not playcanvas 
+          console.log('Cog3D-XR-Session-Manager: Using "local-floor" reference space.');
+      } catch (error) {
+          console.warn('Cog3D-XR-Session-Manager: "local-floor" not supported, falling back to "local".', error);
+          try {
+              this.referenceSpace = await this.xrSession.requestReferenceSpace('local'); // local is more common 
+              console.log('Cog3D-XR-Session-Manager: Using "local" reference space.');
+          } catch (fallbackError) {
+              console.error('Cog3D-XR-Session-Manager: Failed to get any supported reference space.', fallbackError);
+              return; 
+          }
+      }
+      this.isTracking = true;
+      this.animationFrameHandle = this.xrSession.requestAnimationFrame(this.onXRFrame);
+      console.log('Cog3D-XR-Session-Manager: Gaze tracking started.');
+  }
 
   stop() { // Stop the gaze tracking loop.
     if (!this.isTracking) return;
@@ -63,6 +61,7 @@ async start() {
 }
 
 
+
 export const getHMDInfo = (inputSources) => { // Get info about users head mounted display  
     for (const source of inputSources) {
         if (source.profiles) {
@@ -85,4 +84,19 @@ export const getHMDInfo = (inputSources) => { // Get info about users head mount
         }
     }
     return null; 
+};
+
+export const getEnabledFeatures = (xrSession) => {
+    const enabledFeatures = xrSession.enabledFeatures || [];
+
+    const handTracking = enabledFeatures.includes('hand-tracking');
+    const eyeTracking = enabledFeatures.includes('eye-tracking');
+
+    console.log(`Cog3D-XR-Session-Manager: Hand Tracking feature is ${handTracking ? 'enabled' : 'disabled'}.`);
+    console.log(`Cog3D-XR-Session-Manager: Eye Tracking feature is ${eyeTracking ? 'enabled' : 'disabled'}.`);
+
+    return {
+        handTracking,
+        eyeTracking
+    };
 };

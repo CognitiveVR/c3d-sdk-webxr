@@ -30,14 +30,6 @@ export const safeWindowAccess = (accessor, defaultValue) => {
 export const getDeviceMemory = () =>
   safeWindowAccess(() => navigator.deviceMemory, null);
 
-/*
-export const getPlatform = () =>
-  safeWindowAccess(() => navigator.platform, 'unknown');
-*/ 
-/*
-getOperatingSystem().then(os => {
-  console.log(`The operating system is: ${os}`);
-});*/ 
 export const getScreenHeight = () =>
   safeWindowAccess(() => window.screen.height, null);
 

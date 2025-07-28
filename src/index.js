@@ -6,6 +6,9 @@ import Sensor from './sensors';
 import ExitPoll from './exitpoll';
 import DynamicObject from './dynamicobject';
 import FPSTracker from './utils/Framerate';
+import HMDOrientationTracker from './utils/HMDOrientation';
+import Profiler from './utils/Profiler';
+import ControllerTracker from './utils/ControllerTracker'; 
 
 import {
   getDeviceMemory,
@@ -19,11 +22,12 @@ import {
 
 import { 
   XRSessionManager,
-  getHMDInfo 
+  getHMDInfo,
+  getEnabledFeatures 
 } from './utils/webxr';
 
 class C3D {
-  constructor(settings) {
+  constructor(settings, renderer = null) {
     this.core = CognitiveVRAnalyticsCore;
     if (settings) { this.core.config.settings = settings.config; }
 
@@ -31,9 +35,13 @@ class C3D {
 
     this.setUserProperty("c3d.version", this.core.config.SDKVersion);  
     this.setDeviceProperty("SDKType", "WebXR"); 
+    this.lastInputType = 'none'; // Can be 'none', 'hand', or 'controller'
     this.network = new Network(this.core);
     this.gaze = new GazeTracker(this.core);
     this.customEvent = new CustomEvent(this.core);
+    this.hmdOrientation = new HMDOrientationTracker();
+    this.profiler = new Profiler(this);
+    this.controllerTracker = new ControllerTracker(this);
     this.sensor = new Sensor(this.core);
     this.exitpoll = new ExitPoll(this.core, this.customEvent);
     this.dynamicObject = new DynamicObject(this.core, this.customEvent);
@@ -42,21 +50,11 @@ class C3D {
     // Set default device properties using environment utils
     const deviceMemory = getDeviceMemory();
     if (deviceMemory) {
-      this.setDeviceProperty('DeviceMemory', deviceMemory * 1000);
+      this.setDeviceProperty('DeviceMemory', deviceMemory * 1000); 
     }
-    const systemInfo = getSystemInfo() 
-    if(systemInfo){ 
-      this.setDeviceProperty('DevicePlatform', getSystemInfo().deviceType);
-      this.setDeviceProperty('DeviceOS', getSystemInfo().os);
-      this.setDeviceProperty('Browser', getSystemInfo().browser)
+    if (renderer) {
+        this.profiler.start(renderer); 
     }
-  /*  
-    const platform = getSystemInfo().deviceType;
-
-    if (platform) {
-      this.setDeviceProperty('DeviceType', getSystemInfo().deviceType);
-    }
-*/
     const screenHeight = getScreenHeight();
     if (screenHeight) {
       this.setDeviceProperty('DeviceScreenHeight', screenHeight);
@@ -84,7 +82,7 @@ class C3D {
       this.setDeviceProperty('DeviceGPUVendor', gpuInfo.vendor);
     }
   }
-  startSession(xrSession = null) { 
+  async startSession(xrSession = null) { 
     if (this.core.isSessionActive) { return false; }
     
     this.fpsTracker.start(metrics => {
@@ -95,10 +93,28 @@ class C3D {
 
     if (xrSession) {  
       this.xrSessionManager = new XRSessionManager(this.gaze, xrSession);
-      this.xrSessionManager.start();
+      
+      await this.xrSessionManager.start();
+      this.controllerTracker.start(xrSession);
+      const referenceSpace = this.xrSessionManager.referenceSpace;
+      if (referenceSpace) {
+        this.hmdOrientation.start(
+          xrSession,
+          referenceSpace,
+          (orientation) => {
+            this.sensor.recordSensor('c3d.hmd.pitch', orientation.pitch);
+            this.sensor.recordSensor('c3d.hmd.yaw', orientation.yaw);
+          }
+        );
+      } else {
+        console.warn('C3D: Could not start HMD orientation tracking, no reference space available.');
+      }
+      const features = getEnabledFeatures(xrSession);
+      this.setDeviceProperty("HandTracking", features.handTracking);
+      this.setDeviceProperty("EyeTracking", features.eyeTracking);
     }
     else{
-        console.log("C3D: No XR session was provided. Gaze data will not be tracked for this session. This session will be tagged as junk on the Cognitive3D Dashboard, find the session under Test Mode.");
+        console.warn("C3D: No XR session was provided. Gaze data will not be tracked for this session. This session will be tagged as junk on the Cognitive3D Dashboard, find the session under Test Mode.");
     }
 
     if (xrSession && xrSession.inputSources) { // check what is connected right now 
@@ -106,13 +122,35 @@ class C3D {
         if (hmdInfo) {
             this.setDeviceProperty('VRModel', hmdInfo.VRModel);
             this.setDeviceProperty('VRVendor', hmdInfo.VRVendor);
-        } else {
-            this.setDeviceProperty('VRModel', 'Unknown VR Headset');
-            this.setDeviceProperty('VRVendor', 'Unknown Vendor');
+        } 
 
-        }
+  const checkInputType = (sources) => {
+            const hasHand = Array.from(sources).some(source => source.hand);
+            const hasController = Array.from(sources).some(source => !source.hand && source.targetRayMode === 'tracked-pointer');
+            
+            let currentInputType = 'none';
+            if (hasHand) {
+                currentInputType = 'hand';
+            } else if (hasController) {
+                currentInputType = 'controller';
+            }
 
-        xrSession.addEventListener('inputsourceschange', (event) => { // if controllers were previously off, check now 
+            if (currentInputType !== this.lastInputType) {
+                console.log(`Cognitive3D: Input changed from '${this.lastInputType}' to '${currentInputType}'.`);
+                this.customEvent.send('c3d.input.tracking.changed', [0,0,0], {
+                    "Previously Tracking": this.lastInputType,
+                    "Now Tracking": currentInputType
+                });
+                this.lastInputType = currentInputType;
+            }
+        };
+
+        checkInputType(xrSession.inputSources);
+
+        xrSession.addEventListener('inputsourceschange', (event) => {  // Check whenever the input sources change
+            checkInputType(event.session.inputSources);
+            
+            // HMD info might change
             const newHmdInfo = getHMDInfo(event.session.inputSources);
             if (newHmdInfo) {
                 this.setDeviceProperty('VRModel', newHmdInfo.VRModel);
@@ -135,7 +173,17 @@ class C3D {
         reject('session is not active');
         return;
       }
-      this.fpsTracker.stop(); 
+      this.fpsTracker.stop();  
+      this.profiler.stop();
+      if (this.hmdOrientation) {
+          this.hmdOrientation.stop();
+      }
+      
+      if (this.controllerTracker) {
+          this.controllerTracker.stop(); 
+      }      if (this.controllerTracker) {
+          this.controllerTracker.stop();
+      }
 
       if (this.xrSessionManager) {
       this.xrSessionManager.stop();
@@ -171,7 +219,13 @@ class C3D {
         .catch(err => reject(err));
     });
   }
-
+  /**
+   * Checks the current primary input method.
+   * @returns {'hand' | 'controller' | 'none'} The current input type.
+   */
+  getCurrentInputType() {
+      return this.lastInputType;
+  }
   sceneData(name, id, version) {
     return this.core.getSceneData(name, id, version);
   }
