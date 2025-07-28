@@ -7,6 +7,7 @@ import ExitPoll from './exitpoll';
 import DynamicObject from './dynamicobject';
 import FPSTracker from './utils/Framerate';
 import HMDOrientationTracker from './utils/HMDOrientation';
+import Profiler from './utils/Profiler';
 import ControllerTracker from './utils/ControllerTracker'; 
 
 import {
@@ -26,7 +27,7 @@ import {
 } from './utils/webxr';
 
 class C3D {
-  constructor(settings) {
+  constructor(settings, renderer = null) {
     this.core = CognitiveVRAnalyticsCore;
     if (settings) { this.core.config.settings = settings.config; }
 
@@ -39,6 +40,7 @@ class C3D {
     this.gaze = new GazeTracker(this.core);
     this.customEvent = new CustomEvent(this.core);
     this.hmdOrientation = new HMDOrientationTracker();
+    this.profiler = new Profiler(this);
     this.controllerTracker = new ControllerTracker(this);
     this.sensor = new Sensor(this.core);
     this.exitpoll = new ExitPoll(this.core, this.customEvent);
@@ -55,6 +57,9 @@ class C3D {
       this.setDeviceProperty('DevicePlatform', getSystemInfo().deviceType);
       this.setDeviceProperty('DeviceOS', getSystemInfo().os);
       this.setDeviceProperty('Browser', getSystemInfo().browser)
+    }
+     if (renderer) {
+        this.profiler.start(renderer); 
     }
   /*  
     const platform = getSystemInfo().deviceType;
@@ -122,7 +127,7 @@ class C3D {
       this.setDeviceProperty("EyeTracking", features.eyeTracking);
     }
     else{
-        console.log("C3D: No XR session was provided. Gaze data will not be tracked for this session. This session will be tagged as junk on the Cognitive3D Dashboard, find the session under Test Mode.");
+        console.warn("C3D: No XR session was provided. Gaze data will not be tracked for this session. This session will be tagged as junk on the Cognitive3D Dashboard, find the session under Test Mode.");
     }
 
     if (xrSession && xrSession.inputSources) { // check what is connected right now 
@@ -181,8 +186,15 @@ class C3D {
         reject('session is not active');
         return;
       }
-      this.fpsTracker.stop(); 
+      this.fpsTracker.stop();  
+      this.profiler.stop();
+      if (this.hmdOrientation) {
+          this.hmdOrientation.stop();
+      }
+      
       if (this.controllerTracker) {
+          this.controllerTracker.stop(); 
+      }      if (this.controllerTracker) {
           this.controllerTracker.stop();
       }
 
