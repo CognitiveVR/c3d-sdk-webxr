@@ -14,7 +14,6 @@ import {
   getDeviceMemory,
   getScreenHeight,
   getScreenWidth,
-  getSystemInfo,
   getHardwareConcurrency,
   getConnection,
   getGPUInfo
@@ -181,10 +180,7 @@ class C3D {
       
       if (this.controllerTracker) {
           this.controllerTracker.stop(); 
-      }      if (this.controllerTracker) {
-          this.controllerTracker.stop();
-      }
-
+      }      
       if (this.xrSessionManager) {
       this.xrSessionManager.stop();
       this.xrSessionManager = null;

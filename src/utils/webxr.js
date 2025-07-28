@@ -59,31 +59,34 @@ export class XRSessionManager {
     this.animationFrameHandle = this.xrSession.requestAnimationFrame(this.onXRFrame); // next frame 
   }
 }
+// Controller (profile identifier) lookup table to infer HMD Device 
+const HMD_PROFILE_MAP = {
+    'meta-quest-touch-pro': { VRModel: 'Quest Pro', VRVendor: 'Meta' },
+    'meta-quest-touch-plus': { VRModel: 'Quest 3/ Quest 3S', VRVendor: 'Meta' },
+    'oculus-touch-v3': { VRModel: 'Quest 2', VRVendor: 'Meta' },
+    'oculus-touch': { VRModel: 'Quest/Rift S', VRVendor: 'Meta' }, // Generic fallback
+    'htc-vive': { VRModel: 'Vive', VRVendor: 'HTC' },
+    'valve-index': { VRModel: 'Index', VRVendor: 'Valve' },
+    'microsoft-mixed-reality': { VRModel: 'Mixed Reality', VRVendor: 'Microsoft' }
+};
 
-
-
-export const getHMDInfo = (inputSources) => { // Get info about users head mounted display  
+export const getHMDInfo = (inputSources) => {
     for (const source of inputSources) {
-        if (source.profiles) {
-            for (const profile of source.profiles) {
-                const lowerCaseProfile = profile.toLowerCase();
-                console.log("HMD Profiles: ", lowerCaseProfile);
-                if (lowerCaseProfile.includes('oculus') || lowerCaseProfile.includes('meta-quest')) {
-                    const VRVendor = 'Meta';
-                    if (lowerCaseProfile.includes('meta-quest-touch-pro')) return { VRModel: 'Quest Pro', VRVendor };
-                    if (lowerCaseProfile.includes('meta-quest-touch-plus')) return { VRModel: 'Quest 3', VRVendor }; 
-                    if (lowerCaseProfile.includes('oculus-touch-v3')) return { VRModel: 'Quest 2', VRVendor };
+        if (!source.profiles) continue;
 
-                    return { VRModel: 'Quest', VRVendor }; // fallback for future devices if none of the above 
-                }
+        for (const profile of source.profiles) {
+            const lowerCaseProfile = profile.toLowerCase();
+            
+            // Find a matching profile in our map
+            const matchedProfile = Object.keys(HMD_PROFILE_MAP).find(key => lowerCaseProfile.includes(key));
 
-                if (profile.includes('htc-vive')) return { VRModel: 'Vive', VRVendor: 'HTC' };
-                if (profile.includes('valve-index')) return { VRModel: 'Index', VRVendor: 'Valve' };
-                if (profile.includes('microsoft-mixed-reality')) return { VRModel: 'Mixed Reality', VRVendor: 'Microsoft' };
+            if (matchedProfile) {
+                console.log("HMD Profile Matched: ", lowerCaseProfile);
+                return HMD_PROFILE_MAP[matchedProfile];
             }
         }
     }
-    return null; 
+    return null; // No profile found
 };
 
 export const getEnabledFeatures = (xrSession) => {
