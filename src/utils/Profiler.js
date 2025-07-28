@@ -13,12 +13,11 @@ class Profiler {
             return;
         }
 
-        // We need the renderer to access engine-specific stats like draw calls
         this.renderer = renderer;
 
         this.intervalId = setInterval(() => {
             this.recordMetrics();
-        }, 1000); // Record once per second
+        }, 1000);
     }
 
     stop() {
@@ -27,40 +26,48 @@ class Profiler {
             this.intervalId = null;
         }
     }
-
-    async recordMetrics() {
-        // Draw Calls
-        if (this.renderer && this.renderer.info && this.renderer.info.render) {
+    // Record draw calls
+    _recordDrawCalls() {
+        // Use optional chaining (?.) to safely access nested properties
+        if (this.renderer?.info?.render) {
+            this.renderer.info.reset();
             const drawCalls = this.renderer.info.render.calls;
             this.c3d.sensor.recordSensor('c3d.profiler.drawCallsCount', drawCalls);
         }
-        // Memory usage (measuring the javascript heap, does not contain vram usage) 
+    }
+
+    // Record memory usage
+    async _recordMemory() {
         try {
-            // Try the new, standardized API first.
             if (performance.measureUserAgentSpecificMemory) {
                 const memorySample = await performance.measureUserAgentSpecificMemory();
                 const memoryInMB = memorySample.bytes / (1024 * 1024);
                 this.c3d.sensor.recordSensor('c3d.profiler.systemMemoryInMB', memoryInMB);
-            } 
-            // Fallback to the old, deprecated API if the new one isn't available.
-            else if (performance.memory) {
+            } else if (performance.memory) {
                 const memoryInMB = performance.memory.usedJSHeapSize / (1024 * 1024);
                 this.c3d.sensor.recordSensor('c3d.profiler.systemMemoryInMB', memoryInMB);
             }
         } catch (error) {
-            // The new API throws an error if the page is not cross-origin isolated.
-            if (performance.memory) { // performance.memory is depreciated but should be available on chromium browsers 
+            // Fallback for when measureUserAgentSpecificMemory fails
+            if (performance.memory) {
                 const memoryInMB = performance.memory.usedJSHeapSize / (1024 * 1024);
                 this.c3d.sensor.recordSensor('c3d.profiler.systemMemoryInMB', memoryInMB);
             }
             console.warn("Could not measure memory: ", error);
         }
+    }
 
-        // Main Thread Time, can be retrieved from FPSTracker's last calculated delta time.
-        // It's the time in milliseconds between the last two frames.
-        if (this.c3d.fpsTracker && this.c3d.fpsTracker.lastDeltaTime) {
+    // Record main thread time
+    _recordMainThreadTime() {
+        if (this.c3d.fpsTracker?.lastDeltaTime) {
             this.c3d.sensor.recordSensor('c3d.profiler.mainThreadTimeInMs', this.c3d.fpsTracker.lastDeltaTime);
         }
+    }
+
+    recordMetrics() {
+        this._recordDrawCalls();
+        this._recordMemory();
+        this._recordMainThreadTime();
     }
 }
 
