@@ -89,6 +89,9 @@ export const getSystemInfo = async () => {
   } else if (/iPad/.test(userAgent)) {
     deviceType = 'Tablet';     // iPads on recent iOS versions may be reported as a Mac
   }
+  else {
+    deviceType = 'Desktop';
+  }
 
   // Browser Detection 
   if (/Firefox/i.test(userAgent)) {
