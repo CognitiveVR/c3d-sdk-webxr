@@ -74,6 +74,9 @@ const _parseFromUserAgent = (userAgent) => {
     } else if (/iPad/.test(userAgent)) {
         deviceType = 'Tablet';
     }
+    else{
+        deviceType = 'Desktop';
+    }
 
     return { os, deviceType, browser };
 };
