@@ -28,11 +28,10 @@ class Profiler {
     }
     // Record draw calls
     _recordDrawCalls() {
-        // Use optional chaining (?.) to safely access nested properties
         if (this.renderer?.info?.render) {
-            this.renderer.info.reset();
             const drawCalls = this.renderer.info.render.calls;
             this.c3d.sensor.recordSensor('c3d.profiler.drawCallsCount', drawCalls);
+            this.renderer.info.reset();
         }
     }
 
