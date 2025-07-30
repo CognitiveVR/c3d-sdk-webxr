@@ -30,9 +30,6 @@ export const safeWindowAccess = (accessor, defaultValue) => {
 export const getDeviceMemory = () =>
   safeWindowAccess(() => navigator.deviceMemory, null);
 
-export const getPlatform = () =>
-  safeWindowAccess(() => navigator.platform, 'unknown');
-
 export const getScreenHeight = () =>
   safeWindowAccess(() => window.screen.height, null);
 
@@ -42,45 +39,100 @@ export const getScreenWidth = () =>
 export const getUserAgent = () =>
   safeWindowAccess(() => navigator.userAgent, '');
 
-// OS detection
-export const getOS = () => {
-  if (!isBrowser) return 'unknown';
+export const getHardwareConcurrency = () => // CPU threads that I have access to 
+    safeWindowAccess(() => navigator.hardwareConcurrency, null);
 
-  const userAgent = getUserAgent();
-  const platform = getPlatform();
+export const getConnection = () =>
+    safeWindowAccess(() => navigator.connection, null);
 
-  const macosPlatforms = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'];
-  const windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE'];
-  const iosPlatforms = ['iPhone', 'iPad', 'iPod'];
 
-  if (macosPlatforms.indexOf(platform) !== -1) {
-    return 'MacOS';
-  } else if (iosPlatforms.indexOf(platform) !== -1) {
-    return 'iOS';
-  } else if (windowsPlatforms.indexOf(platform) !== -1) {
-    return 'Windows';
-  } else if (/Android/.test(userAgent)) {
-    return 'Android';
-  } else if (/Linux/.test(platform)) {
-    return 'Linux';
-  }
+const _parseFromUserAgent = (userAgent) => {
+    const osMap = [
+        { name: 'Windows', regex: /Windows/ },
+        { name: 'macOS', regex: /Macintosh|MacIntel|MacPPC|Mac68K/ },
+        { name: 'Android', regex: /Android/ },
+        { name: 'iOS', regex: /iPhone|iPad|iPod/ },
+        { name: 'Linux', regex: /Linux/ },
+    ];
 
-  return 'unknown';
+    const browserMap = [
+        { name: 'Firefox', regex: /Firefox/i },
+        { name: 'Opera', regex: /OPR|Opera/i },
+        { name: 'Edge', regex: /Edg/i },
+        { name: 'Chrome', regex: /Chrome/i },
+        { name: 'Safari', regex: /Safari/i },
+    ];
+
+    const findMatch = (map, agent) => map.find(entry => entry.regex.test(agent))?.name || 'unknown';
+
+    const os = findMatch(osMap, userAgent);
+    const browser = findMatch(browserMap, userAgent);
+    
+    let deviceType = 'Desktop';
+    if (/Mobi|Android|iPhone/.test(userAgent)) {
+        deviceType = 'Mobile';
+    } else if (/iPad/.test(userAgent)) {
+        deviceType = 'Tablet';
+    }
+    else{
+        deviceType = 'Desktop';
+    }
+
+    return { os, deviceType, browser };
 };
 
-// Platform type detection
-export const getPlatformType = () => {
-  if (!isBrowser) return 'unknown';
+const _parseFromUserAgentData = async (userAgentData) => {
+    const platformData = await userAgentData.getHighEntropyValues(['platform']);
+    const os = platformData.platform || 'unknown';
+    const deviceType = userAgentData.mobile ? 'Mobile' : 'Desktop';
+    
+    const browserMap = [
+        { name: 'Opera', brand: 'Opera' },
+        { name: 'Edge', brand: 'Microsoft Edge' },
+        { name: 'Chrome', brand: 'Google Chrome' },
+    ];
+    
+    const brandInfo = userAgentData.brands?.find(b => browserMap.some(bm => bm.brand === b.brand));
+    const browser = browserMap.find(bm => bm.brand === brandInfo?.brand)?.name || 'unknown';
 
-  const userAgent = getUserAgent();
+    return { os, deviceType, browser };
+};
 
-  if (userAgent.match(/mobile/i)) {
-    return 'Mobile';
-  } else if (userAgent.match(/iPad|Android|Touch/i)) {
-    return 'Tablet';
-  } else {
-    return 'Desktop';
+export const getSystemInfo = async () => {
+  if (!isBrowser) {
+    return { os: 'unknown', deviceType: 'unknown', browser: "unknown" };
   }
+
+  if (navigator.userAgentData) {
+    return _parseFromUserAgentData(navigator.userAgentData);
+  }
+  
+  return _parseFromUserAgent(navigator.userAgent);
+};
+
+export const getGPUInfo = () => {
+    if (!isBrowser) {
+    return null;
+  }
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+    if (gl && gl instanceof WebGLRenderingContext) {
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      if (debugInfo) {
+        let vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+        let renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        if (renderer.toLowerCase().includes("adreno")) {
+          vendor = "Qualcomm";
+        }
+        return { vendor, renderer };
+      }
+    }
+  } catch (e) {
+    console.warn("WebGL is not supported", e);
+  }
+  return null;
 };
 
 // Universal fetch implementation (works in both browser and Node)

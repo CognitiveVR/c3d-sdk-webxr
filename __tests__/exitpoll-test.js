@@ -1,4 +1,4 @@
-import C3DAnalytics from '../lib/index.cjs.js';
+import C3DAnalytics from '../lib/cjs/index.cjs.js'; 
 import settings from '../settings';
 
 
@@ -50,8 +50,7 @@ test('Return question set as an object', async () => {
 
     const questionSet = c3d.exitpoll.getQuestionSet();
 
-    expect(questionSet).toBeInstanceOf(Object);
-
+    expect(questionSet).toEqual(expect.any(Object));
     expect(questionSet).toHaveProperty('id');
     expect(typeof questionSet.id).toBe('string');
 
@@ -141,7 +140,7 @@ test('Complete full exit poll workflow (JSON)', async () => {
 
     const questionSet = c3d.exitpoll.getQuestionSet();
 
-    expect(questionSet).toBeInstanceOf(Object);
+    expect(questionSet).toEqual(expect.any(Object));
     expect(questionSet).toHaveProperty('id');
     expect(typeof questionSet.id).toBe('string');
     expect(questionSet).toHaveProperty('name');
