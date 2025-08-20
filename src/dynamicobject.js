@@ -23,7 +23,7 @@ class DynamicObject {
 		//count of engagements on dynamic objects of type
 		this.engagementCounts = {};
 	}
-	registerObjectCustomId(name, meshname, customid, position, rotation) {
+	registerObjectCustomId(name, meshname, customid, position, rotation, fileType = "gltf") {
 		for (let i = 0; i < this.objectIds.length; i++) {
 			if (this.objectIds[i].id === customid) {
 				console.log("DynamicObject.registerObjectCustomId object id " + customid + " already registered");
@@ -34,7 +34,7 @@ class DynamicObject {
 		let registerId = this.dynamicObjectId(customid, meshname);
 		this.objectIds.push(registerId);
 
-		let dome = this.dynamicObjectManifestEntry(registerId.id, name, meshname);
+		let dome = this.dynamicObjectManifestEntry(registerId.id, name, meshname, fileType);
 		this.manifestEntries.push(dome);
 		this.fullManifest.push(dome);
 		let props = {};
@@ -48,13 +48,13 @@ class DynamicObject {
 		return;
 	};
 
-	registerObject(name, meshname, position, rotation) {
+	registerObject(name, meshname, position, rotation, fileType = "gltf") {
 		let foundRecycledId = false;
 		let newObjectId = this.dynamicObjectId(uuidv4(), meshname);
 
 		if (!foundRecycledId) {
 			this.objectIds.push(newObjectId);
-			let dome = this.dynamicObjectManifestEntry(newObjectId.id, name, meshname);
+			let dome = this.dynamicObjectManifestEntry(newObjectId.id, name, meshname, fileType);
 			this.manifestEntries.push(dome);
 			this.fullManifest.push(dome);
 		}
@@ -147,7 +147,8 @@ class DynamicObject {
 			for (let element of this.manifestEntries) {
 				let entryValues = {}
 				entryValues["name"] = element.name;
-				entryValues["mesh"] = element.meshname;
+				entryValues["mesh"] = element.mesh;
+                entryValues["fileType"] = element.fileType;
 				manifest[element.id] = entryValues;
 			}
 			sendJson['manifest'] = manifest;
@@ -203,11 +204,12 @@ class DynamicObject {
 		}
 	};
 
-	dynamicObjectManifestEntry(id, name, mesh) {
+	dynamicObjectManifestEntry(id, name, mesh, fileType) {
 		return {
 			id,
 			name,
-			mesh
+			mesh,
+            fileType
 		}
 	};
 
@@ -221,7 +223,7 @@ class DynamicObject {
 	};
 
 	//re-add all manifest entries when a scene changes.
-	//otherwise there could be snapshots for dynamic 
+	//otherwise there could be snapshots for dynamic
 	//objects without any identification in the new scene
 	refreshObjectManifest() {
 		for (var i = 0; i < this.fullManifest.length; i++) {
@@ -248,7 +250,7 @@ class DynamicObject {
 	};
 
 	beginEngagement(objectId, name, parentId = null) {
-		//parentId is the Id of the object that we are engaging with 
+		//parentId is the Id of the object that we are engaging with
 		//objectId is the Id of the object getting engaged
 		console.log("DynamicObject::beginEngagement engagement " + name + " on object " + objectId);
 		if (!this.engagementCounts[objectId]) {
@@ -282,7 +284,7 @@ class DynamicObject {
 
 
 	endEngagement(objectId, name, parentId) {
-		//parentId is the Id of the object that we are engaging with 
+		//parentId is the Id of the object that we are engaging with
 		//objectId is the Id of the object getting engaged
 		if (this.activeEngagements[objectId]) {
 			for (let i = 0; i < this.activeEngagements[objectId].length; i++) {
