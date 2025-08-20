@@ -23,7 +23,7 @@ class DynamicObject {
 		//count of engagements on dynamic objects of type
 		this.engagementCounts = {};
 	}
-	registerObjectCustomId(name, meshname, customid, position, rotation, fileType = "gltf") {
+	registerObjectCustomId(name, meshname, customid, position, rotation, fileType) {
 		for (let i = 0; i < this.objectIds.length; i++) {
 			if (this.objectIds[i].id === customid) {
 				console.log("DynamicObject.registerObjectCustomId object id " + customid + " already registered");
@@ -34,7 +34,8 @@ class DynamicObject {
 		let registerId = this.dynamicObjectId(customid, meshname);
 		this.objectIds.push(registerId);
 
-		let dome = this.dynamicObjectManifestEntry(registerId.id, name, meshname, fileType);
+        const finalFileType = fileType || "gltf";
+		let dome = this.dynamicObjectManifestEntry(registerId.id, name, meshname, finalFileType);
 		this.manifestEntries.push(dome);
 		this.fullManifest.push(dome);
 		let props = {};
@@ -48,13 +49,14 @@ class DynamicObject {
 		return;
 	};
 
-	registerObject(name, meshname, position, rotation, fileType = "gltf") {
+	registerObject(name, meshname, position, rotation, fileType) {
 		let foundRecycledId = false;
 		let newObjectId = this.dynamicObjectId(uuidv4(), meshname);
 
 		if (!foundRecycledId) {
 			this.objectIds.push(newObjectId);
-			let dome = this.dynamicObjectManifestEntry(newObjectId.id, name, meshname, fileType);
+			const finalFileType = fileType || "gltf";
+			let dome = this.dynamicObjectManifestEntry(newObjectId.id, name, meshname, finalFileType);
 			this.manifestEntries.push(dome);
 			this.fullManifest.push(dome);
 		}
@@ -121,58 +123,56 @@ class DynamicObject {
 		}
 	}
 	sendData() {
-		return new Promise((resolve, reject) => {
-			if (!this.core.isSessionActive) {
-				console.log('DynamicObject.sendData failed: no session active');
-				resolve('DynamicObject.sendData failed: no session active');
-				return;
-			}
+	    return new Promise((resolve, reject) => {
+	        if (!this.core.isSessionActive) {
+	            console.log('DynamicObject.sendData failed: no session active');
+	            resolve('DynamicObject.sendData failed: no session active');
+	            return;
+	        }
 
+	        if ((this.manifestEntries.length + this.snapshots.length) === 0) {
+	            resolve('no manifest entries/snapshots');
+	            console.log('no manifest entries/snapshots');
+	            return;
+	        }
+	        let sendJson = {};
+	        sendJson['userid'] = this.core.userId;
+	        sendJson['timestamp'] = this.core.getTimestamp();
+	        sendJson['sessionid'] = this.core.sessionId;
+	        sendJson['part'] = this.jsonPart;
+	        this.jsonPart++;
 
+	        let manifest = {};
+	        for (let element of this.manifestEntries) {
+	            let entryValues = {}
+	            entryValues["name"] = element.name;
+	            entryValues["mesh"] = element.mesh;
+	            entryValues["FileType"] = "gltf"; 
+	            manifest[element.id] = entryValues;
+	        }
+	        sendJson['manifest'] = manifest;
 
-			if ((this.manifestEntries.length + this.snapshots.length) === 0) {
-				resolve('no manifest entries/snapshots');
-				console.log('no manifest entries/snapshots');
+	        console.warn("Cognitive3D SDK: Sending manifest data...", JSON.stringify(manifest, null, 2));
 
-				return;
-			}
-			let sendJson = {};
-			sendJson['userid'] = this.core.userId;
-			sendJson['timestamp'] = this.core.getTimestamp();
-			sendJson['sessionid'] = this.core.sessionId;
-			sendJson['part'] = this.jsonPart;
-			this.jsonPart++;
+	        let data = [];
+	        for (let element of this.snapshots) {
+	            let entry = {};
+	            entry['id'] = element.id;
+	            entry['time'] = element.time;
+	            entry['p'] = element.position;
+	            entry['r'] = element.rotation;
+	            if (element.engagements && element.engagements.length) { entry['engagements'] = element.engagements }
+	            if (element.properties) { entry['properties'] = element.properties }
+	            data.push(entry);
+	        }
 
-			let manifest = {};
-			for (let element of this.manifestEntries) {
-				let entryValues = {}
-				entryValues["name"] = element.name;
-				entryValues["mesh"] = element.mesh;
-                entryValues["fileType"] = element.fileType;
-				manifest[element.id] = entryValues;
-			}
-			sendJson['manifest'] = manifest;
-
-			let data = [];
-			for (let element of this.snapshots) {
-				let entry = {};
-				entry['id'] = element.id;
-				entry['time'] = element.time;
-				entry['p'] = element.position;
-				entry['r'] = element.rotation;
-				if (element.engagements && element.engagements.length) { entry['engagements'] = element.engagements }
-				if (element.properties) { entry['properties'] = element.properties }
-				data.push(entry);
-			}
-
-			sendJson['data'] = data;
-			this.network.networkCall('dynamics', sendJson)
-				.then(res => (res === 200) ? resolve(200) : reject(res));
-			this.manifestEntries = [];
-			this.snapshots = [];
-		});
+	        sendJson['data'] = data;
+	        this.network.networkCall('dynamics', sendJson)
+	            .then(res => (res === 200) ? resolve(200) : reject(res));
+	        this.manifestEntries = [];
+	        this.snapshots = [];
+	    });
 	};
-
 	dynamicObjectSnapshot(position, rotation, objectId, properties) {
 		let ss = {};
 		//TODO conversion for xyz = -xzy or whatever
