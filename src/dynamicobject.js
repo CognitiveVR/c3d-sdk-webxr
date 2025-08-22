@@ -147,7 +147,7 @@ class DynamicObject {
 	            let entryValues = {}
 	            entryValues["name"] = element.name;
 	            entryValues["mesh"] = element.mesh;
-	            entryValues["FileType"] = "gltf"; 
+	            entryValues["fileType"] = "gltf"; 
 	            manifest[element.id] = entryValues;
 	        }
 	        sendJson['manifest'] = manifest;

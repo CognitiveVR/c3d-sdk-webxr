@@ -21,6 +21,10 @@
     "./adapters/playcanvas": {
       "import": "./lib/esm/adapters/playcanvas-adapter.esm.js",
       "require": "./lib/cjs/adapters/playcanvas-adapter.cjs.js"
+    },
+    "./adapters/wonderland": {
+      "import": "./lib/esm/adapters/wonderland-adapter.esm.js",
+      "require": "./lib/cjs/adapters/wonderland-adapter.cjs.js"
     }
   },
   "files": [
@@ -71,12 +75,14 @@
   },
   "dependencies": {
     "cross-fetch": "^4.1.0",
+    "gl-matrix": "^3.4.3",
     "uuid": "^11.1.0"
   },
   "peerDependencies": {
-    "three": ">=0.177.0",
+    "three": ">=0.128.0",
     "babylonjs": ">=5.0.0",
-    "playcanvas": ">=1.50.0"
+    "playcanvas": ">=1.50.0",
+    "@wonderlandengine/api": ">=1.0.0"
   },
   "peerDependenciesMeta": {
     "three": {
@@ -86,6 +92,9 @@
       "optional": true
     },
     "playcanvas": {
+      "optional": true
+    },
+    "@wonderlandengine/api": {
       "optional": true
     }
   },
