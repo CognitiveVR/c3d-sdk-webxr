@@ -75,14 +75,14 @@
   },
   "dependencies": {
     "cross-fetch": "^4.1.0",
-    "gl-matrix": "^3.4.3",
     "uuid": "^11.1.0"
   },
   "peerDependencies": {
     "three": ">=0.128.0",
     "babylonjs": ">=5.0.0",
     "playcanvas": ">=1.50.0",
-    "@wonderlandengine/api": ">=1.0.0"
+    "@wonderlandengine/api": ">=1.0.0",
+    "gl-matrix": "^3.4.3"
   },
   "peerDependenciesMeta": {
     "three": {
@@ -96,7 +96,8 @@
     },
     "@wonderlandengine/api": {
       "optional": true
-    }
+    },
+    "gl-matrix": { "optional": true } 
   },
   "engines": {
     "node": ">=20.0.0"
