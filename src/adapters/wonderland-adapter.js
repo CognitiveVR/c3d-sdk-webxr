@@ -22,7 +22,7 @@ class C3DWonderlandAdapter {
 
     // Set engine properties for the session data
     this.c3d.setDeviceProperty('AppEngine', 'Wonderland Engine');
-    this.c3d.setDeviceProperty('AppEngineVersion', this.WL.runtimeVersion.join('.'));
+    this.c3d.setDeviceProperty('AppEngineVersion', this.WL.runtimeVersion);
   }
 
   /**
