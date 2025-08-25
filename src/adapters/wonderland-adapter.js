@@ -22,7 +22,10 @@ class C3DWonderlandAdapter {
 
     // Set engine properties for the session data
     this.c3d.setDeviceProperty('AppEngine', 'Wonderland Engine');
-    this.c3d.setDeviceProperty('AppEngineVersion', this.WL.runtimeVersion);
+
+    const version = this.WL.runtimeVersion; // Object with major, minor, patch
+    const versionString = `${version.major}.${version.minor}.${version.patch}`;
+    this.c3d.setDeviceProperty('AppEngineVersion', versionString);
   }
 
   /**
@@ -56,7 +59,6 @@ class C3DWonderlandAdapter {
     }
 
     // Get world-space position and rotation using Wonderland API
-    // The empty array [] tells the function to create a new array for the result.
     const position = cameraObject.getTranslationWorld([]);
     const rotation = cameraObject.getRotationWorld([]);
 
@@ -67,8 +69,8 @@ class C3DWonderlandAdapter {
 
     // Record the data using the core SDK method
     this.c3d.gaze.recordGaze(
-        this.fromVector3(position), 
-        this.fromQuaternion(rotation), 
+        this.fromVector3(position),
+        this.fromQuaternion(rotation),
         this.fromVector3(gaze)
     );
   }
