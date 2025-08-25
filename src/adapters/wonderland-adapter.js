@@ -1,3 +1,4 @@
+import { version } from '@wonderlandengine/api';
 import { vec3 } from 'gl-matrix'; // Wonderland Engine uses gl-matrix for vector math
 
 /**
@@ -22,8 +23,7 @@ class C3DWonderlandAdapter {
 
     // Set engine properties for the session data
     this.c3d.setDeviceProperty('AppEngine', 'Wonderland Engine');
-    // WL.version is an array of numbers [major, minor, patch]
-    this.c3d.setDeviceProperty('AppEngineVersion', this.WL.version.join('.'));
+    this.c3d.setDeviceProperty('AppEngineVersion', version.join('.'));
   }
 
   /**
