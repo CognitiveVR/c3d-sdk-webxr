@@ -1,4 +1,3 @@
-import { version } from '@wonderlandengine/api';
 import { vec3 } from 'gl-matrix'; // Wonderland Engine uses gl-matrix for vector math
 
 /**
@@ -23,12 +22,11 @@ class C3DWonderlandAdapter {
 
     // Set engine properties for the session data
     this.c3d.setDeviceProperty('AppEngine', 'Wonderland Engine');
-    this.c3d.setDeviceProperty('AppEngineVersion', version.join('.'));
+    this.c3d.setDeviceProperty('AppEngineVersion', this.WL.runtimeVersion.join('.'));
   }
 
   /**
    * Converts a gl-matrix vec3 to a simple array.
-   * Note: As gl-matrix uses arrays, this is mostly a pass-through for consistency.
    * @param {vec3} vec - The vector to convert.
    * @returns {number[]} An array [x, y, z].
    */
@@ -38,7 +36,6 @@ class C3DWonderlandAdapter {
 
   /**
    * Converts a gl-matrix quat to a simple array.
-   * Note: As gl-matrix uses arrays, this is mostly a pass-through for consistency.
    * @param {quat} quat - The quaternion to convert.
    * @returns {number[]} An array [x, y, z, w].
    */
