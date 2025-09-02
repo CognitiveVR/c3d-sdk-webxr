@@ -61,4 +61,4 @@ typings/
 lib
 package_lock.json
 
-types
+types/
