@@ -3,7 +3,7 @@ export default _default;
 declare class CognitiveVRAnalyticsCore {
     config: {
         LOG: boolean;
-        SDKVersion: any;
+        SDKVersion: string;
         networkHost: string;
         APIKey: string;
         networkVersion: string;
@@ -12,17 +12,13 @@ declare class CognitiveVRAnalyticsCore {
         customEventBatchSize: number;
         gazeBatchSize: number;
         GazeInterval: number;
-        allSceneData: any[];
-        sceneData(sceneName: any, sceneId: any, versionNumber: any): {
-            sceneName: any;
-            sceneId: any;
-            versionNumber: any;
-        };
-        set settings(settings: any);
-        HMDType: any;
+        allSceneData: import("./config.ts").SceneData[];
+        HMDType?: string;
+        sceneData(sceneName: string, sceneId: string, versionNumber: string): import("./config.ts").SceneData;
+        set settings(newSettings: Partial</*elided*/ any>);
     };
     isSessionActive: boolean;
-    sceneData: any;
+    sceneData: import("./config.ts").SceneData;
     userId: string;
     deviceId: string;
     sessionId: string;
@@ -61,7 +57,7 @@ declare class CognitiveVRAnalyticsCore {
         VRVendor: string;
     };
     getSessionTimestamp(): string;
-    getCurrentScene(): any;
+    getCurrentScene(): import("./config.ts").SceneData;
     setScene(name: any): void;
     getTimestamp(): number;
     isSessionActive1(): boolean;

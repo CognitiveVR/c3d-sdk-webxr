@@ -1,8 +1,17 @@
-export default defaultConfig;
-declare const defaultConfig: Config;
+/**
+ * Shape of data for a single scene.
+ */
+export interface SceneData {
+    sceneName: string;
+    sceneId: string;
+    versionNumber: string;
+}
+/**
+ * Manages all configuration settings for the SDK.
+ */
 declare class Config {
     LOG: boolean;
-    SDKVersion: any;
+    SDKVersion: string;
     networkHost: string;
     APIKey: string;
     networkVersion: string;
@@ -11,12 +20,17 @@ declare class Config {
     customEventBatchSize: number;
     gazeBatchSize: number;
     GazeInterval: number;
-    allSceneData: any[];
-    sceneData(sceneName: any, sceneId: any, versionNumber: any): {
-        sceneName: any;
-        sceneId: any;
-        versionNumber: any;
-    };
-    set settings(settings: any);
-    HMDType: any;
+    allSceneData: SceneData[];
+    HMDType?: string;
+    /**
+     * Creates a SceneData object.
+     */
+    sceneData(sceneName: string, sceneId: string, versionNumber: string): SceneData;
+    /**
+     * Merges new settings into the current configuration.
+     * @param newSettings - An object with properties to override in the config.
+     */
+    set settings(newSettings: Partial<Config>);
 }
+declare const defaultConfig: Config;
+export default defaultConfig;

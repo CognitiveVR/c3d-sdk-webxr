@@ -4,7 +4,7 @@ declare class C3D {
     core: {
         config: {
             LOG: boolean;
-            SDKVersion: any;
+            SDKVersion: string;
             networkHost: string;
             APIKey: string;
             networkVersion: string;
@@ -13,17 +13,13 @@ declare class C3D {
             customEventBatchSize: number;
             gazeBatchSize: number;
             GazeInterval: number;
-            allSceneData: any[];
-            sceneData(sceneName: any, sceneId: any, versionNumber: any): {
-                sceneName: any;
-                sceneId: any;
-                versionNumber: any;
-            };
-            set settings(settings: any);
-            HMDType: any;
+            allSceneData: import("./config").SceneData[];
+            HMDType?: string;
+            sceneData(sceneName: string, sceneId: string, versionNumber: string): import("./config").SceneData;
+            set settings(newSettings: Partial</*elided*/ any>);
         };
         isSessionActive: boolean;
-        sceneData: any;
+        sceneData: import("./config").SceneData;
         userId: string;
         deviceId: string;
         sessionId: string;
@@ -62,7 +58,7 @@ declare class C3D {
             VRVendor: string;
         };
         getSessionTimestamp(): string;
-        getCurrentScene(): any;
+        getCurrentScene(): import("./config").SceneData;
         setScene(name: any): void;
         getTimestamp(): number;
         isSessionActive1(): boolean;
@@ -128,7 +124,7 @@ declare class C3D {
     setDeviceProperty(property: any, value: any): void;
     set deviceId(deviceId: any);
     getApiKey(): string;
-    getSceneId(): any;
+    getSceneId(): string;
 }
 import { XRSessionManager } from './utils/webxr';
 import Network from './network';
