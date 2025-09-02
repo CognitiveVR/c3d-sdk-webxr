@@ -20,7 +20,7 @@ export interface DevicePropertyMap {
  * properties, and scene information. It acts as the central hub that other modules
  * in the SDK interact with.
  */
-class CognitiveVRAnalyticsCore {
+export class CognitiveVRAnalyticsCore {
     /** A singleton instance of the Config class. */
     public config: typeof Config;
 
