@@ -1,6 +1,6 @@
 {
   "name": "@cognitive3d/analytics",
-  "version": "2.1.5",
+  "version": "2.2.0",
   "description": "This SDK allows you to integrate your Javascript Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project.",
   "main": "lib/cjs/index.cjs.js",
   "module": "lib/esm/index.esm.js",
@@ -78,7 +78,7 @@
     "uuid": "^11.1.0"
   },
   "peerDependencies": {
-    "three": ">=0.128.0",
+    "three": ">=0.177.0",
     "babylonjs": ">=5.0.0",
     "playcanvas": ">=1.50.0",
     "@wonderlandengine/api": ">=1.0.0",
