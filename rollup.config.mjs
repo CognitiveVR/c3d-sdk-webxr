@@ -39,6 +39,7 @@ const input = {
   'adapters/threejs-adapter': 'src/adapters/threejs-adapter.js',
   'adapters/babylon-adapter': 'src/adapters/babylon-adapter.js',
   'adapters/playcanvas-adapter': 'src/adapters/playcanvas-adapter.js',
+  'adapters/wonderland-adapter': 'src/adapters/wonderland-adapter.js', 
 };
 const external = [
   ...Object.keys(pkg.dependencies || {}),
@@ -147,6 +148,24 @@ export default [
           ...commonPlugins,
           terser()
       ]
+  },
+  // UMD build for Wonderland Engine Adapter
+  {
+      input: 'src/adapters/wonderland-adapter.js',
+      output: {
+          name: 'C3DWonderlandAdapter',
+          file: 'lib/c3d-wonderland-adapter.umd.js',
+          format: 'umd',
+          sourcemap: true,
+          globals: {
+              '@wonderlandengine/api': 'WL',
+              'gl-matrix': 'glMatrix'
+          }
+      },
+      external: ['@wonderlandengine/api', 'gl-matrix'],
+      plugins: [
+          ...commonPlugins,
+          terser()
+      ]
   }
-  
 ];
