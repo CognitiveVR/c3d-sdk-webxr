@@ -24,8 +24,8 @@ export class CognitiveVRAnalyticsCore {
     /** A singleton instance of the Config class. */
     public config: typeof Config;
 
-    /** A boolean flag indicating whether a session is currently active. */
-    public isSessionActive: boolean;
+    /** Boolean flag indicating whether a session is currently active. */
+    private _isSessionActive: boolean;
 
     /** Holds the data for the currently active scene. */
     public sceneData: SceneData;
@@ -56,7 +56,7 @@ export class CognitiveVRAnalyticsCore {
 
     constructor() {
         this.config = Config;
-        this.isSessionActive = false;
+        this._isSessionActive = false;
         this.sceneData = this.getCurrentScene();
         this.userId = '';
         this.deviceId = '';
@@ -142,6 +142,14 @@ export class CognitiveVRAnalyticsCore {
     public getTimestamp(): number {
         return Date.now() / 1000;
     }
+    
+    /**
+     * Checks if a session is currently active.
+     * @returns True if a session is active, otherwise false.
+     */
+    public isSessionActive(): boolean {
+        return this._isSessionActive;
+    }
 
     /**
      * Gets the unique ID for the current session. If not set, it generates one.
@@ -183,7 +191,7 @@ export class CognitiveVRAnalyticsCore {
     }
 
     public set setSessionStatus(active: boolean) {
-        this.isSessionActive = active;
+        this._isSessionActive = active;
     }
 
     public set setSessionTimestamp(value: number | '') {

@@ -45,15 +45,14 @@ class C3D {
     this.exitpoll = new ExitPoll(this.core, this.customEvent);
     this.dynamicObject = new DynamicObject(this.core, this.customEvent);
     this.fpsTracker = new FPSTracker(); 
+    this.renderer = renderer; 
 
     // Set default device properties using environment utils
     const deviceMemory = getDeviceMemory();
     if (deviceMemory) {
       this.setDeviceProperty('DeviceMemory', deviceMemory * 1000); 
     }
-    if (renderer) {
-        this.profiler.start(renderer); 
-    }
+
     const screenHeight = getScreenHeight();
     if (screenHeight) {
       this.setDeviceProperty('DeviceScreenHeight', screenHeight);
@@ -83,7 +82,10 @@ class C3D {
   }
   async startSession(xrSession = null) { 
     if (this.core.isSessionActive) { return false; }
-    
+  
+    if (this.renderer) { 
+      this.profiler.start(this.renderer);
+    }
     this.fpsTracker.start(metrics => {
       this.sensor.recordSensor('c3d.fps.avg', metrics.avg);
       this.sensor.recordSensor('c3d.fps.1pl', metrics['1pl']);
@@ -234,15 +236,22 @@ class C3D {
     this.core.config.allSceneData.push(scene);
   }
 
-  setScene(name) {
-    console.log(`CognitiveVRAnalytics::SetScene: ${name}`);
-    if (this.core.sceneData.sceneId) {
-      this.sendData();
-      this.dynamicObject.refreshObjectManifest();
+  // setScene(name) {
+  //   console.log(`CognitiveVRAnalytics::SetScene: ${name}`);
+  //   if (this.core.sceneData.sceneId) {
+  //     this.sendData();
+  //     this.dynamicObject.refreshObjectManifest();
+  //   }
+  //   this.core.setScene(name);
+  // }
+  async setScene(name) {
+      console.log(`CognitiveVRAnalytics::SetScene: ${name}`);
+      if (this.core.sceneData.sceneId) {
+        await this.sendData();
+        this.dynamicObject.refreshObjectManifest();
+      }
+      this.core.setScene(name);
     }
-    this.core.setScene(name);
-  }
-
   set allSceneData(allSceneData) {
     this.core.allSceneData = allSceneData;
   }
