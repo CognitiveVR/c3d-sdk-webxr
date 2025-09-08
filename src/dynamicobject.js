@@ -38,8 +38,7 @@ class DynamicObject {
 		let dome = this.dynamicObjectManifestEntry(registerId.id, name, meshname, finalFileType);
 		this.manifestEntries.push(dome);
 		this.fullManifest.push(dome);
-		let props = {};
-		props['enabled'] = true;
+		let props = [{ "enabled": true }];
 
 		this.addSnapshot(customid, position, rotation, props);
 
@@ -60,8 +59,7 @@ class DynamicObject {
 			this.manifestEntries.push(dome);
 			this.fullManifest.push(dome);
 		}
-		let props = {};
-		props['enabled'] = true;
+		let props = [{ "enabled": true }];
 		this.addSnapshot(newObjectId.id, position, rotation, props);
 
 		if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
@@ -237,8 +235,7 @@ class DynamicObject {
 		this.endActiveEngagements(objectid);
 
 		//one final snapshot to send all the ended engagements
-		let props = {};
-		props['enabled'] = false;
+		let props = [{ "enabled": false }];
 		this.addSnapshot(objectid, position, rotation, props);
 
 		for (let i = 0; i < this.objectIds.length; i++) {
