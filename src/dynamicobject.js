@@ -46,7 +46,7 @@ class DynamicObject {
 		if ((this.snapshots.length + this.manifestEntries.length) >= this.core.config.dynamicDataLimit) {
 			this.sendData();
 		}
-		return;
+		return customid;
 	};
 
 	registerObject(name, meshname, position, rotation, fileType) {
