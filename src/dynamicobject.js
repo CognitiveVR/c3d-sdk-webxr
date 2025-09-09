@@ -81,6 +81,7 @@ class DynamicObject {
 		if (!foundId) {
 			console.warn("DynamicObject::Snapshot cannot find objectId " + objectId + " in full manifest. Did you Register this object?");
 		}
+		console.log(`Adding snapshot for ${objectId} at position:`, position, "rotation:", rotation);
 
 		let snapshot = this.dynamicObjectSnapshot(position, rotation, objectId, properties);
 
