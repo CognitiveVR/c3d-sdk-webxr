@@ -38,15 +38,14 @@ class DynamicObject {
 		let dome = this.dynamicObjectManifestEntry(registerId.id, name, meshname, finalFileType);
 		this.manifestEntries.push(dome);
 		this.fullManifest.push(dome);
-		let props = {};
-		props['enabled'] = true;
+		let props = [{ "enabled": true }];
 
 		this.addSnapshot(customid, position, rotation, props);
 
 		if ((this.snapshots.length + this.manifestEntries.length) >= this.core.config.dynamicDataLimit) {
 			this.sendData();
 		}
-		return;
+		return customid;
 	};
 
 	registerObject(name, meshname, position, rotation, fileType) {
@@ -60,8 +59,7 @@ class DynamicObject {
 			this.manifestEntries.push(dome);
 			this.fullManifest.push(dome);
 		}
-		let props = {};
-		props['enabled'] = true;
+		let props = [{ "enabled": true }];
 		this.addSnapshot(newObjectId.id, position, rotation, props);
 
 		if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
@@ -83,6 +81,7 @@ class DynamicObject {
 		if (!foundId) {
 			console.warn("DynamicObject::Snapshot cannot find objectId " + objectId + " in full manifest. Did you Register this object?");
 		}
+		console.log(`Adding snapshot for ${objectId} at position:`, position, "rotation:", rotation);
 
 		let snapshot = this.dynamicObjectSnapshot(position, rotation, objectId, properties);
 
@@ -237,8 +236,7 @@ class DynamicObject {
 		this.endActiveEngagements(objectid);
 
 		//one final snapshot to send all the ended engagements
-		let props = {};
-		props['enabled'] = false;
+		let props = [{ "enabled": false }];
 		this.addSnapshot(objectid, position, rotation, props);
 
 		for (let i = 0; i < this.objectIds.length; i++) {
