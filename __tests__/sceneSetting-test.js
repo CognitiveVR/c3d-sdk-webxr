@@ -1,5 +1,5 @@
 import C3DAnalytics from '../lib/cjs/index.cjs.js'; 
-import settings from '../settings.ts';
+import settings from '../settings';
 
 //jest.setTimeout(10000); // 10 seconds
 

@@ -7,7 +7,7 @@
           "not dead",
           "not op_mini all"
         ],
-        "node": "20"
+        "node": "14"
       },
       "modules": false,
       "useBuiltIns": "usage",
@@ -22,8 +22,7 @@
           "targets": {
             "node": "current"
           }
-        }],
-                "@babel/preset-typescript"
+        }]
       ]
     }
   }

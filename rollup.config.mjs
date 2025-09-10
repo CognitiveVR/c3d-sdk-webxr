@@ -3,7 +3,6 @@ import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
 import terser from '@rollup/plugin-terser';
 import replace from '@rollup/plugin-replace';
-import typescript from '@rollup/plugin-typescript'; // Import the TypeScript plugin
 import { builtinModules } from 'module';
 import fs from 'fs';
 import path from 'path';
@@ -11,7 +10,6 @@ import path from 'path';
 const pkg = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf-8'));
 
 const commonPlugins = [
-  typescript(), // Add the TypeScript plugin here, before Babel
   replace({
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     '__SDK_VERSION__': JSON.stringify(pkg.version),
@@ -22,14 +20,12 @@ const commonPlugins = [
     presets: [
       ['@babel/preset-env', {
         targets: {
-          node: '20',
+          node: '20', 
           browsers: pkg.browserslist,
         },
-      }],
-      '@babel/preset-typescript', // Add the TypeScript preset for Babel
+      }]
     ],
-    exclude: 'node_modules/**',
-    extensions: ['.js', '.jsx', '.ts', '.tsx'], // Make sure Babel processes TypeScript files
+    exclude: 'node_modules/**'
   }),
   resolve({
     browser: true,
