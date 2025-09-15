@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 
 class C3DThreeAdapter {
   constructor(c3dInstance) {
@@ -9,7 +10,6 @@ class C3DThreeAdapter {
 
     this.c3d.setDeviceProperty('AppEngine', 'Three.js');
     this.c3d.setDeviceProperty('AppEngineVersion', THREE.REVISION);
-
   }
 
   fromVector3(vec3) { // translate a THREE.Vector3 to a simple array
@@ -26,6 +26,34 @@ class C3DThreeAdapter {
       const gaze = this.fromVector3(forward);
 
       this.c3d.gaze.recordGaze(position, rotation, gaze);
+  }
+
+  /**
+   * Exports the current scene to a GLTF file.
+   * @param {THREE.Scene} scene - The Three.js scene to export.
+   * @param {string} sceneName - The name of the scene to use for the exported file.
+   */
+  exportGLTF(scene, sceneName) {
+    const exporter = new GLTFExporter();
+    exporter.parse(
+      scene,
+      (gltf) => {
+        const output = JSON.stringify(gltf, null, 2);
+        const blob = new Blob([output], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.style.display = 'none';
+        link.href = url;
+        link.download = `${sceneName}.gltf`;
+        document.body.appendChild(link);
+        link.click();
+        URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+      },
+      (error) => {
+        console.error('An error happened during GLTF exportation:', error);
+      }
+    );
   }
 }
 

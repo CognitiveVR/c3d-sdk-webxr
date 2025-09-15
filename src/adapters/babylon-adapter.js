@@ -1,4 +1,5 @@
 import * as BABYLON from 'babylonjs';
+import { GLTF2Export } from 'babylonjs-serializers';
 
 class C3DBabylonAdapter {
   constructor(c3dInstance) {
@@ -30,6 +31,19 @@ class C3DBabylonAdapter {
     const gaze = this.fromVector3(forwardVector);
 
     this.c3d.gaze.recordGaze(position, rotation, gaze);
+  }
+
+  /**
+   * Exports the current scene to a GLB file.
+   * @param {BABYLON.Scene} scene - The Babylon.js scene to export.
+   * @param {string} sceneName - The name of the scene to use for the exported file.
+   */
+  exportGLTF(scene, sceneName) {
+    GLTF2Export.GLBAsync(scene, sceneName).then((glb) => {
+      glb.downloadFiles();
+    }).catch((error) => {
+      console.error('An error happened during GLTF exportation:', error);
+    });
   }
 }
 
