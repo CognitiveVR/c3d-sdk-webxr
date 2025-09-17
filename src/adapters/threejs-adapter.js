@@ -17,7 +17,7 @@ class C3DThreeAdapter {
   }
   fromQuaternion(quat) { // THREE.Quaternion to a simple array
     return [quat.x, quat.y, quat.z, quat.w];
-  }  
+  }
   recordGazeFromCamera(camera) {
       const position = this.fromVector3(camera.position);
       const rotation = this.fromQuaternion(camera.quaternion);
@@ -32,28 +32,64 @@ class C3DThreeAdapter {
    * Exports the current scene to a GLTF file.
    * @param {THREE.Scene} scene - The Three.js scene to export.
    * @param {string} sceneName - The name of the scene to use for the exported file.
+   * @param {THREE.WebGLRenderer} renderer - The renderer instance to capture a screenshot for upload-tools.
    */
-  exportGLTF(scene, sceneName) {
+  exportGLTF(scene, sceneName, renderer) {
+    // Export GLTF and BIN
     const exporter = new GLTFExporter();
     exporter.parse(
       scene,
       (gltf) => {
-        const output = JSON.stringify(gltf, null, 2);
-        const blob = new Blob([output], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.style.display = 'none';
-        link.href = url;
-        link.download = `${sceneName}.gltf`;
-        document.body.appendChild(link);
-        link.click();
-        URL.revokeObjectURL(url);
-        document.body.removeChild(link);
+        const gltfString = JSON.stringify(gltf, null, 2);
+        const gltfBlob = new Blob([gltfString], { type: 'application/json' });
+        this.downloadBlob(gltfBlob, 'scene.gltf');
+
+        // The binary data (scene.bin) is handled by the GLTFExporter
+        // and is usually embedded or referenced within the GLTF file.
+        // If it's separate, you would handle it here.
       },
       (error) => {
         console.error('An error happened during GLTF exportation:', error);
-      }
+      },
+      { binary: true } // Export as binary to get a .bin file
     );
+
+    // Create and download settings.json
+    const settings = {
+      scale: 1,
+      sceneName: sceneName,
+      sdkVersion: "0.2.2" // Or dynamically get this from your project
+    };
+    const settingsString = JSON.stringify(settings, null, 2);
+    const settingsBlob = new Blob([settingsString], { type: 'application/json' });
+    this.downloadBlob(settingsBlob, 'settings.json');
+
+    // Create and download screenshot.png
+    renderer.render(scene, camera); // Ensure the scene is rendered
+    const screenshotDataUrl = renderer.domElement.toDataURL('image/png');
+    this.downloadDataURL(screenshotDataUrl, 'screenshot.png');
+  }
+
+  downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.style.display = 'none';
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+  }
+
+  downloadDataURL(dataUrl, filename) {
+    const link = document.createElement('a');
+    link.style.display = 'none';
+    link.href = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }
 
