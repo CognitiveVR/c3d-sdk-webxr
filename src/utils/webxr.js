@@ -11,6 +11,8 @@ export class XRSessionManager {
     this.isTracking = false; 
     this.animationFrameHandle = null;
     this.onXRFrame = this.onXRFrame.bind(this);
+    this.lastUpdateTime = 0; // Timestamp of the last gaze record
+    this.interval = 1000; // 0.1s interval between gaze records
   }
 
   async start() {
@@ -46,16 +48,20 @@ export class XRSessionManager {
   onXRFrame(timestamp, frame) { // runs every frame, gets pos + orientation and records to gazeTracker module 
     if (!this.isTracking) return;
 
-    const viewerPose = frame.getViewerPose(this.referenceSpace);
+    // Record gaze after interval ~ 0.1 seconds 
+    if (timestamp - this.lastUpdateTime >= this.interval) {
+        this.lastUpdateTime = timestamp;
+        const viewerPose = frame.getViewerPose(this.referenceSpace);
 
-    if (viewerPose) {
-      const { position, orientation } = viewerPose.transform;
-      this.gazeTracker.recordGaze(
-        [position.x, position.y, position.z],
-        [-orientation.x, -orientation.y, -orientation.z, orientation.w]
-      );
+        if (viewerPose) {
+          const { position, orientation } = viewerPose.transform;
+          this.gazeTracker.recordGaze(
+            [position.x, position.y, position.z],
+            [-orientation.x, -orientation.y, -orientation.z, orientation.w]
+          );
+        }
     }
-
+    
     this.animationFrameHandle = this.xrSession.requestAnimationFrame(this.onXRFrame); // next frame 
   }
 }
