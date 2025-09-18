@@ -165,8 +165,8 @@ c3d.userId = 'userid' + Date.now();
 c3d.setUserName('SDK_Test_User');
 c3d.setDeviceName('WindowsPCBrowserVR');
 c3d.setDeviceProperty("AppName", "ThreeJS_WebXR_SDK_Test_App");
+c3d.setDeviceProperty("AppEngine", "ThreeJS");
 c3d.setUserProperty("c3d.app.version", "0.2");
-c3d.setUserProperty("c3d.deviceid", 'threejs_windows_device_' + Date.now());
 
 // 4. START THE C3D SESSION, Example using a WebXR 'sessionstart' event listener:
 renderer.xr.addEventListener('sessionstart', async () => {
