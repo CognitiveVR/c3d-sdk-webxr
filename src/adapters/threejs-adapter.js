@@ -104,12 +104,11 @@ class C3DThreeAdapter {
               const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
 
               // Create and handle screenshot.png
-              renderer.render(scene, camera);
               const screenshotDataUrl = renderer.domElement.toDataURL('image/png');
               const screenshotBlob = await (await fetch(screenshotDataUrl)).blob();
 
 
-              // Save or download all files
+              // Save/ download all files needed for c3d-upload-tools
               if (dir) {
                   if (binBlob) await this._writeFile(dir, "scene.bin", binBlob);
                   await this._writeFile(dir, "scene.gltf", gltfBlob);
