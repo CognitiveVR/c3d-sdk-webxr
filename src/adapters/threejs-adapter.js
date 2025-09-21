@@ -17,7 +17,7 @@ class C3DThreeAdapter {
   }
   fromQuaternion(quat) { // THREE.Quaternion to a simple array
     return [quat.x, quat.y, quat.z, quat.w];
-  }  
+  }
   recordGazeFromCamera(camera) {
       const position = this.fromVector3(camera.position);
       const rotation = this.fromQuaternion(camera.quaternion);
@@ -27,33 +27,106 @@ class C3DThreeAdapter {
 
       this.c3d.gaze.recordGaze(position, rotation, gaze);
   }
+  // Helper methods for file writing
+  async _ensureExportDir() {
+      if (this.exportDirHandle) return this.exportDirHandle;
+      if (!window.showDirectoryPicker) return null;
+      try {
+          const root = await window.showDirectoryPicker();
+          const sceneDir = await root.getDirectoryHandle("scene", { create: true });
+          const perm = await sceneDir.requestPermission?.({ mode: "readwrite" });
+          if (perm && perm !== "granted") throw new Error("Write permission denied");
+          this.exportDirHandle = sceneDir;
+          return sceneDir;
+      } catch (err) {
+          console.error("Error getting directory handle:", err);
+          return null;
+      }
+  }
+
+  async _writeFile(dirHandle, filename, blob) {
+      const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+  }
+
+  _downloadBlob(blob, filename) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+          URL.revokeObjectURL(a.href);
+          a.remove();
+      }, 800);
+  }
 
   /**
-   * Exports the current scene to a GLTF file.
+   * Exports the current scene to GLTF and other necessary files for Cognitive3D.
    * @param {THREE.Scene} scene - The Three.js scene to export.
    * @param {string} sceneName - The name of the scene to use for the exported file.
+   * @param {THREE.WebGLRenderer} renderer - The renderer instance to capture a screenshot.
+   * @param {THREE.Camera} camera - The camera used for the screenshot.
    */
-  exportGLTF(scene, sceneName) {
-    const exporter = new GLTFExporter();
-    exporter.parse(
-      scene,
-      (gltf) => {
-        const output = JSON.stringify(gltf, null, 2);
-        const blob = new Blob([output], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.style.display = 'none';
-        link.href = url;
-        link.download = `${sceneName}.gltf`;
-        document.body.appendChild(link);
-        link.click();
-        URL.revokeObjectURL(url);
-        document.body.removeChild(link);
-      },
-      (error) => {
-        console.error('An error happened during GLTF exportation:', error);
-      }
-    );
+  exportScene(scene, sceneName, renderer, camera) {
+      const exporter = new GLTFExporter();
+
+      // Export GLTF and BIN
+      exporter.parse(
+          scene,
+          async (gltf) => {
+              const dir = await this._ensureExportDir();
+
+              // Handle the binary .bin file
+              const prefix = "data:application/octet-stream;base64,";
+              const uri = gltf.buffers?.[0]?.uri || "";
+              let binBlob = null;
+              if (uri.startsWith(prefix)) {
+                  const b64 = uri.slice(prefix.length);
+                  const raw = atob(b64);
+                  const bytes = new Uint8Array(raw.length);
+                  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+                  binBlob = new Blob([bytes.buffer], { type: "application/octet-stream" });
+                  gltf.buffers[0].uri = "scene.bin";
+              }
+
+              // Handle the .gltf file
+              const gltfBlob = new Blob([JSON.stringify(gltf, null, 2)], { type: "model/gltf+json" });
+
+              // Create and handle settings.json
+              const settings = {
+                  scale: 1,
+                  sceneName: sceneName,
+                  sdkVersion: "2.2.3" 
+              };
+              const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+
+              // Create and handle screenshot.png
+              const screenshotDataUrl = renderer.domElement.toDataURL('image/png');
+              const screenshotBlob = await (await fetch(screenshotDataUrl)).blob();
+
+
+              // Save/ download all files needed for c3d-upload-tools
+              if (dir) {
+                  if (binBlob) await this._writeFile(dir, "scene.bin", binBlob);
+                  await this._writeFile(dir, "scene.gltf", gltfBlob);
+                  await this._writeFile(dir, "settings.json", settingsBlob);
+                  await this._writeFile(dir, "screenshot.png", screenshotBlob);
+                  console.log("Exported scene files to the 'scene' directory.");
+              } else {
+                  console.warn("File System Access API not available; falling back to downloads.");
+                  if (binBlob) this._downloadBlob(binBlob, "scene.bin");
+                  this._downloadBlob(gltfBlob, "scene.gltf");
+                  this._downloadBlob(settingsBlob, "settings.json");
+                  this._downloadBlob(screenshotBlob, "screenshot.png");
+              }
+          },
+          (err) => console.error("GLTF export failed:", err),
+          // Use binary: false to get a separate .bin file
+          { binary: false, embedImages: true, onlyVisible: true, truncateDrawRange: true, maxTextureSize: 4096 }
+      );
   }
 }
 

@@ -45,7 +45,7 @@ const external = [
   ...Object.keys(pkg.dependencies || {}),
   ...builtinModules,
   'playcanvas', 
-  'three', 
+  /^three(\/.*)?$/, // Match 'three' and all sub-paths
   'babylonjs'
 ];
 
@@ -121,11 +121,15 @@ export default [
         file: 'lib/c3d-threejs-adapter.umd.js',
         format: 'umd',
         sourcemap: true,
-        globals: {
-            'three': 'THREE'
+        // Make globals a function to handle sub-paths
+        globals: (id) => {
+          if (/^three/.test(id)) {
+            return 'THREE';
+          }
+          return id;
         }
     },
-    external: ['three'],
+    external: [/^three/], // Regex to externalize all 'three' imports
     plugins: [
         ...commonPlugins,
         terser()
@@ -169,3 +173,4 @@ export default [
       ]
   }
 ];
+
