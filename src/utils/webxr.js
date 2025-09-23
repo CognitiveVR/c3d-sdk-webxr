@@ -12,7 +12,7 @@ export class XRSessionManager {
     this.animationFrameHandle = null;
     this.onXRFrame = this.onXRFrame.bind(this);
     this.lastUpdateTime = 0; // Timestamp of the last gaze record
-    this.interval = 1000; // 0.1s interval between gaze records
+    this.interval = 100; // 0.1s interval between gaze records
   }
 
   async start() {

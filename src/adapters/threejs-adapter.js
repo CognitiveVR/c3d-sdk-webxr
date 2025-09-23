@@ -73,10 +73,20 @@ class C3DThreeAdapter {
   exportScene(scene, sceneName, renderer, camera) {
       const exporter = new GLTFExporter();
 
-      // Export GLTF and BIN
+      // New root object for the export
+      const exportRoot = new THREE.Group();
+      exportRoot.name = "CoordinateSystemFix";
+      exportRoot.add(scene); // 'scene' is the exportGroup from the app
+
+      // Apply the X and Z-axis flip to the new root
+      exportRoot.scale.z = -1;
+      exportRoot.scale.x = -1;
+
+      // Export the new root object ---
       exporter.parse(
-          scene,
+          exportRoot, // Pass the wrapper to the exporter
           async (gltf) => {
+
               const dir = await this._ensureExportDir();
 
               // Handle the binary .bin file
@@ -92,23 +102,16 @@ class C3DThreeAdapter {
                   gltf.buffers[0].uri = "scene.bin";
               }
 
-              // Handle the .gltf file
               const gltfBlob = new Blob([JSON.stringify(gltf, null, 2)], { type: "model/gltf+json" });
-
-              // Create and handle settings.json
               const settings = {
                   scale: 1,
                   sceneName: sceneName,
-                  sdkVersion: "2.2.3" 
+                  sdkVersion: "2.2.3"
               };
               const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
-
-              // Create and handle screenshot.png
               const screenshotDataUrl = renderer.domElement.toDataURL('image/png');
               const screenshotBlob = await (await fetch(screenshotDataUrl)).blob();
 
-
-              // Save/ download all files needed for c3d-upload-tools
               if (dir) {
                   if (binBlob) await this._writeFile(dir, "scene.bin", binBlob);
                   await this._writeFile(dir, "scene.gltf", gltfBlob);
@@ -116,15 +119,20 @@ class C3DThreeAdapter {
                   await this._writeFile(dir, "screenshot.png", screenshotBlob);
                   console.log("Exported scene files to the 'scene' directory.");
               } else {
-                  console.warn("File System Access API not available; falling back to downloads.");
-                  if (binBlob) this._downloadBlob(binBlob, "scene.bin");
-                  this._downloadBlob(gltfBlob, "scene.gltf");
-                  this._downloadBlob(settingsBlob, "settings.json");
-                  this._downloadBlob(screenshotBlob, "screenshot.png");
+                    console.warn("File System Access API not available; falling back to zip download.");
+                    const zip = new JSZip();
+                    if (binBlob) zip.file("scene.bin", binBlob);
+                    zip.file("scene.gltf", gltfBlob);
+                    zip.file("settings.json", settingsBlob);
+                    zip.file("screenshot.png", screenshotBlob);
+
+                    const zipBlob = await zip.generateAsync({ type: "blob" });
+                    this._downloadBlob(zipBlob, "scene-export.zip");
               }
           },
-          (err) => console.error("GLTF export failed:", err),
-          // Use binary: false to get a separate .bin file
+          (err) => {
+              console.error("GLTF export failed:", err);
+          }, // binary:false results in both .gltf and .bin files 
           { binary: false, embedImages: true, onlyVisible: true, truncateDrawRange: true, maxTextureSize: 4096 }
       );
   }
