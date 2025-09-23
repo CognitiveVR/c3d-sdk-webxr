@@ -33,7 +33,6 @@ class C3D {
     this.xrSessionManager = null; 
 
     this.setUserProperty("c3d.version", this.core.config.SDKVersion);  
-    this.setDeviceProperty("SDKType", "WebXR"); 
     this.lastInputType = 'none'; // Can be 'none', 'hand', or 'controller'
     this.network = new Network(this.core);
     this.gaze = new GazeTracker(this.core);
