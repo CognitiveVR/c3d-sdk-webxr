@@ -22,6 +22,7 @@ class DynamicObject {
 		this.allEngagements = {};
 		//count of engagements on dynamic objects of type
 		this.engagementCounts = {};
+		this.trackedObjects = new Map();
 	}
 	registerObjectCustomId(name, meshname, customid, position, rotation, fileType) {
 		for (let i = 0; i < this.objectIds.length; i++) {
@@ -67,6 +68,39 @@ class DynamicObject {
 		}
 		return newObjectId.id;
 	};
+
+	trackObject(id, object) {
+		if (!id || !object) {
+			console.error("DynamicObject.trackObject: id and object must be provided.");
+			return;
+		}
+		this.trackedObjects.set(id, {
+			object: object,
+			lastPosition: object.position.toArray(),
+			lastRotation: object.quaternion.toArray(),
+			lastScale: object.scale.toArray()
+		});
+	}
+
+	updateTrackedObjects() {
+		this.trackedObjects.forEach((tracked, id) => {
+			const { object } = tracked;
+			const newPosition = object.position.toArray();
+			const newRotation = object.quaternion.toArray();
+			const newScale = object.scale.toArray();
+
+			const positionChanged = JSON.stringify(newPosition) !== JSON.stringify(tracked.lastPosition);
+			const rotationChanged = JSON.stringify(newRotation) !== JSON.stringify(tracked.lastRotation);
+			const scaleChanged = JSON.stringify(newScale) !== JSON.stringify(tracked.lastScale);
+
+			if (positionChanged || rotationChanged || scaleChanged) {
+				this.addSnapshot(id, newPosition, newRotation);
+				tracked.lastPosition = newPosition;
+				tracked.lastRotation = newRotation;
+				tracked.lastScale = newScale;
+			}
+		});
+	}
 
 
 	addSnapshot(objectId, position, rotation, properties) {

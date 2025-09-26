@@ -92,7 +92,7 @@ class C3D {
     });
 
     if (xrSession) {  
-      this.xrSessionManager = new XRSessionManager(this.gaze, xrSession);
+      this.xrSessionManager = new XRSessionManager(this.gaze, xrSession, this.dynamicObject);
       
       await this.xrSessionManager.start();
       this.controllerTracker.start(xrSession);

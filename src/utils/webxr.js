@@ -4,26 +4,27 @@
  */
 
 export class XRSessionManager {
-  constructor(gazeTracker, xrSession) {
-    this.gazeTracker = gazeTracker; // this sdks gazetracker module, data is sent here  
-    this.xrSession = xrSession; // A live xr session to be provided by the browser 
-    this.referenceSpace = null; // local floor to measure the position against 
+  constructor(gazeTracker, xrSession, dynamicObject = null) {
+    this.gazeTracker = gazeTracker; 
+    this.xrSession = xrSession; 
+    this.dynamicObject = dynamicObject;
+    this.referenceSpace = null; 
     this.isTracking = false; 
     this.animationFrameHandle = null;
     this.onXRFrame = this.onXRFrame.bind(this);
-    this.lastUpdateTime = 0; // Timestamp of the last gaze record
-    this.interval = 100; // 0.1s interval between gaze records
+    this.lastUpdateTime = 0; 
+    this.interval = 100; 
   }
 
   async start() {
       if (this.isTracking) return;
       try {
-          this.referenceSpace = await this.xrSession.requestReferenceSpace('local-floor'); // local floor works in threejs but not playcanvas 
+          this.referenceSpace = await this.xrSession.requestReferenceSpace('local-floor'); 
           console.log('Cog3D-XR-Session-Manager: Using "local-floor" reference space.');
       } catch (error) {
           console.warn('Cog3D-XR-Session-Manager: "local-floor" not supported, falling back to "local".', error);
           try {
-              this.referenceSpace = await this.xrSession.requestReferenceSpace('local'); // local is more common 
+              this.referenceSpace = await this.xrSession.requestReferenceSpace('local'); 
               console.log('Cog3D-XR-Session-Manager: Using "local" reference space.');
           } catch (fallbackError) {
               console.error('Cog3D-XR-Session-Manager: Failed to get any supported reference space.', fallbackError);
@@ -35,7 +36,7 @@ export class XRSessionManager {
       console.log('Cog3D-XR-Session-Manager: Gaze tracking started.');
   }
 
-  stop() { // Stop the gaze tracking loop.
+  stop() { 
     if (!this.isTracking) return;
 
     this.isTracking = false;
@@ -45,10 +46,9 @@ export class XRSessionManager {
     console.log('Cog3D-XR-Session-Manager: Gaze tracking stopped.');
   }
 
-  onXRFrame(timestamp, frame) { // runs every frame, gets pos + orientation and records to gazeTracker module 
+  onXRFrame(timestamp, frame) { 
     if (!this.isTracking) return;
 
-    // Record gaze after interval ~ 0.1 seconds 
     if (timestamp - this.lastUpdateTime >= this.interval) {
         this.lastUpdateTime = timestamp;
         const viewerPose = frame.getViewerPose(this.referenceSpace);
@@ -60,9 +60,13 @@ export class XRSessionManager {
             [-orientation.x, -orientation.y, -orientation.z, orientation.w]
           );
         }
+        
+        if (this.dynamicObject) {
+            this.dynamicObject.updateTrackedObjects();
+        }
     }
     
-    this.animationFrameHandle = this.xrSession.requestAnimationFrame(this.onXRFrame); // next frame 
+    this.animationFrameHandle = this.xrSession.requestAnimationFrame(this.onXRFrame); 
   }
 }
 // Controller (profile identifier) lookup table to infer HMD Device 
@@ -83,7 +87,6 @@ export const getHMDInfo = (inputSources) => {
         for (const profile of source.profiles) {
             const lowerCaseProfile = profile.toLowerCase();
             
-            // Find a matching profile in our map
             const matchedProfile = Object.keys(HMD_PROFILE_MAP).find(key => lowerCaseProfile.includes(key));
 
             if (matchedProfile) {
@@ -92,7 +95,7 @@ export const getHMDInfo = (inputSources) => {
             }
         }
     }
-    return null; // No profile found
+    return null; 
 };
 
 export const getEnabledFeatures = (xrSession) => {

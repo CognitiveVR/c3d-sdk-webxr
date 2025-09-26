@@ -27,6 +27,10 @@ class C3DThreeAdapter {
 
       this.c3d.gaze.recordGaze(position, rotation, gaze);
   }
+
+  trackDynamicObject(object, id) {
+      this.c3d.dynamicObject.trackObject(id, object);
+  }
   // Helper methods for file writing
   async _ensureExportDir() {
       if (this.exportDirHandle) return this.exportDirHandle;
