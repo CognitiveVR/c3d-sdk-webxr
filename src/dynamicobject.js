@@ -68,6 +68,38 @@ class DynamicObject {
 		}
 		return newObjectId.id;
 	};
+	// trackObject(id, object) {
+	// 	if (!id || !object) {
+	// 		console.error("DynamicObject.trackObject: id and object must be provided.");
+	// 		return;
+	// 	}
+	// 	this.trackedObjects.set(id, {
+	// 		object: object,
+	// 		lastPosition: object.position.toArray(),
+	// 		lastRotation: object.quaternion.toArray(),
+	// 		lastScale: object.scale.toArray()
+	// 	});
+	// }
+
+	// updateTrackedObjects() {
+	// 	this.trackedObjects.forEach((tracked, id) => {
+	// 		const { object } = tracked;
+	// 		const newPosition = object.position.toArray();
+	// 		const newRotation = object.quaternion.toArray();
+	// 		const newScale = object.scale.toArray();
+
+	// 		const positionChanged = JSON.stringify(newPosition) !== JSON.stringify(tracked.lastPosition);
+	// 		const rotationChanged = JSON.stringify(newRotation) !== JSON.stringify(tracked.lastRotation);
+	// 		const scaleChanged = JSON.stringify(newScale) !== JSON.stringify(tracked.lastScale);
+
+	// 		if (positionChanged || rotationChanged || scaleChanged) {
+	// 			this.addSnapshot(id, newPosition, newRotation);
+	// 			tracked.lastPosition = newPosition;
+	// 			tracked.lastRotation = newRotation;
+	// 			tracked.lastScale = newScale;
+	// 		}
+	// 	});
+	// }
 
 	trackObject(id, object) {
 		if (!id || !object) {
@@ -76,34 +108,32 @@ class DynamicObject {
 		}
 		this.trackedObjects.set(id, {
 			object: object,
-			lastPosition: object.position.toArray(),
-			lastRotation: object.quaternion.toArray(),
-			lastScale: object.scale.toArray()
+			lastPosition: object.position.clone(),
+			lastRotation: object.quaternion.clone(),
+			lastScale: object.scale.clone()
 		});
 	}
 
 	updateTrackedObjects() {
 		this.trackedObjects.forEach((tracked, id) => {
-			const { object } = tracked;
-			const newPosition = object.position.toArray();
-			const newRotation = object.quaternion.toArray();
-			const newScale = object.scale.toArray();
+			const { object, lastPosition, lastRotation, lastScale } = tracked;
 
-			const positionChanged = JSON.stringify(newPosition) !== JSON.stringify(tracked.lastPosition);
-			const rotationChanged = JSON.stringify(newRotation) !== JSON.stringify(tracked.lastRotation);
-			const scaleChanged = JSON.stringify(newScale) !== JSON.stringify(tracked.lastScale);
+			const positionChanged = !object.position.equals(lastPosition);
+			const rotationChanged = !object.quaternion.equals(lastRotation);
+			const scaleChanged = !object.scale.equals(lastScale);
 
 			if (positionChanged || rotationChanged || scaleChanged) {
-				this.addSnapshot(id, newPosition, newRotation);
-				tracked.lastPosition = newPosition;
-				tracked.lastRotation = newRotation;
-				tracked.lastScale = newScale;
+				this.addSnapshot(id, object.position.toArray(), object.quaternion.toArray());
+				
+                lastPosition.copy(object.position);
+				lastRotation.copy(object.quaternion);
+				lastScale.copy(object.scale);
 			}
 		});
 	}
 
 
-	addSnapshot(objectId, position, rotation, properties) {
+	addSnapshot(objectId, position, rotation, scale, properties) {
 		//if dynamic object id is not in manifest, display warning. likely object ids were cleared from scene change
 		let foundId = false;
 		for (let element of this.objectIds) {
@@ -117,7 +147,7 @@ class DynamicObject {
 		}
 		console.log(`Adding snapshot for ${objectId} at position:`, position, "rotation:", rotation);
 
-		let snapshot = this.dynamicObjectSnapshot(position, rotation, objectId, properties);
+		let snapshot = this.dynamicObjectSnapshot(position, rotation, objectId, scale, properties);
 
 		if (this.allEngagements[objectId] && Object.keys(this.allEngagements[objectId]).length > 0) {
 			//add engagements to snapshot
@@ -158,14 +188,14 @@ class DynamicObject {
 	sendData() {
 	    return new Promise((resolve, reject) => {
 	        if (!this.core.isSessionActive) {
-	            console.log('DynamicObject.sendData failed: no session active');
+				console.log('DynamicObject.sendData failed: no session active');
 	            resolve('DynamicObject.sendData failed: no session active');
 	            return;
 	        }
 
 	        if ((this.manifestEntries.length + this.snapshots.length) === 0) {
 	            resolve('no manifest entries/snapshots');
-	            console.log('no manifest entries/snapshots');
+				console.log('no manifest entries/snapshots');
 	            return;
 	        }
 	        let sendJson = {};
@@ -194,6 +224,9 @@ class DynamicObject {
 	            entry['time'] = element.time;
 	            entry['p'] = element.position;
 	            entry['r'] = element.rotation;
+				if (element.scale) {
+					entry['s'] = element.scale;
+				}
 	            if (element.engagements && element.engagements.length) { entry['engagements'] = element.engagements }
 	            if (element.properties) { entry['properties'] = element.properties }
 	            data.push(entry);
@@ -206,13 +239,16 @@ class DynamicObject {
 	        this.snapshots = [];
 	    });
 	};
-	dynamicObjectSnapshot(position, rotation, objectId, properties) {
+	dynamicObjectSnapshot(position, rotation, objectId, scale, properties) {
 		let ss = {};
 		//TODO conversion for xyz = -xzy or whatever
 		ss['position'] = position;
 		ss['rotation'] = rotation;
 		ss['time'] = this.core.getTimestamp()
 		ss['id'] = objectId;
+		if (scale) {
+        	ss['scale'] = scale;
+    	}
 		if (properties) {
 			ss['properties'] = properties;
 		}
