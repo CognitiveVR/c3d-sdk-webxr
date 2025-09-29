@@ -8,17 +8,24 @@ class GazeTracker {
 		this.batchedGaze = [];
 		this.jsonPart = 1;
 	}
-	recordGaze(position, rotation, gaze, objectId) {
+    // Updated to accept a gazeHit object containing rich intersection data
+	recordGaze(position, rotation, gaze, gazeHit) {
 		let ts = this.core.getTimestamp();
 		let data = {
-			//TODO: need millidataconds precision ts 
 			time: ts,
 			p: [...position],
 			r: [...rotation],
 		};
 
 		if (gaze) { data['g'] = [...gaze]; }
-		if (objectId) { data['o'] = objectId; }
+		
+        // If we have a valid gaze hit, add its data to the snapshot
+        if (gazeHit && gazeHit.objectId) { 
+            data['o'] = gazeHit.objectId;
+            if (gazeHit.point) data['h'] = gazeHit.point; // 'h' for hit point
+            if (gazeHit.distance) data['d'] = gazeHit.distance; // 'd' for distance
+            if (gazeHit.uv) data['u'] = gazeHit.uv; // 'u' for UV / texture coordinates
+        }
 
 		this.batchedGaze = this.batchedGaze.concat([data]);
 

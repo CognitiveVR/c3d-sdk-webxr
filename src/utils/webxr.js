@@ -4,10 +4,11 @@
  */
 
 export class XRSessionManager {
-  constructor(gazeTracker, xrSession, dynamicObject = null) {
+  constructor(gazeTracker, xrSession, dynamicObject = null, gazeRaycaster = null) {
     this.gazeTracker = gazeTracker; 
     this.xrSession = xrSession; 
     this.dynamicObject = dynamicObject;
+    this.gazeRaycaster = gazeRaycaster;
     this.referenceSpace = null; 
     this.isTracking = false; 
     this.animationFrameHandle = null;
@@ -55,9 +56,17 @@ export class XRSessionManager {
 
         if (viewerPose) {
           const { position, orientation } = viewerPose.transform;
+          
+          let gazeHitData = null;
+          if (this.gazeRaycaster) {
+              gazeHitData = this.gazeRaycaster();
+          }
+
           this.gazeTracker.recordGaze(
             [position.x, position.y, position.z],
-            [-orientation.x, -orientation.y, -orientation.z, orientation.w]
+            [-orientation.x, -orientation.y, -orientation.z, orientation.w],
+            null,
+            gazeHitData
           );
         }
         

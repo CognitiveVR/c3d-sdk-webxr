@@ -31,6 +31,7 @@ class C3D {
     if (settings) { this.core.config.settings = settings.config; }
 
     this.xrSessionManager = null; 
+    this.gazeRaycaster = null;
 
     this.setUserProperty("c3d.version", this.core.config.SDKVersion);  
     this.lastInputType = 'none'; // Can be 'none', 'hand', or 'controller'
@@ -92,7 +93,7 @@ class C3D {
     });
 
     if (xrSession) {  
-      this.xrSessionManager = new XRSessionManager(this.gaze, xrSession, this.dynamicObject);
+      this.xrSessionManager = new XRSessionManager(this.gaze, xrSession, this.dynamicObject, this.gazeRaycaster);
       
       await this.xrSessionManager.start();
       this.controllerTracker.start(xrSession);

@@ -28,6 +28,29 @@ class C3DThreeAdapter {
       this.c3d.gaze.recordGaze(position, rotation, gaze);
   }
 
+  setupGazeRaycasting(camera, interactableGroup) {
+    const raycaster = new THREE.Raycaster();
+
+    this.c3d.gazeRaycaster = () => {
+        raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+        const intersects = raycaster.intersectObjects(interactableGroup.children, true);
+
+        if (intersects.length > 0) {
+            const intersection = intersects[0];
+            const intersectedObject = intersection.object;
+            
+            return {
+                objectId: intersectedObject.userData.c3dId || null,
+                point: intersection.point ? [intersection.point.x, intersection.point.y, intersection.point.z] : null,
+                distance: intersection.distance || null,
+                uv: intersection.uv ? [intersection.uv.x, intersection.uv.y] : null
+            };
+        }
+
+        return null;
+    };
+  }
+
   trackDynamicObject(object, id) {
       this.c3d.dynamicObject.trackObject(id, object);
   }
