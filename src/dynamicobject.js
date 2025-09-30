@@ -41,7 +41,7 @@ class DynamicObject {
 		this.fullManifest.push(dome);
 		let props = [{ "enabled": true }];
 
-		this.addSnapshot(customid, position, rotation, props);
+		this.addSnapshot(customid, position, rotation, null, props);
 
 		if ((this.snapshots.length + this.manifestEntries.length) >= this.core.config.dynamicDataLimit) {
 			this.sendData();
@@ -61,7 +61,7 @@ class DynamicObject {
 			this.fullManifest.push(dome);
 		}
 		let props = [{ "enabled": true }];
-		this.addSnapshot(newObjectId.id, position, rotation, props);
+		this.addSnapshot(newObjectId.id, position, rotation, null, props);
 
 		if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
 			this.sendData();
