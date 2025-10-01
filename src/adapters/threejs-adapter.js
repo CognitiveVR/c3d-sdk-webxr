@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import JSZip from 'jszip';
 
 class C3DThreeAdapter {
   constructor(c3dInstance) {
@@ -27,6 +28,87 @@ class C3DThreeAdapter {
 
       this.c3d.gaze.recordGaze(position, rotation, gaze);
   }
+
+  setupGazeRaycasting(camera, interactableGroup) {
+    const raycaster = new THREE.Raycaster();
+
+    this.c3d.gazeRaycaster = () => {
+        raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+        const intersects = raycaster.intersectObjects(interactableGroup.children, true);
+
+        if (intersects.length > 0) {
+            const intersection = intersects[0];
+            const intersectedObject = intersection.object;
+            
+            return {
+                objectId: intersectedObject.userData.c3dId || null,
+                point: intersection.point ? [intersection.point.x, intersection.point.y, intersection.point.z] : null,
+                distance: intersection.distance || null,
+                uv: intersection.uv ? [intersection.uv.x, intersection.uv.y] : null
+            };
+        }
+
+        return null;
+    };
+  }
+
+  trackDynamicObject(object, id) {
+      // Core SDK's generic method to register the object.
+      this.c3d.dynamicObject.trackObject(id, object);
+
+      // Add engine-specific data to the entry.
+      const tracked = this.c3d.dynamicObject.trackedObjects.get(id);
+      if (tracked) {
+          tracked.lastPosition = new THREE.Vector3(Infinity, Infinity, Infinity);
+          tracked.lastRotation = new THREE.Quaternion(Infinity, Infinity, Infinity, Infinity);
+          tracked.lastScale = new THREE.Vector3(Infinity, Infinity, Infinity);
+      }
+  }
+
+updateTrackedObjectTransforms() { 
+    const dynamicObjectManager = this.c3d.dynamicObject;
+
+    dynamicObjectManager.trackedObjects.forEach((tracked, id) => {
+        if (!tracked.lastPosition) return;
+
+        const { object, lastPosition, lastRotation, lastScale } = tracked;
+
+        object.updateWorldMatrix(true, false);
+
+        const worldPosition = new THREE.Vector3();
+        const worldQuaternion = new THREE.Quaternion();
+        const worldScale = new THREE.Vector3();
+
+        object.matrixWorld.decompose(worldPosition, worldQuaternion, worldScale);
+
+        const positionChanged = !worldPosition.equals(lastPosition);
+        const rotationChanged = !worldQuaternion.equals(lastRotation);
+        const scaleChanged = !worldScale.equals(lastScale);
+
+        if (positionChanged || rotationChanged || scaleChanged) {
+            
+            // Conversion
+            
+            // Flip z 
+            const correctedPosition = worldPosition.clone();
+            correctedPosition.z *= -1;
+
+            // Negate the Z and W components of quaternion.
+            const correctedQuaternion = worldQuaternion.clone();
+            correctedQuaternion.z *= -1; 
+            correctedQuaternion.w*= -1;
+
+            // Send the corrected data to the snapshot.
+            dynamicObjectManager.addSnapshot(id, correctedPosition.toArray(), correctedQuaternion.toArray(), worldScale.toArray());
+            
+            // Update the last known state with the original world-space values for the next comparison.
+            lastPosition.copy(worldPosition);
+            lastRotation.copy(worldQuaternion);
+            lastScale.copy(worldScale);
+        }
+    });
+}
+
   // Helper methods for file writing
   async _ensureExportDir() {
       if (this.exportDirHandle) return this.exportDirHandle;
@@ -135,6 +217,87 @@ class C3DThreeAdapter {
           }, // binary:false results in both .gltf and .bin files 
           { binary: false, embedImages: true, onlyVisible: true, truncateDrawRange: true, maxTextureSize: 4096 }
       );
+  }
+    /**
+   * Exports a specific Three.js object to the required GLTF, BIN, and PNG format.
+   * @param {THREE.Object3D} objectToExport - The object you want to export.
+   * @param {string} objectName - The base name for the exported files (e.g., "MyCube").
+   * @param {THREE.WebGLRenderer} renderer - The main renderer instance.
+   * @param {THREE.Camera} camera - The camera to use for the screenshot.
+   */
+  async exportObject(objectToExport, objectName, renderer, camera) {
+    // Screenshot 
+    const originalScene = renderer.xr.isPresenting ? renderer.xr.getScene() : camera.parent;
+    const tempScene = new THREE.Scene();
+    tempScene.background = new THREE.Color(0xe0e0e0); // Neutral grey background
+    const tempLight = new THREE.AmbientLight(0xffffff, 3.0); // Bright, even lighting
+    tempScene.add(tempLight);
+
+    const objectClone = objectToExport.clone();
+
+    // Center the object for screenshot
+    const box = new THREE.Box3().setFromObject(objectClone);
+    const center = box.getCenter(new THREE.Vector3());
+    objectClone.position.sub(center); 
+    tempScene.add(objectClone);
+
+    // Temporarily render the isolated object
+    renderer.render(tempScene, camera);
+    const screenshotDataUrl = renderer.domElement.toDataURL('image/png');
+    const screenshotBlob = await (await fetch(screenshotDataUrl)).blob();
+
+    // Restore the original scene rendering if needed
+    if (originalScene) {
+        renderer.render(originalScene, camera);
+    }
+    
+    // Export the object to GLTF and BIN
+    const exporter = new GLTFExporter();
+
+    // Export a clone to avoid modifying the original object in the scene
+    const exportRoot = new THREE.Group();
+    exportRoot.add(objectToExport.clone());
+
+    exporter.parse(
+      exportRoot,
+      async (gltf) => {
+        const dir = await this._ensureExportDir();
+        const prefix = "data:application/octet-stream;base64,";
+        const uri = gltf.buffers?.[0]?.uri || "";
+        let binBlob = null;
+        
+        if (uri.startsWith(prefix)) {
+          const b64 = uri.slice(prefix.length);
+          const raw = atob(b64);
+          const bytes = new Uint8Array(raw.length);
+          for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+          binBlob = new Blob([bytes.buffer], { type: "application/octet-stream" });
+          // Name the binary file according to the object name
+          gltf.buffers[0].uri = `${objectName}.bin`;
+        }
+
+        const gltfBlob = new Blob([JSON.stringify(gltf, null, 2)], { type: "model/gltf+json" });
+        
+        if (dir) {
+          if (binBlob) await this._writeFile(dir, `${objectName}.bin`, binBlob);
+          await this._writeFile(dir, `${objectName}.gltf`, gltfBlob);
+          await this._writeFile(dir, `${objectName}.png`, screenshotBlob);
+          console.log(`Exported object files for '${objectName}' to the 'scene' directory.`);
+        } else {
+          console.warn("File System Access API not available; falling back to zip download.");
+          const zip = new JSZip();
+          if (binBlob) zip.file(`${objectName}.bin`, binBlob);
+          zip.file(`${objectName}.gltf`, gltfBlob);
+          zip.file(`${objectName}.png`, screenshotBlob);
+          const zipBlob = await zip.generateAsync({ type: "blob" });
+          this._downloadBlob(zipBlob, `${objectName}-export.zip`);
+        }
+      },
+      (err) => {
+        console.error(`GLTF export for ${objectName} failed:`, err);
+      },
+      { binary: false } // Ensures we get separate .gltf and .bin files
+    );
   }
 }
 
