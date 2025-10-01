@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import JSZip from 'jszip';
 
 class C3DThreeAdapter {
   constructor(c3dInstance) {
@@ -63,8 +64,8 @@ class C3DThreeAdapter {
           tracked.lastScale = new THREE.Vector3(Infinity, Infinity, Infinity);
       }
   }
-  
-updateTrackedObjectTransforms() { // this works however moving the obj upward/ downward tilts it
+
+updateTrackedObjectTransforms() { 
     const dynamicObjectManager = this.c3d.dynamicObject;
 
     dynamicObjectManager.trackedObjects.forEach((tracked, id) => {
@@ -268,7 +269,7 @@ updateTrackedObjectTransforms() { // this works however moving the obj upward/ d
         if (uri.startsWith(prefix)) {
           const b64 = uri.slice(prefix.length);
           const raw = atob(b64);
-          const bytes = new Uint8A-rray(raw.length);
+          const bytes = new Uint8Array(raw.length);
           for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
           binBlob = new Blob([bytes.buffer], { type: "application/octet-stream" });
           // Name the binary file according to the object name
