@@ -101,7 +101,7 @@ class DynamicObject {
 	// 	});
 	// }
 
-	trackObject(id, object) {
+	trackObject(id, object) {  
 		if (!id || !object) {
 			console.error("DynamicObject.trackObject: id and object must be provided.");
 			return;
@@ -131,7 +131,7 @@ class DynamicObject {
 			}
 		});
 	}
-
+	
 
 	addSnapshot(objectId, position, rotation, scale, properties) {
 		//if dynamic object id is not in manifest, display warning. likely object ids were cleared from scene change

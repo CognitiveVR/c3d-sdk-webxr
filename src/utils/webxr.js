@@ -70,9 +70,9 @@ export class XRSessionManager {
           );
         }
         
-        if (this.dynamicObject) {
-            this.dynamicObject.updateTrackedObjects();
-        }
+        // if (this.dynamicObject) {
+        //     this.dynamicObject.updateTrackedObjects();
+        // }
     }
     
     this.animationFrameHandle = this.xrSession.requestAnimationFrame(this.onXRFrame); 

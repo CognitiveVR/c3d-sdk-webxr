@@ -54,6 +54,39 @@ class C3DThreeAdapter {
   trackDynamicObject(object, id) {
       this.c3d.dynamicObject.trackObject(id, object);
   }
+  updateTrackedObjectTransforms() {
+    const dynamicObjectManager = this.c3d.dynamicObject;
+
+    dynamicObjectManager.trackedObjects.forEach((tracked, id) => {
+        const { object, lastPosition, lastRotation, lastScale } = tracked;
+
+        // Ensure the object's world matrix is up-to-date
+        object.updateWorldMatrix(true, false);
+
+        const worldPosition = new THREE.Vector3();
+        const worldQuaternion = new THREE.Quaternion();
+        const worldScale = new THREE.Vector3();
+
+        // Decompose the world matrix to get world-space transform
+        object.matrixWorld.decompose(worldPosition, worldQuaternion, worldScale);
+
+        const positionChanged = !worldPosition.equals(lastPosition);
+        const rotationChanged = !worldQuaternion.equals(lastRotation);
+        const scaleChanged = !worldScale.equals(lastScale);
+
+        if (positionChanged || rotationChanged || scaleChanged) {
+            // Send the WORLD transforms to the snapshot
+            dynamicObjectManager.addSnapshot(id, worldPosition.toArray(), worldQuaternion.toArray(), worldScale.toArray());
+            
+            // Update the last known state with world-space values
+            lastPosition.copy(worldPosition);
+            lastRotation.copy(worldQuaternion);
+            lastScale.copy(worldScale);
+        }
+    });
+  }
+
+
   // Helper methods for file writing
   async _ensureExportDir() {
       if (this.exportDirHandle) return this.exportDirHandle;
@@ -70,34 +103,6 @@ class C3DThreeAdapter {
           return null;
       }
   }
-
-updateTrackedObjects() {
-    const dynamicObjectManager = this.c3d.dynamicObject;
-
-    dynamicObjectManager.trackedObjects.forEach((tracked, id) => {
-        const { object, lastPosition, lastRotation, lastScale } = tracked;
-
-        object.updateWorldMatrix(true, false);
-
-        const worldPosition = new THREE.Vector3();
-        const worldQuaternion = new THREE.Quaternion();
-        const worldScale = new THREE.Vector3();
-
-        object.matrixWorld.decompose(worldPosition, worldQuaternion, worldScale);
-
-        const positionChanged = !worldPosition.equals(lastPosition);
-        const rotationChanged = !worldQuaternion.equals(lastRotation);
-        const scaleChanged = !worldScale.equals(lastScale);
-
-        if (positionChanged || rotationChanged || scaleChanged) {
-            dynamicObjectManager.addSnapshot(id, worldPosition.toArray(), worldQuaternion.toArray(), worldScale.toArray());
-            
-            lastPosition.copy(worldPosition);
-            lastRotation.copy(worldQuaternion);
-            lastScale.copy(worldScale);
-        }
-    });
-}
 
   async _writeFile(dirHandle, filename, blob) {
       const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
