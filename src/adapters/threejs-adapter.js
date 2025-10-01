@@ -52,22 +52,34 @@ class C3DThreeAdapter {
   }
 
   trackDynamicObject(object, id) {
+      // Core SDK's generic method to register the object.
       this.c3d.dynamicObject.trackObject(id, object);
+
+      // Add engine-specific data to the entry.
+      const tracked = this.c3d.dynamicObject.trackedObjects.get(id);
+      if (tracked) {
+          tracked.lastPosition = new THREE.Vector3(Infinity, Infinity, Infinity);
+          tracked.lastRotation = new THREE.Quaternion(Infinity, Infinity, Infinity, Infinity);
+          tracked.lastScale = new THREE.Vector3(Infinity, Infinity, Infinity);
+      }
   }
+
+
   updateTrackedObjectTransforms() {
     const dynamicObjectManager = this.c3d.dynamicObject;
 
     dynamicObjectManager.trackedObjects.forEach((tracked, id) => {
+        // This check ensures we only process objects that have been fully tracked by this adapter.
+        if (!tracked.lastPosition) return;
+
         const { object, lastPosition, lastRotation, lastScale } = tracked;
 
-        // Ensure the object's world matrix is up-to-date
         object.updateWorldMatrix(true, false);
 
         const worldPosition = new THREE.Vector3();
         const worldQuaternion = new THREE.Quaternion();
         const worldScale = new THREE.Vector3();
 
-        // Decompose the world matrix to get world-space transform
         object.matrixWorld.decompose(worldPosition, worldQuaternion, worldScale);
 
         const positionChanged = !worldPosition.equals(lastPosition);
@@ -75,17 +87,14 @@ class C3DThreeAdapter {
         const scaleChanged = !worldScale.equals(lastScale);
 
         if (positionChanged || rotationChanged || scaleChanged) {
-            // Send the WORLD transforms to the snapshot
             dynamicObjectManager.addSnapshot(id, worldPosition.toArray(), worldQuaternion.toArray(), worldScale.toArray());
             
-            // Update the last known state with world-space values
             lastPosition.copy(worldPosition);
             lastRotation.copy(worldQuaternion);
             lastScale.copy(worldScale);
         }
     });
   }
-
 
   // Helper methods for file writing
   async _ensureExportDir() {

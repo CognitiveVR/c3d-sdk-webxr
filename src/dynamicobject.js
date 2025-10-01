@@ -101,37 +101,36 @@ class DynamicObject {
 	// 	});
 	// }
 
-	trackObject(id, object) {  
-		if (!id || !object) {
-			console.error("DynamicObject.trackObject: id and object must be provided.");
-			return;
-		}
-		this.trackedObjects.set(id, {
-			object: object,
-			lastPosition: object.position.clone(),
-			lastRotation: object.quaternion.clone(),
-			lastScale: object.scale.clone()
-		});
-	}
+    trackObject(id, object) {
+        if (!id || !object) {
+            console.error("DynamicObject.trackObject: id and object must be provided.");
+            return;
+        }
+        // The core SDK just stores a map of the ID to the engine's object.
+        // It knows nothing about Vector3, Quaternion, or any other engine-specific type.
+        this.trackedObjects.set(id, {
+            object: object
+        });
+    }
 
-	updateTrackedObjects() {
-		this.trackedObjects.forEach((tracked, id) => {
-			const { object, lastPosition, lastRotation, lastScale } = tracked;
+	// updateTrackedObjects() {
+	// 	this.trackedObjects.forEach((tracked, id) => {
+	// 		const { object, lastPosition, lastRotation, lastScale } = tracked;
 
-			const positionChanged = !object.position.equals(lastPosition);
-			const rotationChanged = !object.quaternion.equals(lastRotation);
-			const scaleChanged = !object.scale.equals(lastScale);
+	// 		const positionChanged = !object.position.equals(lastPosition);
+	// 		const rotationChanged = !object.quaternion.equals(lastRotation);
+	// 		const scaleChanged = !object.scale.equals(lastScale);
 
-			if (positionChanged || rotationChanged || scaleChanged) {
-				this.addSnapshot(id, object.position.toArray(), object.quaternion.toArray());
+	// 		if (positionChanged || rotationChanged || scaleChanged) {
+	// 			this.addSnapshot(id, object.position.toArray(), object.quaternion.toArray());
 				
-                lastPosition.copy(object.position);
-				lastRotation.copy(object.quaternion);
-				lastScale.copy(object.scale);
-			}
-		});
-	}
-	
+    //             lastPosition.copy(object.position);
+	// 			lastRotation.copy(object.quaternion);
+	// 			lastScale.copy(object.scale);
+	// 		}
+	// 	});
+	// }
+
 
 	addSnapshot(objectId, position, rotation, scale, properties) {
 		//if dynamic object id is not in manifest, display warning. likely object ids were cleared from scene change
