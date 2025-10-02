@@ -97,38 +97,38 @@ test('Reject ending session if device properties set pre-session without active 
 });
 
 test('Setting user and device properties post-session', async () => {
-	expect(await c3d.startSession()).toEqual(true);
-	c3d.setDeviceName("7741345684915735");
-	c3d.setDeviceProperty('DeviceMemory', 128);
-	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
-	await expect(c3d.sendData()).resolves.toEqual(200);
+    expect(await c3d.startSession()).toEqual(true);
+    c3d.setDeviceName("7741345684915735");
+    c3d.setDeviceProperty('DeviceMemory', 128);
+    c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
+    await expect(c3d.sendData()).resolves.toEqual(200);
 
-	let deviceProperties = c3d.getDeviceProperties();
-	expect(Object.keys(deviceProperties).length).toEqual(3);
-	c3d.setUserName("john");
-	c3d.setUserProperty("location", "vancouver");
-	c3d.setUserProperty("location", "seattle");
+    let deviceProperties = c3d.getDeviceProperties();
+    expect(Object.keys(deviceProperties).length).toEqual(3);
+    c3d.setParticipantFullName("john");  // Changed from setUserName
+    c3d.setUserProperty("location", "vancouver");
+    c3d.setUserProperty("location", "seattle");
 
-	let userProperties = c3d.getUserProperties();
-	expect(Object.keys(userProperties).length).toEqual(2);
-	let endSession = await c3d.endSession();
-	expect(endSession).toEqual(200);
+    let userProperties = c3d.getUserProperties();
+    expect(Object.keys(userProperties).length).toEqual(2);
+    let endSession = await c3d.endSession();
+    expect(endSession).toEqual(200);
 });
 
 test('Apply user and device properties set pre-session and end session successfully', async () => {
-	c3d.setUserName("john");
-	c3d.setUserProperty("location", "vancouver");
-	c3d.setUserProperty("location", "seattle");
+    c3d.setParticipantFullName("john");  // Changed from setUserName
+    c3d.setUserProperty("location", "vancouver");
+    c3d.setUserProperty("location", "seattle");
 
-	c3d.setDeviceName("7741345684915735");
-	c3d.setDeviceProperty('DeviceMemory', 128);
-	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
+    c3d.setDeviceName("7741345684915735");
+    c3d.setDeviceProperty('DeviceMemory', 128);
+    c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
 
-	let deviceProperties = c3d.getDeviceProperties();
-	expect(Object.keys(deviceProperties).length).toEqual(3);
-	let userProperties = c3d.getUserProperties();
-	expect(Object.keys(userProperties).length).toEqual(2);
-	expect(await c3d.startSession()).toEqual(true);
-	let endSession = await c3d.endSession();
-	expect(endSession).toEqual(200);
+    let deviceProperties = c3d.getDeviceProperties();
+    expect(Object.keys(deviceProperties).length).toEqual(3);
+    let userProperties = c3d.getUserProperties();
+    expect(Object.keys(userProperties).length).toEqual(2);
+    expect(await c3d.startSession()).toEqual(true);
+    let endSession = await c3d.endSession();
+    expect(endSession).toEqual(200);
 });

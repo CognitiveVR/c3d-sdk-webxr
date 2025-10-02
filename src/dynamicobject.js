@@ -68,38 +68,6 @@ class DynamicObject {
 		}
 		return newObjectId.id;
 	};
-	// trackObject(id, object) {
-	// 	if (!id || !object) {
-	// 		console.error("DynamicObject.trackObject: id and object must be provided.");
-	// 		return;
-	// 	}
-	// 	this.trackedObjects.set(id, {
-	// 		object: object,
-	// 		lastPosition: object.position.toArray(),
-	// 		lastRotation: object.quaternion.toArray(),
-	// 		lastScale: object.scale.toArray()
-	// 	});
-	// }
-
-	// updateTrackedObjects() {
-	// 	this.trackedObjects.forEach((tracked, id) => {
-	// 		const { object } = tracked;
-	// 		const newPosition = object.position.toArray();
-	// 		const newRotation = object.quaternion.toArray();
-	// 		const newScale = object.scale.toArray();
-
-	// 		const positionChanged = JSON.stringify(newPosition) !== JSON.stringify(tracked.lastPosition);
-	// 		const rotationChanged = JSON.stringify(newRotation) !== JSON.stringify(tracked.lastRotation);
-	// 		const scaleChanged = JSON.stringify(newScale) !== JSON.stringify(tracked.lastScale);
-
-	// 		if (positionChanged || rotationChanged || scaleChanged) {
-	// 			this.addSnapshot(id, newPosition, newRotation);
-	// 			tracked.lastPosition = newPosition;
-	// 			tracked.lastRotation = newRotation;
-	// 			tracked.lastScale = newScale;
-	// 		}
-	// 	});
-	// }
 
     trackObject(id, object) {
         if (!id || !object) {
@@ -112,26 +80,6 @@ class DynamicObject {
             object: object
         });
     }
-
-	// updateTrackedObjects() {
-	// 	this.trackedObjects.forEach((tracked, id) => {
-	// 		const { object, lastPosition, lastRotation, lastScale } = tracked;
-
-	// 		const positionChanged = !object.position.equals(lastPosition);
-	// 		const rotationChanged = !object.quaternion.equals(lastRotation);
-	// 		const scaleChanged = !object.scale.equals(lastScale);
-
-	// 		if (positionChanged || rotationChanged || scaleChanged) {
-	// 			this.addSnapshot(id, object.position.toArray(), object.quaternion.toArray());
-				
-    //             lastPosition.copy(object.position);
-	// 			lastRotation.copy(object.quaternion);
-	// 			lastScale.copy(object.scale);
-	// 		}
-	// 	});
-	// }
-
-
 	addSnapshot(objectId, position, rotation, scale, properties) {
 		//if dynamic object id is not in manifest, display warning. likely object ids were cleared from scene change
 		let foundId = false;
