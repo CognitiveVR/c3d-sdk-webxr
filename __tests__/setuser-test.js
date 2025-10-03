@@ -62,33 +62,35 @@ test('Verify custom user-defined properties can be properly associated with the 
 });
 
 test('Check if user properties can be defined and correctly exist before session starts', () => {
-	let userPropertiesBefore = c3d.getUserProperties();
-	expect(Object.keys(userPropertiesBefore).length).toEqual(0);
-	c3d.setUserName("ali");
-	c3d.setUserProperty('age', 30);
-	c3d.setUserProperty('location', 'toronto');
-	let userProperties = c3d.getUserProperties();
-	expect(Object.keys(userProperties).length).toEqual(3); // name, age and location 
+    let userPropertiesBefore = c3d.getUserProperties();
+    expect(Object.keys(userPropertiesBefore).length).toEqual(0);
+    c3d.setParticipantFullName("ali");  
+    c3d.setUserProperty('age', 30);
+    c3d.setUserProperty('location', 'toronto');
+    let userProperties = c3d.getUserProperties();
+    expect(Object.keys(userProperties).length).toEqual(3);
 });
+
 
 test('User properties are correctly set and available on the instance after a session has started', () => {
-	c3d.setScene(scene1);
-	c3d.startSession();
+    c3d.setScene(scene1);
+    c3d.startSession();
 
-	// Set user properties after the session has started 
-	c3d.setUserName("Ali");
-	c3d.setUserProperty('age', 30);
-	c3d.setUserProperty('location', 'Toronto');
+    // Set user properties after the session has started 
+    c3d.setParticipantFullName("Ali");  
+    c3d.setUserProperty('age', 30);
+    c3d.setUserProperty('location', 'Toronto');
 
-	// Verify the properties are correctly set on this c3d instance
-	const userProperties = c3d.getUserProperties();
-	expect(Object.keys(userProperties).length).toEqual(3);
-	expect(userProperties).toEqual({
-		'c3d.name': 'Ali',
-		'age': 30,
-		'location': 'Toronto'
-	});
+    // Verify the properties are correctly set on this c3d instance
+    const userProperties = c3d.getUserProperties();
+    expect(Object.keys(userProperties).length).toEqual(3);
+    expect(userProperties).toEqual({
+        'c3d.name': 'Ali',
+        'age': 30,
+        'location': 'Toronto'
+    });
 });
+
 test('Examine behavior of sendData() and endSession with null user', async () => {
 	c3d.setScene(scene1)
 	c3d.startSession();

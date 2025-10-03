@@ -96,7 +96,7 @@ test('Auto-send custom events when session start hits batch limit', async () => 
 	c3d.customEvent.send('testing1', pos);
 
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(3);
-	c3d.startSession();//fouth transaction, should send all here. 
+	c3d.startSession(); // fourth transaction, should send all here. 
 	expect(c3d.customEvent.batchedCustomEvents.length).toBe(0);
 	let endSession = await c3d.endSession();
 	expect(endSession).toEqual(200);
@@ -106,7 +106,7 @@ test('Auto-send custom events when session start hits batch limit', async () => 
 
 test('Auto-send pre-session custom events when batch limit is reached', async () => {
 	let pos = [0, 0, 0];
-	settings.config.customEventBatchSize = 3 //on the third transaction it should send
+	settings.config.customEventBatchSize = 3 // on the third transaction it should send
 	let c3d = new C3DAnalytics(settings);
 	c3d.setScene(scene1);
 	c3d.customEvent.send('testing1', pos);
@@ -121,7 +121,7 @@ test('Auto-send pre-session custom events when batch limit is reached', async ()
 
 test('Auto-send custom events multiple times during active session', async () => {
 	let pos = [0, 0, 0];
-	settings.config.customEventBatchSize = 3 //on the third transaction it should send
+	settings.config.customEventBatchSize = 3 // on the third transaction it should send
 	let c3d = new C3DAnalytics(settings);
 	c3d.setScene(scene1);
 

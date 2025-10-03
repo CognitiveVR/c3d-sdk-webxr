@@ -38,8 +38,8 @@ class CognitiveVRAnalyticsCore {
     		NetworkRTT: 'c3d.network.rtt',
 			SDKType: 'c3d.sdk.type',
 			SDKVersion: 'c3d.sdk.version',
-			VRModel: 'c3d.device.hmd.type', // c3d.device.model - generic device 
-			VRVendor: 'c3d.device.vendor', // c3d.device.vendor
+			VRModel: 'c3d.device.hmd.type',
+			VRVendor: 'c3d.device.vendor', 
 		};
 	}
 
@@ -116,12 +116,19 @@ class CognitiveVRAnalyticsCore {
 	set setSessionTimestamp(value) {
 		this.sessionTimestamp = value;
 	};
-	setUserProperty(propertyType, value) {
-		this.newUserProperties[propertyType] = value;
-	};
-	setDeviceProperty(property, value) {
-		this.newDeviceProperties[this.devicePropertyString(property)] = value;
-	};
+	setUserProperty(key, value) {
+		this.newUserProperties = this.newUserProperties || {};
+		this.newUserProperties[key] = value;
+	}
+	setDeviceProperty(key, value) {
+		this.newDeviceProperties = this.newDeviceProperties || {};
+		const mappedKey = this.devicePropertyMap[key] || key;  
+		this.newDeviceProperties[mappedKey] = value;
+	}
+	setSessionProperty(key, value) {
+    this.sessionProperties = this.sessionProperties || {};
+    this.sessionProperties[key] = value;
+	}
 	getApiKey() {
 		return this.config.APIKey;
 	};

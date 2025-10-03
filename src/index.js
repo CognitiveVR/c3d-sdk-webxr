@@ -302,14 +302,28 @@ class C3D {
   set userId(userId) {
     this.core.setUserId = userId;
   }
+  
+  // USER PROPERTIES 
 
-  setUserProperty(property, value) {
-    this.core.setUserProperty(property, value);
+  setUserProperty(propertyOrObject, value) {
+      if (typeof propertyOrObject === 'object') {
+          Object.entries(propertyOrObject).forEach(([key, val]) =>
+              this.core.setUserProperty(key, val)
+          );
+      } 
+      else {
+          this.core.setUserProperty(propertyOrObject, value);
+      }
   }
 
-  setUserName(name) {
-    this.core.setUserId = name;
-    this.setUserProperty('c3d.name', name);
+  setParticipantFullName(name) {
+      this.core.setUserId = name;
+      this.setUserProperty('c3d.name', name);
+  }
+
+  setParticipantId(id) {
+      this.core.setUserId = id;
+      this.setParticipantProperty('id', id);
   }
 
   setSessionName(name) {
@@ -325,8 +339,57 @@ class C3D {
     this.core.newDeviceProperties['c3d.device.name'] = name;
   }
 
-  setDeviceProperty(property, value) {
-    this.core.setDeviceProperty(property, value);
+  setDeviceProperty(propertyOrObject, value) {
+      if (typeof propertyOrObject === 'object') {
+          Object.entries(propertyOrObject).forEach(([key, val]) =>
+              this.core.setDeviceProperty(key, val)
+          );
+      } 
+      else {
+          this.core.setDeviceProperty(propertyOrObject, value);
+      }
+  }
+  // SESSION PROPERTIES
+
+  setSessionProperty(propertyOrObject, value) {
+    if (typeof propertyOrObject === 'object') {
+        Object.entries(propertyOrObject).forEach(([key, val]) =>
+            this.core.setSessionProperty(key, val)
+        );
+    } else {
+        this.core.setSessionProperty(propertyOrObject, value);
+    }
+}
+  // PARTICIPANT PROPERTY 
+  setParticipantProperty(key, value) {
+      this.setSessionProperty('c3d.participant.' + key, value);
+  }
+
+  // PARTICIPANT PROPERTIES (batch)
+  setParticipantProperties(obj) {
+      Object.entries(obj).forEach(([key, value]) =>
+          this.setParticipantProperty(key, value)
+      );
+  }
+  //  COHORT PROPERTY
+  setCohortProperty(key, value) {
+      this.setSessionProperty('c3d.cohort.' + key, value);
+  }
+
+  // EXPERIMENT PROPERTY
+  setExperimentProperty(key, value) {
+      this.setSessionProperty('c3d.experiment.' + key, value);
+  }
+
+  // TRIAL PROPERTY 
+  setTrialProperty(key, value) {
+      this.setSessionProperty('c3d.trial.' + key, value);
+  }
+
+  // SESSION TAG
+  setSessionTag(tag, value = true) {
+      if (typeof tag !== 'string' || tag.length === 0 || tag.length > 12) return;
+      this.setSessionProperty('c3d.sessiontag.' + tag, value);
   }
 
   set deviceId(deviceId) {

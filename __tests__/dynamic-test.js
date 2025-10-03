@@ -285,7 +285,7 @@ test('Automatically Send Manifest When Batch Limit is Reached', async () => {
 	c3d.dynamicObject.registerObjectCustomId("object1", "lamp", '1', pos, rot);
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(1);
 	c3d.dynamicObject.registerObjectCustomId("object2", "lamp", '2', pos, rot);
-	c3d.dynamicObject.registerObjectCustomId("object3", "lamp", '3', pos, rot); //limit send
+	c3d.dynamicObject.registerObjectCustomId("object3", "lamp", '3', pos, rot); // limit send
 	expect(c3d.dynamicObject.manifestEntries.length).toBe(0);
 
 	c3d.dynamicObject.registerObjectCustomId("object4", "lamp", '4', pos, rot);
