@@ -105,7 +105,7 @@ test('Setting user and device properties post-session', async () => {
 
     let deviceProperties = c3d.getDeviceProperties();
     expect(Object.keys(deviceProperties).length).toEqual(3);
-    c3d.setParticipantFullName("john");  // Changed from setUserName
+    c3d.setParticipantFullName("john");  
     c3d.setUserProperty("location", "vancouver");
     c3d.setUserProperty("location", "seattle");
 
@@ -116,7 +116,7 @@ test('Setting user and device properties post-session', async () => {
 });
 
 test('Apply user and device properties set pre-session and end session successfully', async () => {
-    c3d.setParticipantFullName("john");  // Changed from setUserName
+    c3d.setParticipantFullName("john");  
     c3d.setUserProperty("location", "vancouver");
     c3d.setUserProperty("location", "seattle");
 
