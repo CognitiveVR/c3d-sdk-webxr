@@ -29,30 +29,102 @@ class C3DThreeAdapter {
       this.c3d.gaze.recordGaze(position, rotation, gaze);
   }
 
-  setupGazeRaycasting(camera, interactableGroup) {
-    const raycaster = new THREE.Raycaster();
+// setupGazeRaycasting(camera, interactableGroup) {
+//     const raycaster = new THREE.Raycaster();
 
+//     this.c3d.gazeRaycaster = () => {
+//         raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+//         const intersects = raycaster.intersectObjects(interactableGroup.children, true);
+
+//         if (intersects.length > 0) {
+//             const intersection = intersects[0];
+//             const intersectedObject = intersection.object;
+            
+//             // Find the root object with c3dId (might be parent of hit mesh)
+//             let targetObject = intersectedObject;
+//             while (targetObject && !targetObject.userData.c3dId) {
+//                 targetObject = targetObject.parent;
+//                 if (!targetObject || targetObject === interactableGroup) {
+//                     targetObject = intersectedObject; // fallback to hit object
+//                     break;
+//                 }
+//             }
+            
+//             let localPoint = null;
+//             if (intersection.point && targetObject.userData.c3dId) {
+//                 const worldPoint = intersection.point.clone();
+//                 targetObject.worldToLocal(worldPoint);
+                
+//                 // Apply coordinate system correction (flip Z for Unity compatibility)
+//                 worldPoint.z *= -1;
+                
+//                 localPoint = [worldPoint.x, worldPoint.y, worldPoint.z];
+//             }
+            
+//             return {
+//                 objectId: targetObject.userData.c3dId || null,
+//                 point: localPoint,  // Now in LOCAL coordinates with Unity correction
+//                 distance: intersection.distance || null,
+//                 uv: intersection.uv ? [intersection.uv.x, intersection.uv.y] : null
+//             };
+//         }
+
+//         return null;
+//     };
+// }
+setupGazeRaycasting(camera, interactableGroup) {
+    const raycaster = new THREE.Raycaster();
     this.c3d.gazeRaycaster = () => {
         raycaster.setFromCamera({ x: 0, y: 0 }, camera);
         const intersects = raycaster.intersectObjects(interactableGroup.children, true);
-
+        
         if (intersects.length > 0) {
             const intersection = intersects[0];
             const intersectedObject = intersection.object;
             
-            return {
-                objectId: intersectedObject.userData.c3dId || null,
-                point: intersection.point ? [intersection.point.x, intersection.point.y, intersection.point.z] : null,
-                distance: intersection.distance || null,
-                uv: intersection.uv ? [intersection.uv.x, intersection.uv.y] : null
-            };
+            let targetObject = intersectedObject;
+            let isDynamic = false;
+            
+            // Traverse up to find the object with c3dId, which marks it as dynamic
+            while (targetObject) {
+                if (targetObject.userData.c3dId) {
+                    isDynamic = true;
+                    break;
+                }
+                if (targetObject.parent === interactableGroup) {
+                    break; // Stop if we reach the root of the interactable group
+                }
+                targetObject = targetObject.parent;
+            }
+
+            if (isDynamic) {
+                // Dynamic object hit: convert to local coordinates
+                const worldPoint = intersection.point.clone();
+                targetObject.worldToLocal(worldPoint);
+                // Apply coordinate system correction
+                worldPoint.x *= -1;
+                worldPoint.z *= -1;
+                
+                return {
+                    objectId: targetObject.userData.c3dId,
+                    point: [worldPoint.x, worldPoint.y, worldPoint.z]
+                };
+            } else {
+                // Static object hit: use world coordinates
+                const worldPoint = intersection.point;
+                return {
+                    objectId: null, // No ID for static objects
+                    point: [worldPoint.x, worldPoint.y, worldPoint.z]
+                };
+            }
         }
-
-        return null;
+        
+        return null; // No intersection
     };
-  }
+}
 
-  trackDynamicObject(object, id) {
+
+trackDynamicObject(object, id) {
       // Core SDK's generic method to register the object.
       this.c3d.dynamicObject.trackObject(id, object);
 
@@ -63,7 +135,7 @@ class C3DThreeAdapter {
           tracked.lastRotation = new THREE.Quaternion(Infinity, Infinity, Infinity, Infinity);
           tracked.lastScale = new THREE.Vector3(Infinity, Infinity, Infinity);
       }
-  }
+}
 
 updateTrackedObjectTransforms() { 
     const dynamicObjectManager = this.c3d.dynamicObject;
