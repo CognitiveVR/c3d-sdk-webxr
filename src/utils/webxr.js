@@ -60,13 +60,6 @@ export class XRSessionManager {
           let gazeHitData = null;
           if (this.gazeRaycaster) {
               gazeHitData = this.gazeRaycaster();
-                if (gazeHitData && gazeHitData.point) {
-                    console.log('Gaze hit:', {
-                        objectId: gazeHitData.objectId,
-                        point: gazeHitData.point,
-                        distance: gazeHitData.distance
-                    });
-                }
           }
 
         //   this.gazeTracker.recordGaze(
@@ -76,13 +69,12 @@ export class XRSessionManager {
         //     gazeHitData
         //   );
 
-            const correctedPosition = [position.x, position.y, -position.z];
-            const correctedOrientation = [orientation.x, orientation.y, -orientation.z, -orientation.w];
+        const correctedPosition = [position.x, position.y, -position.z];
+        const correctedOrientation = [orientation.x, orientation.y, -orientation.z, -orientation.w];
 
-            this.gazeTracker.recordGaze(
+        this.gazeTracker.recordGaze(
             correctedPosition,
             correctedOrientation,
-            null,
             gazeHitData
             );
         }

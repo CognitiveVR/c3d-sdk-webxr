@@ -8,7 +8,7 @@ class GazeTracker {
 		this.batchedGaze = [];
 		this.jsonPart = 1;
 	}
-	recordGaze(position, rotation, gaze, gazeHit) {
+	recordGaze(position, rotation, gazeHit) {
 		let ts = this.core.getTimestamp();
 		let data = {
 			time: ts,
