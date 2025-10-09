@@ -29,30 +29,94 @@ class C3DThreeAdapter {
       this.c3d.gaze.recordGaze(position, rotation, gaze);
   }
 
-  setupGazeRaycasting(camera, interactableGroup) {
-    const raycaster = new THREE.Raycaster();
+  /**
+   * Initializes and starts all tracking functionalities.
+   * @param {THREE.WebGLRenderer} renderer - The main renderer instance.
+   * @param {THREE.Camera} camera - The ThreeJS camera used for raycasting.
+   * @param {THREE.Group} interactableGroup - The group containing all dynamic objects.
+   * @param {function} [userRenderFn=null] - The original render function.
+   */
+  startTracking(renderer, camera, interactableGroup, userRenderFn = null) {
+    if (!renderer || !camera || !interactableGroup) {
+      console.error("Cognitive3D: renderer, camera, and interactableGroup must be provided to startTracking.");
+      return;
+    }
 
+    // Consolidate Gaze Setup
+    this._setupGazeRaycasting(camera, interactableGroup);
+    console.log('Cognitive3D: Gaze raycasting enabled.');
+
+    // Automate Dynamic Object Registration
+    interactableGroup.children.forEach(child => {
+      if (child.userData.isDynamic && child.userData.c3dId) {
+        this.trackDynamicObject(child, child.userData.c3dId);
+        console.log(`Cognitive3D: Automatically started tracking dynamic object: ${child.name}`);
+      }
+    });
+
+    // Hook into the Render Loop
+    const renderLoop = (timestamp, frame) => {
+      if (userRenderFn) {
+        userRenderFn(timestamp, frame);
+      }
+      this.updateTrackedObjectTransforms();
+    };
+
+    renderer.setAnimationLoop(renderLoop);
+    console.log('Cognitive3D: Hooked into the render loop to automate transform updates.');
+  }
+
+  /**
+   * (Internal) Sets up the gaze raycaster.
+   * @private
+   */
+  _setupGazeRaycasting(camera, interactableGroup) {
+    const raycaster = new THREE.Raycaster();
+    raycaster.far = 1000; // Raycast maximum distance
     this.c3d.gazeRaycaster = () => {
         raycaster.setFromCamera({ x: 0, y: 0 }, camera);
         const intersects = raycaster.intersectObjects(interactableGroup.children, true);
-
+        
         if (intersects.length > 0) {
             const intersection = intersects[0];
             const intersectedObject = intersection.object;
-            
-            return {
-                objectId: intersectedObject.userData.c3dId || null,
-                point: intersection.point ? [intersection.point.x, intersection.point.y, intersection.point.z] : null,
-                distance: intersection.distance || null,
-                uv: intersection.uv ? [intersection.uv.x, intersection.uv.y] : null
-            };
-        }
+            let targetObject = intersectedObject;
+            let isDynamic = false;
 
-        return null;
+            while (targetObject) {
+                if (targetObject.userData.c3dId) {
+                    isDynamic = true;
+                    break;
+                }
+                if (!targetObject.parent || targetObject.parent === interactableGroup) {
+                    break; 
+                }
+                targetObject = targetObject.parent;
+            }
+
+            if (isDynamic) {  // Dynamic object hit: return intersection in object local coordinates
+                const worldPoint = intersection.point.clone();
+                targetObject.worldToLocal(worldPoint);
+                worldPoint.x *= 1;
+                worldPoint.z *= -1;
+                
+                return {
+                    objectId: targetObject.userData.c3dId,
+                    point: [worldPoint.x, worldPoint.y, worldPoint.z]
+                };
+            } else { // Scene Geometry hit: return intersection world coordinates
+                const worldPoint = intersection.point;
+                return {
+                    objectId: null,
+                    point: [worldPoint.x, worldPoint.y, worldPoint.z]
+                };
+            }
+        }
+        return null; // No intersection or skybox 
     };
   }
 
-  trackDynamicObject(object, id) {
+trackDynamicObject(object, id) {
       // Core SDK's generic method to register the object.
       this.c3d.dynamicObject.trackObject(id, object);
 
@@ -63,7 +127,7 @@ class C3DThreeAdapter {
           tracked.lastRotation = new THREE.Quaternion(Infinity, Infinity, Infinity, Infinity);
           tracked.lastScale = new THREE.Vector3(Infinity, Infinity, Infinity);
       }
-  }
+}
 
 updateTrackedObjectTransforms() { 
     const dynamicObjectManager = this.c3d.dynamicObject;
