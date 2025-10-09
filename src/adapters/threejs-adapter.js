@@ -29,51 +29,50 @@ class C3DThreeAdapter {
       this.c3d.gaze.recordGaze(position, rotation, gaze);
   }
 
-// setupGazeRaycasting(camera, interactableGroup) {
-//     const raycaster = new THREE.Raycaster();
+  /**
+   * Initializes and starts all tracking functionalities.
+   * @param {THREE.WebGLRenderer} renderer - The main renderer instance.
+   * @param {THREE.Camera} camera - The ThreeJS camera used for raycasting.
+   * @param {THREE.Group} interactableGroup - The group containing all dynamic objects.
+   * @param {function} [userRenderFn=null] - The original render function.
+   */
+  startTracking(renderer, camera, interactableGroup, userRenderFn = null) {
+    if (!renderer || !camera || !interactableGroup) {
+      console.error("Cognitive3D: renderer, camera, and interactableGroup must be provided to startTracking.");
+      return;
+    }
 
-//     this.c3d.gazeRaycaster = () => {
-//         raycaster.setFromCamera({ x: 0, y: 0 }, camera);
-//         const intersects = raycaster.intersectObjects(interactableGroup.children, true);
+    // Consolidate Gaze Setup
+    this._setupGazeRaycasting(camera, interactableGroup);
+    console.log('Cognitive3D: Gaze raycasting enabled.');
 
-//         if (intersects.length > 0) {
-//             const intersection = intersects[0];
-//             const intersectedObject = intersection.object;
-            
-//             // Find the root object with c3dId (might be parent of hit mesh)
-//             let targetObject = intersectedObject;
-//             while (targetObject && !targetObject.userData.c3dId) {
-//                 targetObject = targetObject.parent;
-//                 if (!targetObject || targetObject === interactableGroup) {
-//                     targetObject = intersectedObject; // fallback to hit object
-//                     break;
-//                 }
-//             }
-            
-//             let localPoint = null;
-//             if (intersection.point && targetObject.userData.c3dId) {
-//                 const worldPoint = intersection.point.clone();
-//                 targetObject.worldToLocal(worldPoint);
-                
-//                 // Apply coordinate system correction (flip Z for Unity compatibility)
-//                 worldPoint.z *= -1;
-                
-//                 localPoint = [worldPoint.x, worldPoint.y, worldPoint.z];
-//             }
-            
-//             return {
-//                 objectId: targetObject.userData.c3dId || null,
-//                 point: localPoint,  // Now in LOCAL coordinates with Unity correction
-//                 distance: intersection.distance || null,
-//                 uv: intersection.uv ? [intersection.uv.x, intersection.uv.y] : null
-//             };
-//         }
+    // Automate Dynamic Object Registration
+    interactableGroup.children.forEach(child => {
+      if (child.userData.isDynamic && child.userData.c3dId) {
+        this.trackDynamicObject(child, child.userData.c3dId);
+        console.log(`Cognitive3D: Automatically started tracking dynamic object: ${child.name}`);
+      }
+    });
 
-//         return null;
-//     };
-// }
-setupGazeRaycasting(camera, interactableGroup) {
+    // Hook into the Render Loop
+    const renderLoop = (timestamp, frame) => {
+      if (userRenderFn) {
+        userRenderFn(timestamp, frame);
+      }
+      this.updateTrackedObjectTransforms();
+    };
+
+    renderer.setAnimationLoop(renderLoop);
+    console.log('Cognitive3D: Hooked into the render loop to automate transform updates.');
+  }
+
+  /**
+   * (Internal) Sets up the gaze raycaster.
+   * @private
+   */
+  _setupGazeRaycasting(camera, interactableGroup) {
     const raycaster = new THREE.Raycaster();
+    raycaster.far = 1000; // Raycast maximum distance
     this.c3d.gazeRaycaster = () => {
         raycaster.setFromCamera({ x: 0, y: 0 }, camera);
         const intersects = raycaster.intersectObjects(interactableGroup.children, true);
@@ -81,27 +80,23 @@ setupGazeRaycasting(camera, interactableGroup) {
         if (intersects.length > 0) {
             const intersection = intersects[0];
             const intersectedObject = intersection.object;
-            
             let targetObject = intersectedObject;
             let isDynamic = false;
-            
-            // Traverse up to find the object with c3dId, which marks it as dynamic
+
             while (targetObject) {
                 if (targetObject.userData.c3dId) {
                     isDynamic = true;
                     break;
                 }
-                if (targetObject.parent === interactableGroup) {
-                    break; // Stop if we reach the root of the interactable group
+                if (!targetObject.parent || targetObject.parent === interactableGroup) {
+                    break; 
                 }
                 targetObject = targetObject.parent;
             }
 
-            if (isDynamic) {
-                // Dynamic object hit: convert to local coordinates
+            if (isDynamic) {  // Dynamic object hit: return intersection in object local coordinates
                 const worldPoint = intersection.point.clone();
                 targetObject.worldToLocal(worldPoint);
-                // Apply coordinate system correction
                 worldPoint.x *= -1;
                 worldPoint.z *= -1;
                 
@@ -109,20 +104,17 @@ setupGazeRaycasting(camera, interactableGroup) {
                     objectId: targetObject.userData.c3dId,
                     point: [worldPoint.x, worldPoint.y, worldPoint.z]
                 };
-            } else {
-                // Static object hit: use world coordinates
+            } else { // Scene Geometry hit: return intersection world coordinates
                 const worldPoint = intersection.point;
                 return {
-                    objectId: null, // No ID for static objects
+                    objectId: null,
                     point: [worldPoint.x, worldPoint.y, worldPoint.z]
                 };
             }
         }
-        
-        return null; // No intersection
+        return null; // No intersection or skybox 
     };
-}
-
+  }
 
 trackDynamicObject(object, id) {
       // Core SDK's generic method to register the object.
