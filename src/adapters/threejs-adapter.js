@@ -97,7 +97,7 @@ class C3DThreeAdapter {
             if (isDynamic) {  // Dynamic object hit: return intersection in object local coordinates
                 const worldPoint = intersection.point.clone();
                 targetObject.worldToLocal(worldPoint);
-                worldPoint.x *= -1;
+                worldPoint.x *= 1;
                 worldPoint.z *= -1;
                 
                 return {
