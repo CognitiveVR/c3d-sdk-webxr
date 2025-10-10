@@ -78,8 +78,7 @@ class GazeTracker {
 				payload['properties'] = { ...payload.properties, ...uproperties};
 			}
 
-			// Log the payload before sending
-			console.log("Cognitive3D Gaze Payload:", JSON.stringify(payload, null, 2));
+			// console.log("Cognitive3D Gaze Payload:", JSON.stringify(payload, null, 2));
 
 			this.network.networkCall('gaze', payload)
 				.then(res => (res === 200) ? resolve(res) : reject(res));
