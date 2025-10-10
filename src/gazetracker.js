@@ -8,17 +8,26 @@ class GazeTracker {
 		this.batchedGaze = [];
 		this.jsonPart = 1;
 	}
-	recordGaze(position, rotation, gaze, objectId) {
+	recordGaze(position, rotation, gazeHit) {
 		let ts = this.core.getTimestamp();
 		let data = {
-			//TODO: need millidataconds precision ts 
 			time: ts,
 			p: [...position],
 			r: [...rotation],
 		};
 
-		if (gaze) { data['g'] = [...gaze]; }
-		if (objectId) { data['o'] = objectId; }
+		// If we have a valid gaze hit, add its data to the snapshot
+		if (gazeHit) {
+			// If an objectId is present, it's a dynamic object hit with local coordinates
+			if (gazeHit.objectId) {
+				data['o'] = gazeHit.objectId;
+				data['g'] = gazeHit.point; // Gaze point in local coordinates
+			} else {
+				// Otherwise, it's a static object hit with world coordinates
+				data['g'] = gazeHit.point; // Gaze point in world coordinates
+			}
+		}
+		// If gazeHit is null, it's a "sky" gaze, and we only record position and rotation.
 
 		this.batchedGaze = this.batchedGaze.concat([data]);
 
@@ -68,6 +77,9 @@ class GazeTracker {
 			if (Object.keys(uproperties).length) {
 				payload['properties'] = { ...payload.properties, ...uproperties};
 			}
+
+			// console.log("Cognitive3D Gaze Payload:", JSON.stringify(payload, null, 2));
+
 			this.network.networkCall('gaze', payload)
 				.then(res => (res === 200) ? resolve(res) : reject(res));
 			this.batchedGaze = [];

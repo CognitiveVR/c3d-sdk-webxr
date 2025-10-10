@@ -22,6 +22,7 @@ class DynamicObject {
 		this.allEngagements = {};
 		//count of engagements on dynamic objects of type
 		this.engagementCounts = {};
+		this.trackedObjects = new Map();
 	}
 	registerObjectCustomId(name, meshname, customid, position, rotation, fileType) {
 		for (let i = 0; i < this.objectIds.length; i++) {
@@ -40,7 +41,7 @@ class DynamicObject {
 		this.fullManifest.push(dome);
 		let props = [{ "enabled": true }];
 
-		this.addSnapshot(customid, position, rotation, props);
+		this.addSnapshot(customid, position, rotation, null, props);
 
 		if ((this.snapshots.length + this.manifestEntries.length) >= this.core.config.dynamicDataLimit) {
 			this.sendData();
@@ -60,7 +61,7 @@ class DynamicObject {
 			this.fullManifest.push(dome);
 		}
 		let props = [{ "enabled": true }];
-		this.addSnapshot(newObjectId.id, position, rotation, props);
+		this.addSnapshot(newObjectId.id, position, rotation, null, props);
 
 		if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
 			this.sendData();
@@ -68,8 +69,18 @@ class DynamicObject {
 		return newObjectId.id;
 	};
 
-
-	addSnapshot(objectId, position, rotation, properties) {
+    trackObject(id, object) {
+        if (!id || !object) {
+            console.error("DynamicObject.trackObject: id and object must be provided.");
+            return;
+        }
+        // The core SDK just stores a map of the ID to the engine's object.
+        // It knows nothing about Vector3, Quaternion, or any other engine-specific type.
+        this.trackedObjects.set(id, {
+            object: object
+        });
+    }
+	addSnapshot(objectId, position, rotation, scale, properties) {
 		//if dynamic object id is not in manifest, display warning. likely object ids were cleared from scene change
 		let foundId = false;
 		for (let element of this.objectIds) {
@@ -81,9 +92,9 @@ class DynamicObject {
 		if (!foundId) {
 			console.warn("DynamicObject::Snapshot cannot find objectId " + objectId + " in full manifest. Did you Register this object?");
 		}
-		console.log(`Adding snapshot for ${objectId} at position:`, position, "rotation:", rotation);
+		//console.log(`Adding snapshot for ${objectId} at position:`, position, "rotation:", rotation);
 
-		let snapshot = this.dynamicObjectSnapshot(position, rotation, objectId, properties);
+		let snapshot = this.dynamicObjectSnapshot(position, rotation, objectId, scale, properties);
 
 		if (this.allEngagements[objectId] && Object.keys(this.allEngagements[objectId]).length > 0) {
 			//add engagements to snapshot
@@ -124,14 +135,14 @@ class DynamicObject {
 	sendData() {
 	    return new Promise((resolve, reject) => {
 	        if (!this.core.isSessionActive) {
-	            console.log('DynamicObject.sendData failed: no session active');
+				console.log('DynamicObject.sendData failed: no session active');
 	            resolve('DynamicObject.sendData failed: no session active');
 	            return;
 	        }
 
 	        if ((this.manifestEntries.length + this.snapshots.length) === 0) {
 	            resolve('no manifest entries/snapshots');
-	            console.log('no manifest entries/snapshots');
+				console.log('no manifest entries/snapshots');
 	            return;
 	        }
 	        let sendJson = {};
@@ -160,6 +171,9 @@ class DynamicObject {
 	            entry['time'] = element.time;
 	            entry['p'] = element.position;
 	            entry['r'] = element.rotation;
+				if (element.scale) {
+					entry['s'] = element.scale;
+				}
 	            if (element.engagements && element.engagements.length) { entry['engagements'] = element.engagements }
 	            if (element.properties) { entry['properties'] = element.properties }
 	            data.push(entry);
@@ -172,13 +186,16 @@ class DynamicObject {
 	        this.snapshots = [];
 	    });
 	};
-	dynamicObjectSnapshot(position, rotation, objectId, properties) {
+	dynamicObjectSnapshot(position, rotation, objectId, scale, properties) {
 		let ss = {};
 		//TODO conversion for xyz = -xzy or whatever
 		ss['position'] = position;
 		ss['rotation'] = rotation;
 		ss['time'] = this.core.getTimestamp()
 		ss['id'] = objectId;
+		if (scale) {
+        	ss['scale'] = scale;
+    	}
 		if (properties) {
 			ss['properties'] = properties;
 		}
