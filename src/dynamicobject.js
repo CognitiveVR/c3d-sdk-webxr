@@ -69,15 +69,16 @@ class DynamicObject {
 		return newObjectId.id;
 	};
 
-    trackObject(id, object) {
+    trackObject(id, object, options = {}) {
         if (!id || !object) {
             console.error("DynamicObject.trackObject: id and object must be provided.");
             return;
         }
         // The core SDK just stores a map of the ID to the engine's object.
-        // It knows nothing about Vector3, Quaternion, or any other engine-specific type.
         this.trackedObjects.set(id, {
-            object: object
+            object: object,
+			positionThreshold: options.positionThreshold || 1, // default 1 units 
+			rotationThreshold: options.rotationThreshold || 1
         });
     }
 	addSnapshot(objectId, position, rotation, scale, properties) {
