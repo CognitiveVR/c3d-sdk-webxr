@@ -1,51 +1,55 @@
-# When a push is made to the development branch,
-# this workflow will run tests using node and 
-# if all tests pass, publish the package to NPM with the -dev tag. 
-
-name: Test and Publish Dev Package
+name: Build, Test & Publish Package
 
 on:
   push:
     branches:
+      - main
       - development
+  workflow_dispatch:  # Allow manual testing
 
 jobs:
   build-test-and-publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # Required by OIDC Authentication
-
+      id-token: write  # Required for OIDC
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: 'https://registry.npmjs.org'
-
+      
       - name: Ensure npm 11.5.1 or later
         run: npm install -g npm@latest
-
-      - name: Clean Install Dependencies for Testing
+      
+      - name: Install Dependencies
         run: npm ci
-
+      
       - name: Build SDK
         run: npm run build
-
+      
       - name: Run Tests
         run: npm test
         env:
           C3D_APPLICATION_KEY: ${{ secrets.C3D_APPLICATION_KEY }}
-
+      
+      # Development branch: version with commit SHA and publish with dev tag
       - name: Prepare Dev Package Version
-        # npm cannot publish same exact version twice (example 2.0.0 twice)
-        # Grabs the first 7 characters of the commit id ~ SHA, retrieves version number, combines to create a new string and updates package.json version to this new string
+        if: github.ref == 'refs/heads/development'
         run: |
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
           npm version --no-git-tag-version "$(npm pkg get version | sed 's/"//g')-dev.${SHORT_SHA}"
       
-      - name: Publish to NPM Registry
+      - name: Publish Dev Package
+        if: github.ref == 'refs/heads/development'
         run: npm publish --tag dev
+      
+      # Main branch: publish as production release
+      - name: Publish Production Package
+        if: github.ref == 'refs/heads/main'
+        run: npm publish --access public
