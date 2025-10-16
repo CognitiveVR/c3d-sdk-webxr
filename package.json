@@ -45,7 +45,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CognitiveVR/cvr-sdk-js.git"
+    "url": "git+https://github.com/CognitiveVR/c3d-sdk-webxr.git"
   },
   "keywords": [
     "analytics",
