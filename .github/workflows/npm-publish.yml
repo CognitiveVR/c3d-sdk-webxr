@@ -1,21 +1,22 @@
-# When a push is made to the main branch,
-# this workflow will run tests using node and 
-# if all tests pass, publish the package to NPM. 
-# The version #.#.# has to be greater than what is currently published to npm, check package.json
+name: Build, Test & Publish Package
 
-name: Build & Test then Publish to NPM
+# When a push is made to the development or main branch,
+# this workflow will run tests using node and 
+# if all tests pass, publish the package to NPM with the -dev tag or public (depending on branch). 
 
 on:
   push:
     branches:
       - main
+      - development
+  workflow_dispatch:  # Allow manual testing
 
 jobs:
   build-test-and-publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # Required for OIDC
+      id-token: write  # Required for OIDC
     
     steps:
       - name: Checkout repository
@@ -41,5 +42,18 @@ jobs:
         env:
           C3D_APPLICATION_KEY: ${{ secrets.C3D_APPLICATION_KEY }}
       
-      - name: Publish to NPM
+      # Development branch: version with commit SHA and publish with dev tag
+      - name: Prepare Dev Package Version
+        if: github.ref == 'refs/heads/development'
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          npm version --no-git-tag-version "$(npm pkg get version | sed 's/"//g')-dev.${SHORT_SHA}"
+      
+      - name: Publish Dev Package
+        if: github.ref == 'refs/heads/development'
+        run: npm publish --tag dev
+      
+      # Main branch: publish as production release
+      - name: Publish Production Package
+        if: github.ref == 'refs/heads/main'
         run: npm publish --access public
