@@ -49,7 +49,11 @@ class C3DThreeAdapter {
     // Automate Dynamic Object Registration
     interactableGroup.children.forEach(child => {
       if (child.userData.isDynamic && child.userData.c3dId) {
-        this.trackDynamicObject(child, child.userData.c3dId);
+        const options = {
+          positionThreshold: child.userData.positionThreshold, 
+          rotationThreshold: child.userData.rotationThreshold  
+        };
+        this.trackDynamicObject(child, child.userData.c3dId, options);
         console.log(`Cognitive3D: Automatically started tracking dynamic object: ${child.name}`);
       }
     });
@@ -116,9 +120,9 @@ class C3DThreeAdapter {
     };
   }
 
-trackDynamicObject(object, id) {
+trackDynamicObject(object, id, options) {
       // Core SDK's generic method to register the object.
-      this.c3d.dynamicObject.trackObject(id, object);
+      this.c3d.dynamicObject.trackObject(id, object, options);
 
       // Add engine-specific data to the entry.
       const tracked = this.c3d.dynamicObject.trackedObjects.get(id);
@@ -135,7 +139,7 @@ updateTrackedObjectTransforms() {
     dynamicObjectManager.trackedObjects.forEach((tracked, id) => {
         if (!tracked.lastPosition) return;
 
-        const { object, lastPosition, lastRotation, lastScale } = tracked;
+        const { object, lastPosition, lastRotation, lastScale, positionThreshold, rotationThreshold } = tracked;
 
         object.updateWorldMatrix(true, false);
 
@@ -145,8 +149,8 @@ updateTrackedObjectTransforms() {
 
         object.matrixWorld.decompose(worldPosition, worldQuaternion, worldScale);
 
-        const positionChanged = !worldPosition.equals(lastPosition);
-        const rotationChanged = !worldQuaternion.equals(lastRotation);
+        const positionChanged = worldPosition.distanceTo(lastPosition) > positionThreshold;
+        const rotationChanged = worldQuaternion.angleTo(lastRotation) * (180 / Math.PI) > rotationThreshold;
         const scaleChanged = !worldScale.equals(lastScale);
 
         if (positionChanged || rotationChanged || scaleChanged) {
@@ -228,7 +232,7 @@ updateTrackedObjectTransforms() {
       exportRoot.scale.z = -1;
       exportRoot.scale.x = -1;
 
-      // Export the new root object ---
+      // Export the new root object 
       exporter.parse(
           exportRoot, // Pass the wrapper to the exporter
           async (gltf) => {
