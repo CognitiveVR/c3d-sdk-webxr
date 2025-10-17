@@ -74,6 +74,7 @@
     "rollup": "^4.43.0"
   },
   "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^4.6.2",
     "cross-fetch": "^4.1.0",
     "jszip": "^3.10.1",
     "uuid": "^11.1.0"

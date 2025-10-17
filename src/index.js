@@ -9,6 +9,7 @@ import FPSTracker from './utils/Framerate';
 import HMDOrientationTracker from './utils/HMDOrientation';
 import Profiler from './utils/Profiler';
 import ControllerTracker from './utils/ControllerTracker'; 
+import FingerprintJS from '@fingerprintjs/fingerprintjs'
 
 import {
   getDeviceMemory,
@@ -46,7 +47,16 @@ class C3D {
     this.dynamicObject = new DynamicObject(this.core, this.customEvent);
     this.fpsTracker = new FPSTracker(); 
     this.renderer = renderer; 
+    
+    // Initialize an agent at application startup.
+    const fpPromise = FingerprintJS.load()
 
+    ;(async () => {
+      // Get the visitor identifier when you need it.
+      const fp = await fpPromise
+      const result = await fp.get()
+      console.log(result.visitorId)
+    })()
     // Set default device properties using environment utils
     const deviceMemory = getDeviceMemory();
     if (deviceMemory) {
