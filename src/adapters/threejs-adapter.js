@@ -51,7 +51,8 @@ class C3DThreeAdapter {
       if (child.userData.isDynamic && child.userData.c3dId) {
         const options = {
           positionThreshold: child.userData.positionThreshold, 
-          rotationThreshold: child.userData.rotationThreshold  
+          rotationThreshold: child.userData.rotationThreshold,
+          scaleThreshold: child.userData.scaleThreshold  
         };
         this.trackDynamicObject(child, child.userData.c3dId, options);
         console.log(`Cognitive3D: Automatically started tracking dynamic object: ${child.name}`);
@@ -139,7 +140,7 @@ updateTrackedObjectTransforms() {
     dynamicObjectManager.trackedObjects.forEach((tracked, id) => {
         if (!tracked.lastPosition) return;
 
-        const { object, lastPosition, lastRotation, lastScale, positionThreshold, rotationThreshold } = tracked;
+        const { object, lastPosition, lastRotation, lastScale, positionThreshold, rotationThreshold, scaleThreshold } = tracked;
 
         object.updateWorldMatrix(true, false);
 
@@ -151,9 +152,9 @@ updateTrackedObjectTransforms() {
 
         const positionChanged = worldPosition.distanceTo(lastPosition) > positionThreshold;
         const rotationChanged = worldQuaternion.angleTo(lastRotation) * (180 / Math.PI) > rotationThreshold;
-        const scaleChanged = !worldScale.equals(lastScale);
-
-        if (positionChanged || rotationChanged || scaleChanged) {
+        const scaleChanged = worldScale.distanceTo(lastScale) > scaleThreshold;
+        
+        if (positionChanged || rotationChanged || scaleChanged) { // if any threshold exceeded, send data
             
             // Conversion
             
