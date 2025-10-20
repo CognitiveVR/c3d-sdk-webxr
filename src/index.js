@@ -48,15 +48,6 @@ class C3D {
     this.fpsTracker = new FPSTracker(); 
     this.renderer = renderer; 
     
-    // Initialize an agent at application startup.
-    const fpPromise = FingerprintJS.load()
-
-    ;(async () => {
-      // Get the visitor identifier when you need it.
-      const fp = await fpPromise
-      const result = await fp.get()
-      console.log(result.visitorId)
-    })()
     // Set default device properties using environment utils
     const deviceMemory = getDeviceMemory();
     if (deviceMemory) {
@@ -92,6 +83,10 @@ class C3D {
   }
   async startSession(xrSession = null) { 
     if (this.core.isSessionActive) { return false; }
+
+    const fp = await FingerprintJS.load();
+    const result = await fp.get();
+    this.core.setDeviceId = result.visitorId;
   
     if (this.renderer) { 
       this.profiler.start(this.renderer);
