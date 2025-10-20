@@ -1,5 +1,4 @@
 import Config from "./config";
-// import FingerprintJS from '@fingerprintjs/fingerprintjs'
  
 class CognitiveVRAnalyticsCore {
 	constructor() {
@@ -87,15 +86,6 @@ class CognitiveVRAnalyticsCore {
 		return this.isSessionActive;
 	};
 	getSessionId() {
-		// // Initialize an agent at application startup.
-		// const fpPromise = FingerprintJS.load()
-
-		// ;(async () => {
-		// // Get the visitor identifier when you need it.
-		// const fp = await fpPromise
-		// const result = await fp.get()
-		// console.log(result.visitorId)
-		// })()
 		if (!this.sessionId) {
 			if (!this.userId) {
 				this.sessionId = `${this.sessionTimestamp}_${this.deviceId}`;
