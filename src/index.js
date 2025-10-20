@@ -17,7 +17,8 @@ import {
   getScreenWidth,
   getHardwareConcurrency,
   getConnection,
-  getGPUInfo
+  getGPUInfo,
+  isBrowser
 } from './utils/environment';
 
 import { 
@@ -84,9 +85,18 @@ class C3D {
   async startSession(xrSession = null) { 
     if (this.core.isSessionActive) { return false; }
 
-    const fp = await FingerprintJS.load();
-    const result = await fp.get();
-    this.core.setDeviceId = result.visitorId;
+    if (isBrowser) {
+      try {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        this.core.setDeviceId = result.visitorId;
+        console.log('FingerprintJS Device ID:', result.visitorId); 
+      } catch (error) {
+        console.error('FingerprintJS failed to load or get visitor ID:', error);
+      }
+    } else {
+      console.log('Not in a browser environment, skipping FingerprintJS.');
+    }
   
     if (this.renderer) { 
       this.profiler.start(this.renderer);
