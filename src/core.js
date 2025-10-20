@@ -1,4 +1,5 @@
 import Config from "./config";
+ 
 class CognitiveVRAnalyticsCore {
 	constructor() {
 		this.config = Config;

@@ -78,7 +78,8 @@ class DynamicObject {
         this.trackedObjects.set(id, {
             object: object,
 			positionThreshold: options.positionThreshold || 1, // default 1 units 
-			rotationThreshold: options.rotationThreshold || 1
+			rotationThreshold: options.rotationThreshold || 1, 
+			scaleThreshold: options.scaleThreshold || 0.1
         });
     }
 	addSnapshot(objectId, position, rotation, scale, properties) {
