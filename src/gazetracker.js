@@ -51,10 +51,20 @@ class GazeTracker {
 				console.log('GazeTracker.sendData failed: no session active');
 				return;
 			}
-			let dproperties = this.core.newDeviceProperties;
-			let uproperties = this.core.newUserProperties;
-			if (this.batchedGaze.length === 0 && dproperties.length === 0 && uproperties.length === 0) {
-				reject();
+			
+			// Find difference between current and sent properties
+			const allSessionProperties = this.core.sessionProperties || {};
+			const sentSessionProperties = this.core.sentSessionProperties || {};
+			const newOrChangedProperties = {};
+
+			for (const key in allSessionProperties) {
+				if (allSessionProperties[key] !== sentSessionProperties[key]) {
+					newOrChangedProperties[key] = allSessionProperties[key];
+				}
+			}
+
+			if (this.batchedGaze.length === 0 && Object.keys(newOrChangedProperties).length === 0) { 
+				resolve();
 				return;
 			}
 
@@ -70,18 +80,23 @@ class GazeTracker {
 			payload['interval'] = this.playerSnapshotInterval;
 			payload['data'] = this.batchedGaze;
 			payload['properties'] = {};
-			if (Object.keys(dproperties).length) {
-				payload['properties'] = {...dproperties};
+						
+			if (Object.keys(newOrChangedProperties).length > 0) { // New
+				payload['properties'] = newOrChangedProperties;
 			}
 
-			if (Object.keys(uproperties).length) {
-				payload['properties'] = { ...payload.properties, ...uproperties};
-			}
-
-			// console.log("Cognitive3D Gaze Payload:", JSON.stringify(payload, null, 2));
+			console.log("Cognitive3D Gaze Payload:", JSON.stringify(payload, null, 2));
 
 			this.network.networkCall('gaze', payload)
-				.then(res => (res === 200) ? resolve(res) : reject(res));
+				.then(res => {
+					if (res === 200) {
+						// Success! Update the 'sent' properties
+						this.core.sentSessionProperties = { ...this.core.sentSessionProperties, ...newOrChangedProperties };
+						resolve(res);
+					} else {
+						reject(res);
+					}
+				});
 			this.batchedGaze = [];
 		});
 
