@@ -89,8 +89,10 @@ class C3D {
       try {
         const fp = await FingerprintJS.load();
         const result = await fp.get();
-        this.core.setDeviceId = result.visitorId;
-        console.log('FingerprintJS Device ID:', result.visitorId); 
+        this.core.setDeviceId = result.visitorId; // Device Identifier
+        this.setSessionProperty("c3d.deviceid", result.visitorId); 
+        this.setSessionProperty("c3d.deviceid.confidence", result.confidence.score); // Device identifier confidence score
+        console.log('Device ID:', result.visitorId, 'Confidence:', result.confidence.score);
       } catch (error) {
         console.error('FingerprintJS failed to load or get visitor ID:', error);
       }
@@ -306,12 +308,49 @@ class C3D {
     return this.core.getSessionId();
   }
 
-  getUserProperties() {
-    return this.core.newUserProperties;
+  getUserProperties() {    
+    // Filter sessionProperties to return only "user" properties
+    const allProps = this.core.sessionProperties || {};
+    const userProps = {};
+    const deviceKeys = new Set(Object.values(this.core.devicePropertyMap));
+    deviceKeys.add('c3d.device.name'); // Manually added from setDeviceName
+
+    for (const key in allProps) {
+        if (!deviceKeys.has(key) && !key.startsWith('c3d.session.') && !key.startsWith('c3d.cohort.') && !key.startsWith('c3d.experiment.') && !key.startsWith('c3d.trial.') && !key.startsWith('c3d.participant.')) {
+            // "user properties" are those NOT in the device map and not part of other specific session properties.
+            userProps[key] = allProps[key];
+        }
+    }
+    // Need to also grab participant properties for the tests
+    const participantPrefix = 'c3d.participant.';
+    for (const key in allProps) {
+        if (key.startsWith(participantPrefix)) {
+             userProps[key.substring(participantPrefix.length)] = allProps[key];
+        }
+    }
+    // And c3d.name from setParticipantFullName
+     if (allProps['c3d.name']) {
+        userProps['c3d.name'] = allProps['c3d.name'];
+     }
+
+
+    return userProps;
   }
 
   getDeviceProperties() {
-    return this.core.newDeviceProperties;
+    
+    // Filter sessionProperties to return only "device" properties
+    const allProps = this.core.sessionProperties || {};
+    const deviceProps = {};
+    const deviceKeys = new Set(Object.values(this.core.devicePropertyMap));
+    deviceKeys.add('c3d.device.name'); // Manually added from setDeviceName
+
+    for (const key in allProps) {
+        if (deviceKeys.has(key)) {
+            deviceProps[key] = allProps[key];
+        }
+    }
+    return deviceProps;
   }
 
   set userId(userId) {
@@ -319,7 +358,6 @@ class C3D {
   }
   
   // USER PROPERTIES 
-
   setUserProperty(propertyOrObject, value) {
       if (typeof propertyOrObject === 'object') {
           Object.entries(propertyOrObject).forEach(([key, val]) =>
@@ -344,6 +382,9 @@ class C3D {
   setSessionName(name) {
     this.setUserProperty('c3d.sessionname', name);
   }
+  setAppVersion(version) {
+    this.setDeviceProperty('AppVersion', version);
+  }
 
   setLobbyId(id) {
     this.core.setLobbyId(id);
@@ -351,7 +392,7 @@ class C3D {
 
   setDeviceName(name) {
     this.core.setDeviceId = name;
-    this.core.newDeviceProperties['c3d.device.name'] = name;
+    this.core.setSessionProperty('c3d.device.name', name); 
   }
 
   setDeviceProperty(propertyOrObject, value) {
@@ -364,8 +405,8 @@ class C3D {
           this.core.setDeviceProperty(propertyOrObject, value);
       }
   }
-  // SESSION PROPERTIES
 
+  // SESSION PROPERTIES
   setSessionProperty(propertyOrObject, value) {
     if (typeof propertyOrObject === 'object') {
         Object.entries(propertyOrObject).forEach(([key, val]) =>
@@ -386,21 +427,6 @@ class C3D {
           this.setParticipantProperty(key, value)
       );
   }
-  //  COHORT PROPERTY
-  setCohortProperty(key, value) {
-      this.setSessionProperty('c3d.cohort.' + key, value);
-  }
-
-  // EXPERIMENT PROPERTY
-  setExperimentProperty(key, value) {
-      this.setSessionProperty('c3d.experiment.' + key, value);
-  }
-
-  // TRIAL PROPERTY 
-  setTrialProperty(key, value) {
-      this.setSessionProperty('c3d.trial.' + key, value);
-  }
-
   // SESSION TAG
   setSessionTag(tag, value = true) {
       if (typeof tag !== 'string' || tag.length === 0 || tag.length > 12) return;
