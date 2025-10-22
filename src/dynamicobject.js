@@ -164,7 +164,7 @@ class DynamicObject {
 	        }
 	        sendJson['manifest'] = manifest;
 
-	        console.warn("Cognitive3D SDK: Sending manifest data...", JSON.stringify(manifest, null, 2));
+	        // console.warn("Cognitive3D SDK: Sending manifest data...", JSON.stringify(manifest, null, 2));
 
 	        let data = [];
 	        for (let element of this.snapshots) {

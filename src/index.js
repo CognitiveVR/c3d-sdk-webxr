@@ -89,8 +89,10 @@ class C3D {
       try {
         const fp = await FingerprintJS.load();
         const result = await fp.get();
-        this.core.setDeviceId = result.visitorId;
-        console.log('FingerprintJS Device ID:', result.visitorId); 
+        this.core.setDeviceId = result.visitorId; // Device Identifier
+        this.setSessionProperty("c3d.deviceid", result.visitorId); 
+        this.setSessionProperty("c3d.deviceid.confidence", result.confidence.score); // Device identifier confidence score
+        console.log('Device ID:', result.visitorId, 'Confidence:', result.confidence.score);
       } catch (error) {
         console.error('FingerprintJS failed to load or get visitor ID:', error);
       }
@@ -379,6 +381,9 @@ class C3D {
 
   setSessionName(name) {
     this.setUserProperty('c3d.sessionname', name);
+  }
+  setAppVersion(version) {
+    this.setDeviceProperty('AppVersion', version);
   }
 
   setLobbyId(id) {

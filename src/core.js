@@ -87,11 +87,7 @@ class CognitiveVRAnalyticsCore {
 	};
 	getSessionId() {
 		if (!this.sessionId) {
-			if (!this.userId) {
-				this.sessionId = `${this.sessionTimestamp}_${this.deviceId}`;
-			} else {
-				this.sessionId = `${this.sessionTimestamp}_${this.userId}`;
-			}
+			this.sessionId = `${this.sessionTimestamp}_${this.deviceId}`;
 		}
 		return this.sessionId;
 	};
@@ -108,6 +104,10 @@ class CognitiveVRAnalyticsCore {
 	set setUserId(id) {
 		this.userId = id;
 	};
+	// set setUserId(id) {
+	// 	this.userId = id;
+	// 	this.setSessionProperty('c3d.userId', id); // Also record as session property
+	// };
 	set setDeviceId(id) {
 		this.deviceId = id;
 	};
@@ -143,5 +143,9 @@ class CognitiveVRAnalyticsCore {
 	setLobbyId(id) {
 		this.lobbyId = id;
 	}
+	// setLobbyId(id) {
+	// 	this.lobbyId = id;
+	// 	this.setSessionProperty('c3d.lobbyId', id); // Also record as session property
+	// }
 }
 export default new CognitiveVRAnalyticsCore()
