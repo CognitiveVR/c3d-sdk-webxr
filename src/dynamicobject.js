@@ -74,12 +74,12 @@ class DynamicObject {
             console.error("DynamicObject.trackObject: id and object must be provided.");
             return;
         }
-        // The core SDK just stores a map of the ID to the engine's object.
+        // Core SDK just stores a map of the ID to the engine's object.
         this.trackedObjects.set(id, {
             object: object,
-			positionThreshold: options.positionThreshold || 1, // default 1 units 
-			rotationThreshold: options.rotationThreshold || 1, 
-			scaleThreshold: options.scaleThreshold || 0.1
+			positionThreshold: options.positionThreshold || 0.01, // default units 
+			rotationThreshold: options.rotationThreshold || 0.5, 
+			scaleThreshold: options.scaleThreshold || 0.05
         });
     }
 	addSnapshot(objectId, position, rotation, scale, properties) {
