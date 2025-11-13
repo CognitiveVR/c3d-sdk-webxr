@@ -1,4 +1,5 @@
 import Config from "./config";
+ 
 class CognitiveVRAnalyticsCore {
 	constructor() {
 		this.config = Config;
@@ -8,8 +9,8 @@ class CognitiveVRAnalyticsCore {
 		this.deviceId = '';
 		this.sessionId = '';
 		this.sessionTimestamp = '';
-		this.newDeviceProperties = {};
-		this.newUserProperties = {};
+		this.sessionProperties = {}; // Consolidated store
+		this.sentSessionProperties = {}; // Tracks sent properties
 		this.lobbyId = '';
 		this.devicePropertyMap = {
 			AppName: 'c3d.app.name',
@@ -86,11 +87,7 @@ class CognitiveVRAnalyticsCore {
 	};
 	getSessionId() {
 		if (!this.sessionId) {
-			if (!this.userId) {
-				this.sessionId = `${this.sessionTimestamp}_${this.deviceId}`;
-			} else {
-				this.sessionId = `${this.sessionTimestamp}_${this.userId}`;
-			}
+			this.sessionId = `${this.sessionTimestamp}_${this.deviceId}`;
 		}
 		return this.sessionId;
 	};
@@ -107,6 +104,10 @@ class CognitiveVRAnalyticsCore {
 	set setUserId(id) {
 		this.userId = id;
 	};
+	// set setUserId(id) {
+	// 	this.userId = id;
+	// 	this.setSessionProperty('c3d.userId', id); // Also record as session property
+	// };
 	set setDeviceId(id) {
 		this.deviceId = id;
 	};
@@ -117,13 +118,13 @@ class CognitiveVRAnalyticsCore {
 		this.sessionTimestamp = value;
 	};
 	setUserProperty(key, value) {
-		this.newUserProperties = this.newUserProperties || {};
-		this.newUserProperties[key] = value;
+		this.sessionProperties = this.sessionProperties || {}; 
+		this.sessionProperties[key] = value;
 	}
 	setDeviceProperty(key, value) {
-		this.newDeviceProperties = this.newDeviceProperties || {};
+		this.sessionProperties = this.sessionProperties || {}; 
 		const mappedKey = this.devicePropertyMap[key] || key;  
-		this.newDeviceProperties[mappedKey] = value;
+		this.sessionProperties[mappedKey] = value;
 	}
 	setSessionProperty(key, value) {
     this.sessionProperties = this.sessionProperties || {};
@@ -136,11 +137,15 @@ class CognitiveVRAnalyticsCore {
 		return this.devicePropertyMap[property] ? this.devicePropertyMap[property] : "unknown.property";
 	};
 	resetNewUserDeviceProperties() {
-		this.newUserProperties = {};
-		this.newDeviceProperties = {};
+		this.sessionProperties = {};
+		this.sentSessionProperties = {};
 	}
 	setLobbyId(id) {
 		this.lobbyId = id;
 	}
+	// setLobbyId(id) {
+	// 	this.lobbyId = id;
+	// 	this.setSessionProperty('c3d.lobbyId', id); // Also record as session property
+	// }
 }
-export default new CognitiveVRAnalyticsCore() 
+export default new CognitiveVRAnalyticsCore()

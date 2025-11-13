@@ -69,15 +69,17 @@ class DynamicObject {
 		return newObjectId.id;
 	};
 
-    trackObject(id, object) {
+    trackObject(id, object, options = {}) {
         if (!id || !object) {
             console.error("DynamicObject.trackObject: id and object must be provided.");
             return;
         }
-        // The core SDK just stores a map of the ID to the engine's object.
-        // It knows nothing about Vector3, Quaternion, or any other engine-specific type.
+        // Core SDK just stores a map of the ID to the engine's object.
         this.trackedObjects.set(id, {
-            object: object
+            object: object,
+			positionThreshold: options.positionThreshold || 0.01, // default units 
+			rotationThreshold: options.rotationThreshold || 0.5, 
+			scaleThreshold: options.scaleThreshold || 0.05
         });
     }
 	addSnapshot(objectId, position, rotation, scale, properties) {
@@ -162,7 +164,7 @@ class DynamicObject {
 	        }
 	        sendJson['manifest'] = manifest;
 
-	        console.warn("Cognitive3D SDK: Sending manifest data...", JSON.stringify(manifest, null, 2));
+	        // console.warn("Cognitive3D SDK: Sending manifest data...", JSON.stringify(manifest, null, 2));
 
 	        let data = [];
 	        for (let element of this.snapshots) {
