@@ -19,17 +19,28 @@ export class XRSessionManager {
 
   async start() {
       if (this.isTracking) return;
+    // 1. Try for 'bounded-floor' first, as it contains boundary geometry
       try {
-          this.referenceSpace = await this.xrSession.requestReferenceSpace('local-floor'); 
-          console.log('Cog3D-XR-Session-Manager: Using "local-floor" reference space.');
+          this.referenceSpace = await this.xrSession.requestReferenceSpace('bounded-floor'); 
+          console.log('Cog3D-XR-Session-Manager: Using "bounded-floor" reference space.');
       } catch (error) {
-          console.warn('Cog3D-XR-Session-Manager: "local-floor" not supported, falling back to "local".', error);
+          console.warn('Cog3D-XR-Session-Manager: "bounded-floor" not supported, falling back to "local-floor".', error);
+          
+          // 2. Fallback to 'local-floor'
           try {
-              this.referenceSpace = await this.xrSession.requestReferenceSpace('local'); 
-              console.log('Cog3D-XR-Session-Manager: Using "local" reference space.');
+              this.referenceSpace = await this.xrSession.requestReferenceSpace('local-floor'); 
+              console.log('Cog3D-XR-Session-Manager: Using "local-floor" reference space.');
           } catch (fallbackError) {
-              console.error('Cog3D-XR-Session-Manager: Failed to get any supported reference space.', fallbackError);
-              return; 
+              console.warn('Cog3D-XR-Session-Manager: "local-floor" not supported, falling back to "local".', fallbackError);
+
+              // 3. Final fallback to 'local'
+              try {
+                  this.referenceSpace = await this.xrSession.requestReferenceSpace('local'); 
+                  console.log('Cog3D-XR-Session-Manager: Using "local" reference space.');
+              } catch (finalFallbackError) {
+                  console.error('Cog3D-XR-Session-Manager: Failed to get any supported reference space.', finalFallbackError);
+                  return; 
+              }
           }
       }
       this.isTracking = true;

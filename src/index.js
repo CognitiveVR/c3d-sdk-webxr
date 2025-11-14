@@ -10,6 +10,7 @@ import HMDOrientationTracker from './utils/HMDOrientation';
 import Profiler from './utils/Profiler';
 import ControllerTracker from './utils/ControllerTracker'; 
 import FingerprintJS from '@fingerprintjs/fingerprintjs'
+import BoundaryTracker from './utils/BoundaryTracker';
 
 import {
   getDeviceMemory,
@@ -48,7 +49,8 @@ class C3D {
     this.dynamicObject = new DynamicObject(this.core, this.customEvent);
     this.fpsTracker = new FPSTracker(); 
     this.renderer = renderer; 
-    
+    this.boundaryTracker = new BoundaryTracker(this);
+
     // Set default device properties using environment utils
     const deviceMemory = getDeviceMemory();
     if (deviceMemory) {
@@ -115,6 +117,8 @@ class C3D {
       await this.xrSessionManager.start();
       this.controllerTracker.start(xrSession);
       const referenceSpace = this.xrSessionManager.referenceSpace;
+      this.boundaryTracker.start(xrSession, referenceSpace);
+
       if (referenceSpace) {
         this.hmdOrientation.start(
           xrSession,
@@ -199,7 +203,10 @@ class C3D {
       
       if (this.controllerTracker) {
           this.controllerTracker.stop(); 
-      }      
+      }
+      if (this.boundaryTracker) {
+      this.boundaryTracker.stop(); 
+    }      
       if (this.xrSessionManager) {
       this.xrSessionManager.stop();
       this.xrSessionManager = null;
@@ -259,6 +266,12 @@ class C3D {
       this.sendData();
       this.dynamicObject.refreshObjectManifest();
     }
+
+    // Force the boundary tracker to re-send boundary info for the new scene
+    if (this.boundaryTracker && this.boundaryTracker.referenceSpace) {
+        this.boundaryTracker.forceBoundaryUpdate();
+    }
+
     this.core.setScene(name);
   }
 
