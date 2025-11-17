@@ -21,9 +21,14 @@ class BoundaryTracker {
     start(xrSession, referenceSpace) {
         console.log("C3D-SDK: BoundaryTracker.start() called."); // LOG
         if (!isBrowser || this.intervalId || !xrSession || !referenceSpace) {
-            console.warn("C3D-SDK: BoundaryTracker.start() exiting early. Conditions not met:", // LOG
-                { isBrowser, intervalId: this.intervalId, xrSession, referenceSpace });
+            console.warn("C3D-SDK: BoundaryTracker.start() exiting early.");
             return;
+        }
+        
+        // Check if this is actually a bounded reference space
+        if (!referenceSpace.boundsGeometry) {
+            console.warn("C3D-SDK: BoundaryTracker - Reference space does not have boundsGeometry. Only 'bounded-floor' reference spaces support boundary tracking.");
+            return; // Don't start tracking if no boundary support
         }
 
         this.xrSession = xrSession;

@@ -9,7 +9,9 @@ export class XRSessionManager {
     this.xrSession = xrSession; 
     this.dynamicObject = dynamicObject;
     this.gazeRaycaster = gazeRaycaster;
-    this.referenceSpace = null; 
+    this.referenceSpace = null;  // For gaze tracking (local-floor)
+    this.boundedReferenceSpace = null; // For boundary tracking (bounded-floor)
+    this.referenceSpaceType = null;
     this.isTracking = false; 
     this.animationFrameHandle = null;
     this.onXRFrame = this.onXRFrame.bind(this);
@@ -18,52 +20,55 @@ export class XRSessionManager {
   }
 
   async start() {
-      if (this.isTracking) return;
-    // 1. Try for 'bounded-floor' first, as it contains boundary geometry
+      if (this.isTracking) return { 
+          referenceSpace: this.referenceSpace, 
+          boundedReferenceSpace: this.boundedReferenceSpace,
+          type: this.referenceSpaceType 
+      };
+      
+      // 1. ALWAYS get local-floor for gaze tracking
       try {
-          this.referenceSpace = await this.xrSession.requestReferenceSpace('bounded-floor'); 
-          console.log('Cog3D-XR-Session-Manager: Using "bounded-floor" reference space.');
+          this.referenceSpace = await this.xrSession.requestReferenceSpace('local-floor');
+          console.log('Cog3D-XR-Session-Manager: Using "local-floor" for gaze tracking.');
       } catch (error) {
-          console.warn('Cog3D-XR-Session-Manager: "bounded-floor" not supported, falling back to "local-floor".', error);
-          
-          // 2. Fallback to 'local-floor'
+          console.warn('Cog3D-XR-Session-Manager: "local-floor" not supported, falling back to "local".', error);
           try {
-              this.referenceSpace = await this.xrSession.requestReferenceSpace('local-floor'); 
-              console.log('Cog3D-XR-Session-Manager: Using "local-floor" reference space.');
-          } catch (fallbackError) {
-              console.warn('Cog3D-XR-Session-Manager: "local-floor" not supported, falling back to "local".', fallbackError);
-
-              // 3. Final fallback to 'local'
-              try {
-                  this.referenceSpace = await this.xrSession.requestReferenceSpace('local'); 
-                  console.log('Cog3D-XR-Session-Manager: Using "local" reference space.');
-              } catch (finalFallbackError) {
-                  console.error('Cog3D-XR-Session-Manager: Failed to get any supported reference space.', finalFallbackError);
-                  return; 
-              }
+              this.referenceSpace = await this.xrSession.requestReferenceSpace('local');
+              console.log('Cog3D-XR-Session-Manager: Using "local" for gaze tracking.');
+          } catch (finalError) {
+              console.error('Cog3D-XR-Session-Manager: Failed to get reference space for gaze.', finalError);
+              return null;
           }
       }
+      
+      // 2. Try to get bounded-floor for boundary tracking (optional)
+      try {
+          this.boundedReferenceSpace = await this.xrSession.requestReferenceSpace('bounded-floor');
+          this.referenceSpaceType = 'bounded-floor';
+          console.log('Cog3D-XR-Session-Manager: "bounded-floor" available for boundary tracking.');
+      } catch (error) {
+          console.warn('Cog3D-XR-Session-Manager: "bounded-floor" not available. Boundary tracking disabled.', error);
+          this.boundedReferenceSpace = null;
+          this.referenceSpaceType = 'local-floor';
+      }
+      
       this.isTracking = true;
       this.animationFrameHandle = this.xrSession.requestAnimationFrame(this.onXRFrame);
       console.log('Cog3D-XR-Session-Manager: Gaze tracking started.');
+      
+      return {
+          referenceSpace: this.referenceSpace,  // local-floor for gaze
+          boundedReferenceSpace: this.boundedReferenceSpace,  // bounded-floor for boundaries
+          type: this.referenceSpaceType
+      };
   }
-
-  stop() { 
-    if (!this.isTracking) return;
-
-    this.isTracking = false;
-    if (this.animationFrameHandle) {
-      this.xrSession.cancelAnimationFrame(this.animationFrameHandle);
-    }
-    console.log('Cog3D-XR-Session-Manager: Gaze tracking stopped.');
-  }
-
+  
   onXRFrame(timestamp, frame) { 
     if (!this.isTracking) return;
 
     if (timestamp - this.lastUpdateTime >= this.interval) {
         this.lastUpdateTime = timestamp;
-        const viewerPose = frame.getViewerPose(this.referenceSpace);
+        const viewerPose = frame.getViewerPose(this.referenceSpace); // Uses local-floor
 
         if (viewerPose) {
           const { position, orientation } = viewerPose.transform;
@@ -73,7 +78,6 @@ export class XRSessionManager {
               gazeHitData = this.gazeRaycaster();
           }
 
-    
         const correctedPosition = [position.x, position.y, -position.z];
         const correctedOrientation = [orientation.x, orientation.y, -orientation.z, -orientation.w];
 
@@ -86,6 +90,15 @@ export class XRSessionManager {
     }
     
     this.animationFrameHandle = this.xrSession.requestAnimationFrame(this.onXRFrame); 
+  }
+  stop() { 
+    if (!this.isTracking) return;
+
+    this.isTracking = false;
+    if (this.animationFrameHandle) {
+      this.xrSession.cancelAnimationFrame(this.animationFrameHandle);
+    }
+    console.log('Cog3D-XR-Session-Manager: Gaze tracking stopped.');
   }
 }
 // Controller (profile identifier) lookup table to infer HMD Device 

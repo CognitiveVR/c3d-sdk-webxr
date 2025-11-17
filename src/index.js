@@ -114,10 +114,24 @@ class C3D {
     if (xrSession) {  
       this.xrSessionManager = new XRSessionManager(this.gaze, xrSession, this.dynamicObject, this.gazeRaycaster);
       
-      await this.xrSessionManager.start();
+      // await this.xrSessionManager.start();
+      // this.controllerTracker.start(xrSession);
+      // const referenceSpace = this.xrSessionManager.referenceSpace;
+      // this.boundaryTracker.start(xrSession, referenceSpace);
+      const sessionInfo = await this.xrSessionManager.start();
       this.controllerTracker.start(xrSession);
-      const referenceSpace = this.xrSessionManager.referenceSpace;
-      this.boundaryTracker.start(xrSession, referenceSpace);
+
+      // Only start boundary tracking if we have a bounded-floor space
+      if (sessionInfo && sessionInfo.boundedReferenceSpace) {
+          this.boundaryTracker.start(xrSession, sessionInfo.boundedReferenceSpace);
+          console.log('C3D: Boundary tracking started with bounded-floor reference space');
+      } else {
+          console.warn('C3D: Boundary tracking not available - requires bounded-floor reference space');
+      }
+
+      const referenceSpace = sessionInfo ? sessionInfo.referenceSpace : null;
+
+
 
       if (referenceSpace) {
         this.hmdOrientation.start(
