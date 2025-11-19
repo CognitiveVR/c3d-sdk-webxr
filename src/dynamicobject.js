@@ -238,6 +238,7 @@ class DynamicObject {
 		this.snapshots = [];
 		this.engagementCount = {};
 		this.allEngagements = {};
+		this.trackedObjects.clear();
 	};
 
 	//re-add all manifest entries when a scene changes.
