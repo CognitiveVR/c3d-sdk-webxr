@@ -14,7 +14,7 @@ Welcome!  This SDK allows you to integrate your Javascript and WebXR Application
 
 [![npm version](https://badge.fury.io/js/%40cognitive3d%2Fanalytics.svg)](https://www.npmjs.com/package/@cognitive3d/analytics)
 [![All Tests Passing](https://img.shields.io/github/actions/workflow/status/CognitiveVR/c3d-sdk-webxr/npm-publish.yml?branch=main&label=all%20tests&logo=github&logoColor=white)](https://github.com/CognitiveVR/c3d-sdk-webxr/actions/workflows/build-test-publish.yml)
-[![License](https://img.shields.io/github/license/CognitiveVR/c3d-sdk-webxr)](LICENSE)
+[![License](https://img.shields.io/badge/License-SEE%20LICENSE%20IN%20LICENSE-blue.svg)](LICENSE)
 
 
 ## ✅ Requirement(s)
