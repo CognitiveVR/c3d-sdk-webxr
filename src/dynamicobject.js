@@ -43,7 +43,7 @@ class DynamicObject {
 
 		this.addSnapshot(customid, position, rotation, null, props);
 
-		if ((this.snapshots.length + this.manifestEntries.length) >= this.core.config.dynamicDataLimit) {
+		if (this.core.isSessionActive && (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit)) {
 			this.sendData();
 		}
 		return customid;
@@ -63,7 +63,7 @@ class DynamicObject {
 		let props = [{ "enabled": true }];
 		this.addSnapshot(newObjectId.id, position, rotation, null, props);
 
-		if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
+		if (this.core.isSessionActive && (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit)) {
 			this.sendData();
 		}
 		return newObjectId.id;
@@ -118,7 +118,7 @@ class DynamicObject {
 		}
 		this.snapshots.push(snapshot);
 
-		if (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit) {
+		if (this.core.isSessionActive && (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit)) {
 			this.sendData();
 		}
 	};
