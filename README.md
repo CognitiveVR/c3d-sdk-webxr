@@ -12,10 +12,21 @@ Welcome!  This SDK allows you to integrate your Javascript and WebXR Application
   <img src="https://github.com/user-attachments/assets/4815254c-d89f-4504-9c4d-944ed40cfb43" alt="Javascript Logo" width="16%">
 </div>
 
-[![Build Status](https://travis-ci.org/CognitiveVR/cvr-sdk-js.svg?branch=master)](https://travis-ci.org/CognitiveVR/cvr-sdk-js)
+<br>
 
-## Requirement(s)
-Node.js version 20 or higher. We currently require a version of Node.js of 20 or higher for this SDK. If this doesn't match your needs, let us know.
+<div align="center">
+
+[![npm version](https://badge.fury.io/js/%40cognitive3d%2Fanalytics.svg)](https://www.npmjs.com/package/@cognitive3d/analytics)
+[![All Tests Passing](https://img.shields.io/github/actions/workflow/status/CognitiveVR/c3d-sdk-webxr/npm-publish.yml?branch=main&label=all%20tests&logo=github&logoColor=white)](https://github.com/CognitiveVR/c3d-sdk-webxr/actions/workflows/build-test-publish.yml)
+[![License](https://img.shields.io/badge/License-SEE%20LICENSE%20IN%20LICENSE-blue.svg)](LICENSE)
+
+</div>
+
+## ✅ Requirement(s)
+Node.js version 20 or higher. To check your current version: 
+```
+node --version
+```
 
 ## 🔧 Installation 
 You can add Cognitive3D to your javascript project in two ways. 
@@ -58,7 +69,7 @@ c3d-sdk-webxr/
 └── settings.js             # Configuration file for the SDK tests (API key, scene info).
 ```
 
-## Usage
+## 🚀 Usage
 
 The SDK is designed to be flexible and can be integrated into various JavaScript projects. The build process creates multiple module formats in the `/lib` folder to support different environments.
 - index.umd.js (Universal Module Definition): One-size-fits-all for direct use in browsers. It's designed to be dropped into a <script> tag on a webpage. 
@@ -67,8 +78,9 @@ The SDK is designed to be flexible and can be integrated into various JavaScript
 
 The documentation explains how to integrate the SDK, track your users' experience and how to export your scene to view on Cognitive3D.com.
 
+## 📚 Documentation 
 [Go to the Docs](http://docs.cognitive3d.com/webxr/get-started/)
 
-## Sample Projects
-For more detailed examples and complete project integrations (Playcanvas, ThreeJS, Wonderland Engine), please see our sample applications repository at: https://github.com/CognitiveVR/c3d-webxr-sample-apps 
+## 🎮 Sample Projects
+For more detailed examples and complete project integrations (Playcanvas, ThreeJS, Wonderland Engine), please see our [sample applications repository](https://github.com/CognitiveVR/c3d-webxr-sample-apps) 
 
