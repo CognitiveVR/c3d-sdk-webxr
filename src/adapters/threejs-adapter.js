@@ -30,47 +30,133 @@ class C3DThreeAdapter {
   }
 
   /**
-   * Initializes and starts all tracking functionalities.
+   * Initializes and starts tracking functionalities.
    * @param {THREE.WebGLRenderer} renderer - The main renderer instance.
    * @param {THREE.Camera} camera - The ThreeJS camera used for raycasting.
-   * @param {THREE.Group} interactableGroup - The group containing all dynamic objects.
+   * @param {THREE.Group} [interactableGroup=null] - (Optional) The group containing all dynamic objects.
    * @param {function} [userRenderFn=null] - The original render function.
    */
-  startTracking(renderer, camera, interactableGroup, userRenderFn = null) {
-    if (!renderer || !camera || !interactableGroup) {
-      console.error("Cognitive3D: renderer, camera, and interactableGroup must be provided to startTracking.");
+  startTracking(renderer, camera, interactableGroup = null, userRenderFn = null) {
+    if (!renderer || !camera) {
+      console.error("Cognitive3D: renderer and camera must be provided to startTracking.");
       return;
     }
 
-    // Consolidate Gaze Setup
-    this._setupGazeRaycasting(camera, interactableGroup);
-    console.log('Cognitive3D: Gaze raycasting enabled.');
+    // 1. Stop default tracker
+    if (this.c3d.fpsTracker) {
+        this.c3d.fpsTracker.stop();
+        console.log("Cognitive3D: Stopped default FPS tracker in favor of XR-synced tracking.");
+    }
 
-    // Automate Dynamic Object Registration
-    interactableGroup.children.forEach(child => {
-      if (child.userData.isDynamic && child.userData.c3dId) {
-        const options = {
-          positionThreshold: child.userData.positionThreshold, 
-          rotationThreshold: child.userData.rotationThreshold,
-          scaleThreshold: child.userData.scaleThreshold  
-        };
-        this.trackDynamicObject(child, child.userData.c3dId, options);
-        console.log(`Cognitive3D: Automatically started tracking dynamic object: ${child.name}`);
-      }
-    });
+    // 2. Setup Dynamic Objects & Gaze
+    if (interactableGroup) {
+        this._setupGazeRaycasting(camera, interactableGroup);
+        console.log('Cognitive3D: Gaze raycasting enabled.');
 
-    // Hook into the Render Loop
+        interactableGroup.children.forEach(child => {
+            if (child.userData.isDynamic && child.userData.c3dId) {
+                const options = {
+                    positionThreshold: child.userData.positionThreshold, 
+                    rotationThreshold: child.userData.rotationThreshold,
+                    scaleThreshold: child.userData.scaleThreshold  
+                };
+                this.trackDynamicObject(child, child.userData.c3dId, options);
+                console.log(`Cognitive3D: Automatically started tracking dynamic object: ${child.name}`);
+            }
+        });
+    }
+
+    // 3. Initialize FPS State
+    this._initFPSState();
+
+    // 4. Hook into the Render Loop
     const renderLoop = (timestamp, frame) => {
+      // Update FPS logic
+      this._updateFPS();
+
+      // Run user's original render function
       if (userRenderFn) {
         userRenderFn(timestamp, frame);
       }
+
+      // Update transforms for dynamic objects
       this.updateTrackedObjectTransforms();
     };
 
     renderer.setAnimationLoop(renderLoop);
-    console.log('Cognitive3D: Hooked into the render loop to automate transform updates.');
+    console.log('Cognitive3D: Hooked into the render loop for analytics.');
   }
 
+  /**
+   * Initializes the state variables used for FPS tracking.
+   * @private
+   */
+  _initFPSState() {
+      this._fpsState = {
+          frameCount: 0,
+          timeAccumulator: 0,
+          lastTime: performance.now(),
+          frameTimes: []
+      };
+  }
+
+  /**
+   * Updates FPS counters and sends data if the sample period is reached.
+   * @private
+   */
+  _updateFPS() {
+      const now = performance.now();
+      let delta = (now - this._fpsState.lastTime) / 1000; // delta in seconds
+      
+      // Ignore massive jumps (session paused/resumed)
+      if (delta > 1.0) delta = 0; 
+      
+      this._fpsState.lastTime = now;
+      this._fpsState.timeAccumulator += delta;
+      this._fpsState.frameCount++;
+      this._fpsState.frameTimes.push(delta);
+
+      // Report every 1 second
+      if (this._fpsState.timeAccumulator >= 1.0) {
+          this._sendFPSData();
+          
+          // Reset counters for next interval
+          this._fpsState.frameCount = 0;
+          this._fpsState.timeAccumulator = 0;
+          this._fpsState.frameTimes = [];
+      }
+  }
+
+  /**
+   * Calculates Average and 1% Low FPS and sends them to the sensor.
+   * @private
+   */
+  _sendFPSData() {
+      const { frameCount, timeAccumulator, frameTimes } = this._fpsState;
+
+      // A. Average FPS
+      const avgFps = frameCount / timeAccumulator;
+      this.c3d.sensor.recordSensor('c3d.fps.avg', avgFps);
+
+      // B. 1% Low FPS
+      // 1. Sort frame times from highest (slowest) to lowest (fastest)
+      frameTimes.sort((a, b) => b - a);
+      
+      // 2. Get the top 1% slowest frames
+      const onePercentCount = Math.ceil(frameTimes.length * 0.01);
+      const slowestFrames = frameTimes.slice(0, onePercentCount);
+      
+      // 3. Average their duration and convert to FPS
+      if (slowestFrames.length > 0) {
+          const totalSlowestTime = slowestFrames.reduce((sum, t) => sum + t, 0);
+          const avgSlowestTime = totalSlowestTime / slowestFrames.length;
+          
+          // Guard against divide by zero
+          const fps1pl = avgSlowestTime > 0 ? (1 / avgSlowestTime) : avgFps;
+          
+          this.c3d.sensor.recordSensor('c3d.fps.1pl', fps1pl);
+      }
+  }
   /**
    * (Internal) Sets up the gaze raycaster.
    * @private
@@ -257,7 +343,7 @@ updateTrackedObjectTransforms() {
               const settings = {
                   scale: 1,
                   sceneName: sceneName,
-                  sdkVersion: "2.2.3"
+                  sdkVersion: "2.3.0" // need to automate **********************
               };
               const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
               const screenshotDataUrl = renderer.domElement.toDataURL('image/png');

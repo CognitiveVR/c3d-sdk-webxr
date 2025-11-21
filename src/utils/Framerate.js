@@ -1,3 +1,15 @@
+/**
+ * FPSTracker.js
+ * 
+ * Purpose:
+ * - Provides a generic browser FPS tracker for non-XR applications.
+ * - Uses window.requestAnimationFrame to measure the framerate delivered by the browser's main rendering loop.
+ * - Should be used as the fallback when no engine-specific or XR render loop integration is possible.
+ * Note:
+ * - The adapters for engines handle switching between this generic tracker and their engine-synced loop 
+ *   automatically based on the application's state (immersive XR or not).
+ */
+
 import { isBrowser } from "./environment";
 
 class FPSTracker {
