@@ -113,11 +113,6 @@ class C3D {
 
     if (xrSession) {  
       this.xrSessionManager = new XRSessionManager(this.gaze, xrSession, this.dynamicObject, this.gazeRaycaster);
-      
-      // await this.xrSessionManager.start();
-      // this.controllerTracker.start(xrSession);
-      // const referenceSpace = this.xrSessionManager.referenceSpace;
-      // this.boundaryTracker.start(xrSession, referenceSpace);
       const sessionInfo = await this.xrSessionManager.start();
       this.controllerTracker.start(xrSession);
 

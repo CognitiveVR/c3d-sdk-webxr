@@ -129,12 +129,6 @@ class BoundaryTracker {
                     }
                 }
             });
-        } else {
-            // Stationary: skip position boundary exit checks
-            if (!isInitialCheck) {
-                // Optionally log or handle stationary state without boundary exit tests
-                // console.log("C3D-SDK: BoundaryTracker in Stationary mode, skipping exit boundary tests.");
-            }
         }
     }
 

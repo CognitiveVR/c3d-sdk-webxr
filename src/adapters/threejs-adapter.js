@@ -79,7 +79,6 @@ class C3DThreeAdapter {
         userRenderFn(timestamp, frame);
       }
 
-      // Update transforms for dynamic objects
       this.updateTrackedObjectTransforms();
     };
 
