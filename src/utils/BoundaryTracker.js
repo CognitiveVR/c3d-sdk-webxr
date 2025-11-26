@@ -1,5 +1,18 @@
-// src/utils/BoundaryTracker.js
+/*
+ * LIMITATIONS / TODO 
+ * ----------------------------------------
+ * 1. Missing 'reset' Event Handling:
+ *    The code does not listen for `referenceSpace.addEventListener('reset',...)`. 
+ *    If a user opens the OS menu and switches from Stationary to Room Scale during the session,
+ *    the `referenceSpace` object may become invalid or jump origins. The tracker will fail 
+ *    to detect this runtime switch without the event listener.
+ *
+ * 2. Missing Threshold Heuristic:
+ *    To definitively identify the mode, you must implement a logic gate:
+ *    IF (Area < 1.6m²) THEN "Stationary" ELSE "Room Scale". 
+ *    Webxr API does not provide explicit Stationary vs Room Scale mode info only capabilities. 
 
+ */
 import { isBrowser } from './environment';
 
 class BoundaryTracker {
