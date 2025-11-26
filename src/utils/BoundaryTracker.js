@@ -14,38 +14,44 @@ class BoundaryTracker {
         this.previousBoundaryPoints = []; // Stores {x, z}
         this.previousRoomSize = { width: 0, depth: 0, area: 0 };
         this.isHMDOutsideBoundary = false;
-        
+        this.boundaryType = "Unknown";
+
         console.log("C3D-SDK: BoundaryTracker initialized."); // LOG
     }
 
     start(xrSession, referenceSpace) {
-        console.log("C3D-SDK: BoundaryTracker.start() called."); // LOG
+        console.log("C3D-SDK: BoundaryTracker.start() called.");
         if (!isBrowser || this.intervalId || !xrSession || !referenceSpace) {
             console.warn("C3D-SDK: BoundaryTracker.start() exiting early.");
             return;
         }
-        
-        // Check if this is actually a bounded reference space
-        if (!referenceSpace.boundsGeometry) {
-            console.warn("C3D-SDK: BoundaryTracker - Reference space does not have boundsGeometry. Only 'bounded-floor' reference spaces support boundary tracking.");
-            return; // Don't start tracking if no boundary support
-        }
 
         this.xrSession = xrSession;
         this.referenceSpace = referenceSpace;
-        
-        console.log("C3D-SDK: BoundaryTracker starting in 1 second..."); // LOG
-        // 1 sec delay 
-        setTimeout(() => {
-            console.log("C3D-SDK: BoundaryTracker running initial check..."); // LOG
-            this._checkBoundary(true); // 'true' to indicate this is the initial check
 
-            // Start periodic checking
-            console.log("C3D-SDK: BoundaryTracker starting update interval."); // LOG
-            this.intervalId = setInterval(
-                () => this._checkBoundary(false), // 'false' for subsequent checks
-                this.updateInterval
-            );
+        if (referenceSpace.boundsGeometry && referenceSpace.boundsGeometry.length > 0) {
+            this.boundaryType = "Room Scale";
+            this.previousBoundaryPoints = referenceSpace.boundsGeometry.map(p => ({ x: p.x, z: p.z }));
+
+            // Set room size session properties only for room scale
+            const newRoomSize = this._getRoomSize(this.previousBoundaryPoints);
+            const roomSizeString = `${newRoomSize.width.toFixed(2)} x ${newRoomSize.depth.toFixed(2)}`;
+            this.c3d.setSessionProperty("c3d.roomsizeMeters", newRoomSize.area);
+            this.c3d.setSessionProperty("c3d.roomsizeDescriptionMeters", roomSizeString);
+
+            console.log(`C3D-SDK: BoundaryTracker boundary type '${this.boundaryType}', Room Size: ${roomSizeString} meters.`);
+        } else {
+            console.warn("C3D-SDK: BoundaryTracker - No boundsGeometry found. Reporting Stationary boundary type without room size.");
+            this.boundaryType = "Stationary";
+            this.previousBoundaryPoints = []; // No polygon for stationary
+        }
+
+        // Set boundaryType session property always
+        this.c3d.setSessionProperty("c3d.boundaryType", this.boundaryType);
+
+        setTimeout(() => {
+            this._checkBoundary(true);
+            this.intervalId = setInterval(() => this._checkBoundary(false), this.updateInterval);
         }, 1000);
     }
 
@@ -60,8 +66,9 @@ class BoundaryTracker {
         this.previousBoundaryPoints = [];
         this.previousRoomSize = { width: 0, depth: 0, area: 0 };
         this.isHMDOutsideBoundary = false;
+        this.boundaryType = "Unknown";
     }
-
+    
     /**
      * Main update loop called by setInterval.
      * @param {boolean} isInitialCheck - Flag to set initial properties without firing events.
@@ -72,87 +79,59 @@ class BoundaryTracker {
             return;
         }
 
-        const boundaryPoints = this.referenceSpace.boundsGeometry;
+        // Only do boundary change and user position exit detection if Room Scale
+        if (this.boundaryType === "Room Scale" && this.referenceSpace.boundsGeometry && this.referenceSpace.boundsGeometry.length > 0) {
+            const boundaryChanged = this._hasBoundaryChanged(this.referenceSpace.boundsGeometry);
+            if (boundaryChanged) {
+                this.previousBoundaryPoints = this.referenceSpace.boundsGeometry.map(p => ({ x: p.x, z: p.z }));
+                const newRoomSize = this._getRoomSize(this.previousBoundaryPoints);
+                this.previousRoomSize = newRoomSize;
+                this.c3d.setSessionProperty("c3d.roomsizeMeters", newRoomSize.area);
+                this.c3d.setSessionProperty("c3d.roomsizeDescriptionMeters", `${newRoomSize.width.toFixed(2)} x ${newRoomSize.depth.toFixed(2)}`);
 
-        if (!boundaryPoints || boundaryPoints.length === 0) {
-            if (isInitialCheck) {
-                console.warn("C3D-SDK: BoundaryTracker - No 'boundsGeometry' found on initial check. Is a Roomscale boundary active?");
-            } else if (this.previousBoundaryPoints.length === 0) {
-                // This will log once per second if no boundary is ever found
-                console.log("C3D-SDK: BoundaryTracker - Still no 'boundsGeometry' found. Waiting for a boundary...");
-            }
-
-            if (this.previousBoundaryPoints.length > 0) {
-                console.log("C3D-SDK: BoundaryTracker - Boundary points disappeared."); // LOG
-                this.previousBoundaryPoints = [];
-                this.previousRoomSize = { width: 0, depth: 0, area: 0 };
-            }
-            this.isHMDOutsideBoundary = false; // No boundary, so can't be outside it
-            return;
-        }
-
-        const boundaryChanged = this._hasBoundaryChanged(boundaryPoints);
-        // console.log(`C3D-SDK: Boundary changed? ${boundaryChanged}`); // noisy log
-
-        if (isInitialCheck || boundaryChanged) {
-            const newRoomSize = this._getRoomSize(boundaryPoints);
-            const newArea = newRoomSize.area;
-            const oldArea = this.previousRoomSize.area;
-
-            console.log(`C3D-SDK: Setting session properties & sensor for RoomSize: ${newArea.toFixed(2)}m²`); // LOG
-
-            // Set session properties
-            this.c3d.setSessionProperty("c3d.roomsizeMeters", newArea);
-            this.c3d.setSessionProperty("c3d.roomsizeDescriptionMeters", `${newRoomSize.width.toFixed(1)} x ${newRoomSize.depth.toFixed(1)}`);
-            this.c3d.sensor.recordSensor('RoomSize', newArea);
-
-            if (!isInitialCheck && boundaryChanged) {
-                if (Math.abs(newArea - oldArea) < 0.01) {
-                    console.log("C3D-SDK: BoundaryTracker: User recentered. Sending event."); // LOG
-                    this.c3d.customEvent.send('c3d.User recentered', [0, 0, 0]);
-                } else {
-                    console.log("C3D-SDK: BoundaryTracker: User changed boundary. Sending event."); // LOG
+                if (!isInitialCheck) {
                     this.c3d.customEvent.send('c3d.User changed boundary', [0, 0, 0], {
-                        "Previous Room Size": oldArea,
-                        "New Room Size": newArea
+                        "Previous Room Size": this.previousRoomSize.area,
+                        "New Room Size": newRoomSize.area
                     });
                 }
+
+                console.log(`C3D-SDK: BoundaryTracker: Boundary changed detected. New Area: ${newRoomSize.area.toFixed(2)}`);
             }
 
-            // Update stored values
-            this.previousBoundaryPoints = boundaryPoints.map(p => ({ x: p.x, z: p.z }));
-            this.previousRoomSize = newRoomSize;
-        }
+            // Exit Boundary Detection
+            this.xrSession.requestAnimationFrame((time, frame) => {
+                const viewerPose = frame.getViewerPose(this.referenceSpace);
+                if (viewerPose) {
+                    const hmdPosition = viewerPose.transform.position;
+                    const isInside = this._isPointInPolygon(hmdPosition, this.previousBoundaryPoints);
 
-        // Exit Detection
-        this.xrSession.requestAnimationFrame((time, frame) => {
-            const viewerPose = frame.getViewerPose(this.referenceSpace);
-            if (viewerPose) {
-                const hmdPosition = viewerPose.transform.position;
-                
-                const isInside = this._isPointInPolygon(hmdPosition, this.previousBoundaryPoints);
-
-                if (!isInside && !this.isHMDOutsideBoundary) {
-                    // User just stepped OUT
-                    console.log("C3D-SDK: BoundaryTracker: User exited boundary. Sending event."); // LOG
-                    this.c3d.customEvent.send('c3d.user.exited.boundary', [0, 0, 0]);
+                    if (!isInside && !this.isHMDOutsideBoundary) {
+                        console.log("C3D-SDK: BoundaryTracker: User exited boundary. Sending event."); // LOG
+                        this.c3d.customEvent.send('c3d.user.exited.boundary', [0, 0, 0]);
+                        this.isHMDOutsideBoundary = true;
+                    } else if (isInside && this.isHMDOutsideBoundary) {
+                        this.isHMDOutsideBoundary = false;
+                        console.log("C3D-SDK: BoundaryTracker: User re-entered boundary.");
+                    }
                 }
-                // Update state for next check
-                this.isHMDOutsideBoundary = !isInside;
+            });
+        } else {
+            // Stationary: skip position boundary exit checks
+            if (!isInitialCheck) {
+                // Optionally log or handle stationary state without boundary exit tests
+                // console.log("C3D-SDK: BoundaryTracker in Stationary mode, skipping exit boundary tests.");
             }
-        });
+        }
     }
-    
-    /**
-     * Forces the tracker to re-send the current boundary and room size data.
-     */
+
     forceBoundaryUpdate() {
         if (!this.referenceSpace) {
             console.warn("C3D-SDK: BoundaryTracker.forceBoundaryUpdate failed - no reference space."); // LOG
             return;
         }
 
-        const boundaryPoints = this.referenceSpace.boundsGeometry;
+        const boundaryPoints = this.previousBoundaryPoints;
         if (!boundaryPoints || boundaryPoints.length === 0) {
             console.log("C3D-SDK: BoundaryTracker.forceBoundaryUpdate - no boundary points found."); // LOG
             return; // No boundary to send
@@ -164,17 +143,12 @@ class BoundaryTracker {
 
         // Re-send the session properties and sensor data
         this.c3d.setSessionProperty("c3d.roomsizeMeters", newArea);
-        this.c3d.setSessionProperty("c3d.roomsizeDescriptionMeters", `${newRoomSize.width.toFixed(1)} x ${newRoomSize.depth.toFixed(1)}`);
+        this.c3d.setSessionProperty("c3d.roomsizeDescriptionMeters", `${newRoomSize.width.toFixed(2)} x ${newRoomSize.depth.toFixed(2)}`);
         this.c3d.sensor.recordSensor('RoomSize', newArea);
 
-        // Update stored values
-        this.previousBoundaryPoints = boundaryPoints.map(p => ({ x: p.x, z: p.z }));
         this.previousRoomSize = newRoomSize;
     }
 
-    /**
-     * Checks if the boundary has changed compared to the stored points.
-     */
     _hasBoundaryChanged(newPoints) {
         if (this.previousBoundaryPoints.length === 0 && newPoints.length > 0) {
             return true;
@@ -182,7 +156,7 @@ class BoundaryTracker {
         if (this.previousBoundaryPoints.length !== newPoints.length) {
             return true;
         }
-        
+
         if (this.previousBoundaryPoints.length > 0 && newPoints.length === 0) {
             return false;
         }
@@ -190,7 +164,7 @@ class BoundaryTracker {
         for (let i = 0; i < newPoints.length; i++) {
             const prev = this.previousBoundaryPoints[i];
             const curr = newPoints[i];
-            
+
             if (Math.abs(prev.x - curr.x) >= 0.1 || Math.abs(prev.z - curr.z) >= 0.1) {
                 return true;
             }
@@ -198,7 +172,7 @@ class BoundaryTracker {
         return false;
     }
 
-    /**
+   /**
      * Calculates the room size (width and depth) from boundary points.
      */
     _getRoomSize(points) {
@@ -240,7 +214,7 @@ class BoundaryTracker {
 
             const intersects = ((p_i.z > point.z) !== (p_j.z > point.z))
                 && (point.x < (p_j.x - p_i.x) * (point.z - p_i.z) / (p_j.z - p_i.z) + p_i.x);
-            
+
             if (intersects) {
                 isInside = !isInside;
             }
