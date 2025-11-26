@@ -1,6 +1,6 @@
 # The Cognitive3D SDK for Javascript and WebXR
 
-Welcome!  This SDK allows you to integrate your Javascript and WebXR Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project.  In addition, Cognitive3D empowers you to take actions that will improve users' engagement with your experience.
+Welcome!  This SDK allows you to integrate your JavaScript and WebXR Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project.  In addition, Cognitive3D empowers you to take actions that will improve users' engagement with your experience.
 
 <div align="center">
   <a href="https://www.cognitive3d.com">
@@ -29,9 +29,9 @@ node --version
 ```
 
 ## 🔧 Installation 
-You can add Cognitive3D to your javascript project in two ways. 
+You can add Cognitive3D to your JavaScript project in two ways. 
 ### Option 1. Install from NPM
-Inside your javascript project's terminal, run the following command 
+Inside your JavaScript project's terminal, run the following command 
 ```
 npm install @cognitive3d/analytics
 ```
@@ -81,7 +81,7 @@ It supports a wide range of development environments by providing multiple modul
 
 
 ## 📚 Documentation 
-The **[Cognititive3D WebXR SDK documentation](http://docs.cognitive3d.com/webxr/get-started/)** explains how to integrate the SDK, track user experiences, export scenes, track dynamic objects, and more.
+The **[Cognitive3D WebXR SDK documentation](http://docs.cognitive3d.com/webxr/get-started/)** explains how to integrate the SDK, track user experiences, export scenes, track dynamic objects, and more.
 
 
 ## 🎮 Sample Projects
