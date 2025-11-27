@@ -81,8 +81,8 @@ class GazeTracker {
 			payload['data'] = this.batchedGaze;
 			payload['properties'] = {};
 						
-			if (Object.keys(newOrChangedProperties).length > 0) { // New
-				payload['properties'] = newOrChangedProperties;
+			if (Object.keys(newOrChangedProperties).length > 0) { 
+				payload['properties'] = newOrChangedProperties; // session properties are sent with gaze stream 
 			}
 
 			// console.log("Cognitive3D Gaze Payload:", JSON.stringify(payload, null, 2));

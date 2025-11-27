@@ -1,6 +1,6 @@
 {
   "name": "@cognitive3d/analytics",
-  "version": "2.2.5",
+  "version": "2.3.0",
   "description": "This SDK allows you to integrate your Javascript Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project.",
   "main": "lib/cjs/index.cjs.js",
   "module": "lib/esm/index.esm.js",
@@ -55,7 +55,7 @@
     "cognitive3d"
   ],
   "author": "Cognitive3D support@cognitive3d.com",
-  "license": "ISC",
+  "license": "SEE LICENSE IN LICENSE",
   "bugs": {
     "url": "https://github.com/CognitiveVR/c3d-sdk-webxr/issues"
   },

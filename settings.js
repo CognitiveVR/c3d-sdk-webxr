@@ -10,10 +10,10 @@ export default {
             return process.env.C3D_APPLICATION_KEY;
         })(),
 		networkHost: 'data.cognitive3d.com', // data.cognitive3d.com is prod, data.c3ddev.com is dev 
-        gazeBatchSize: 64,
-        dynamicDataLimit: 64,
-        customEventBatchSize: 64,
-        sensorDataLimit: 64,
+        gazeBatchSize: 256, 
+        dynamicDataLimit: 512,
+        customEventBatchSize: 256,
+        sensorDataLimit: 512,
         // Note: Replace `allSceneData` with your own scene data.
         // You can find your Scene Name, Scene ID, and Version Number in the Cognitive3D dashboard for your project.
         allSceneData: [

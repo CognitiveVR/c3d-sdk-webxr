@@ -7,10 +7,10 @@ class Config {
 			: 'data.c3ddev.com';
 		this.APIKey = ''; // SET APIKEY for PROD or DEV
 		this.networkVersion = '0';
-		this.sensorDataLimit = 64;
-		this.dynamicDataLimit = 64;
-		this.customEventBatchSize = 64;
-		this.gazeBatchSize = 64;
+		this.sensorDataLimit = 512;
+		this.dynamicDataLimit = 512;
+		this.customEventBatchSize = 256;
+		this.gazeBatchSize = 256;
 		this.GazeInterval = 0.1; // this corresponds to 10 Hz
 		this.allSceneData = [];
 	}
