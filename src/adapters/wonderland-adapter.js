@@ -322,13 +322,30 @@ class C3DWonderlandAdapter {
 		indexOffset,
 		min,
 		max,
-        filterDynamic,
+		filterDynamic,
 	) {
-        // Skip objects tagged as dynamic (userData is WLE Component property)
-        const c3dIdComponent = wleObject.getComponent("c3d-analytics-component"); // Assuming this component marks dynamic objects
-        if (filterDynamic && c3dIdComponent?.c3dId) {
+        // Check if wleObject is a valid WLE Object 
+        // If not, we skip component processing but continue recursively processing children.
+        if (typeof wleObject.getComponent !== 'function') {
+            for (const child of wleObject.children || []) {
+                indexOffset = this._collectAndTransformMeshData(
+                    child,
+                    parentMatrix, 
+                    data,
+                    indexOffset,
+                    min,
+                    max,
+                    filterDynamic,
+                );
+            }
             return indexOffset;
         }
+
+	// Skip objects tagged as dynamic (userData is WLE Component property)
+	const c3dIdComponent = wleObject.getComponent("c3d-analytics-component");
+	if (filterDynamic && c3dIdComponent?.c3dId) {
+		return indexOffset;
+	}
         
         // This is a simplified way to get local transform, relying on gl-matrix directly
         // and assuming WLEObject methods are available.
@@ -426,36 +443,39 @@ class C3DWonderlandAdapter {
 		buffers: [],
 	});
 
-  // Public Export Methods
+  	// Public Export Method
+	/**
+	* Exports the entire static scene geometry to GLTF, BIN, and settings.json.
+	* Dynamic objects (those with c3dId) are automatically excluded.
+	* @param {string} sceneName - The name of the scene.
+	* @param {number} [scale=1.0] - Optional global scale factor.
+	* @param {string} [rootObjectName=null] - Optional name of the root object to export.
+	*/
+	async exportScene(sceneName, scale = 1.0, rootObjectName = null) {
+		console.log(`Cognitive3D: Exporting static scene geometry...`);
+		
+		let rootObject = this.WL.scene; // Start with the engine's highest root
 
-  /**
-   * Exports the entire static scene geometry to GLTF, BIN, and settings.json.
-   * Dynamic objects (those with c3dId) are automatically excluded.
-   * @param {string} sceneName - The name of the scene.
-   * @param {number} [scale=1.0] - Optional global scale factor.
-   */
-  async exportScene(sceneName, scale = 1.0) {
-    console.log(`Cognitive3D: Exporting static scene geometry for "${sceneName}"...`);
-    
-    // The WL.scene.children is the highest level of objects
-    const rootObject = this.WL.scene.children[0]?.parent || this.WL.scene; 
-    
-    // Start export from the root of the scene, filter dynamic objects
-    await this._performExport(rootObject, sceneName, scale, true); 
-  }
-
-  /**
-   * Exports a specific Wonderland Engine object and its children.
-   * @param {WLEObject} objectToExport - The object to export.
-   * @param {string} objectName - The name of the object to use for filenames.
-   * @param {number} [scale=1.0] - Optional global scale factor.
-   */
-  async exportObject(objectToExport, objectName, scale = 1.0) {
-    console.log(`Cognitive3D: Exporting specific object geometry for "${objectName}"...`);
-    
-    // Start export from the specified object, do NOT filter dynamic objects
-    await this._performExport(objectToExport, objectName, scale, false);
-  }
+		if (rootObjectName) {
+		// Find the object by name
+		const customRoot = this.WL.scene.findByName(rootObjectName); 
+		
+		if (customRoot) {
+			rootObject = customRoot;
+			console.log(`Cognitive3D: Using custom export root: ${rootObjectName}`);
+		} else {
+			console.warn(`Cognitive3D: Object with name "${rootObjectName}" not found. Defaulting to full scene export.`);
+			// Fallback to full scene parent logic
+			rootObject = this.WL.scene.children[0]?.parent || this.WL.scene;
+		}
+		} else {
+				// Default to the top-level scene parent if no name is provided
+				rootObject = this.WL.scene.children[0]?.parent || this.WL.scene;
+			}
+		
+		// Start export from the determined root object, filter dynamic objects
+		await this._performExport(rootObject, sceneName, scale, true); 
+	}
 }
 
 export default C3DWonderlandAdapter;
