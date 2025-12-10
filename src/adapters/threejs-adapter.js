@@ -352,7 +352,7 @@ exportScene(scene, sceneName, renderer, camera) {
             const settings = {
                 scale: 1,
                 sceneName: sceneName,
-                sdkVersion: "2.3.0" // need to automate **********************
+                sdkVersion: typeof __SDK_VERSION__ !== 'undefined' ? __SDK_VERSION__ : 'dev'
             };
             const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
             const screenshotDataUrl = renderer.domElement.toDataURL('image/png');
