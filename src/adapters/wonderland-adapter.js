@@ -1,10 +1,10 @@
-import { vec3, quat, mat4, mat3 } from 'gl-matrix'; 
-import { MeshAttribute, MeshComponent, Object as WLEObject } from '@wonderlandengine/api'; 
+import { vec3, mat4, mat3 } from 'gl-matrix'; 
+import { MeshAttribute, MeshComponent } from '@wonderlandengine/api';
 
 // Constants for GLTF binary format
 const COMPONENT_TYPE = { UNSIGNED_SHORT: 5123, UNSIGNED_INT: 5125, FLOAT: 5126 };
 const TARGET = { ARRAY_BUFFER: 34962, ELEMENT_ARRAY_BUFFER: 34963 };
-const SDK_VERSION = "2.4.2";
+const SDK_VERSION = typeof __SDK_VERSION__ !== 'undefined' ? __SDK_VERSION__ : 'dev';
 
 class C3DWonderlandAdapter {
     exportDirHandle = null;
@@ -40,14 +40,13 @@ class C3DWonderlandAdapter {
         this.c3d.gaze.recordGaze(this.fromVector3(position), this.fromQuaternion(rotation), this.fromVector3(gaze));
     }
 
-/**
+    /**
      * Internal: Captures a PNG screenshot from the Wonderland Engine canvas.
      */
     _captureScreenshot() {
         return new Promise((resolve, reject) => {
             const callback = () => {
                 try {
-                    // FIX: Remove from scene emitter
                     this.WL.scene.onPostRender.remove(callback);
 
                     const canvas = this.WL.canvas;
@@ -238,22 +237,31 @@ class C3DWonderlandAdapter {
         }
 
         // Calculate Transform
+        const pos = wleObject.getTranslationLocal ? wleObject.getTranslationLocal([]) : wleObject.getPositionLocal([]);
         const localMatrix = mat4.fromRotationTranslationScale(
             mat4.create(),
             wleObject.getRotationLocal([]),
-            wleObject.getPositionLocal([]),
+            pos,
             wleObject.getScalingLocal([])
         );
         const worldMatrix = mat4.multiply(mat4.create(), parentMatrix, localMatrix);
 
         // Calculate Normal Matrix (Inverse Transpose)
-        const normalMatrix4 = mat4.transpose(mat4.create(), mat4.invert(mat4.create(), worldMatrix));
-        const normalMatrix3 = mat3.fromMat4(mat3.create(), normalMatrix4);
+        const invertedWorld = mat4.invert(mat4.create(), worldMatrix);
+        let normalMatrix3;
 
-        // Gather Meshes
+        // Check if matrix is invertible (scale 0 objects are not)
+        if (invertedWorld) {
+            const normalMatrix4 = mat4.transpose(mat4.create(), invertedWorld);
+            normalMatrix3 = mat3.fromMat4(mat3.create(), normalMatrix4);
+        } else {
+            // Singular matrix, likely 0 scale "root" object. 
+            // Fallback to identity to avoid crash.
+            normalMatrix3 = mat3.create();
+        }
         let meshComponents = wleObject.getComponents(MeshComponent);
         if (!meshComponents || meshComponents.length === 0) {
-            meshComponents = wleObject.getComponents('mesh'); // Fallback string lookup
+            meshComponents = wleObject.getComponents('mesh');
         }
 
         for (const mc of meshComponents) {
