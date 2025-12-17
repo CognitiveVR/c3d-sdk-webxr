@@ -10,6 +10,12 @@ interface GazeData {
     g?: number[]; // Gaze point (optional)
 }
 
+// Define the hit result structure
+interface GazeHit {
+    objectId?: string | null;
+    point: number[];
+}
+
 class GazeTracker {
     private core: CognitiveVRAnalyticsCore;
     private network: Network;
@@ -28,7 +34,8 @@ class GazeTracker {
         this.jsonPart = 1;
     }
 
-    recordGaze(position: number[], rotation: number[], gazeHit?: { objectId?: string | null; point: number[] } | null, objectId?: string): void {
+    // UPDATED SIGNATURE: Allows GazeHit object OR number[] (vector)
+    recordGaze(position: number[], rotation: number[], gazeHit?: GazeHit | number[] | null, objectId?: string): void {
         let ts = this.core.getTimestamp();
         let data: GazeData = {
             time: ts,
@@ -36,24 +43,31 @@ class GazeTracker {
             r: [...rotation],
         };
 
-        // If we have a valid gaze hit, add its data to the snapshot
+        // If we have a valid gaze hit (or vector), add its data to the snapshot
         if (gazeHit) {
-            // If an objectId is present, it's a dynamic object hit with local coordinates
-            if (gazeHit.objectId) {
-                data['o'] = gazeHit.objectId;
-                data['g'] = gazeHit.point; // Gaze point in local coordinates
+            if (Array.isArray(gazeHit)) {
+                // It is a raw vector (from adapters like Babylon/PlayCanvas)
+                data['g'] = gazeHit;
             } else {
-                // Otherwise, it's a static object hit with world coordinates
-                data['g'] = gazeHit.point; // Gaze point in world coordinates
+                // It is a GazeHit object (from WebXR Raycaster)
+                // If an objectId is present, it's a dynamic object hit with local coordinates
+                if (gazeHit.objectId) {
+                    data['o'] = gazeHit.objectId;
+                    data['g'] = gazeHit.point; // Gaze point in local coordinates
+                } else {
+                    // Otherwise, it's a static object hit with world coordinates
+                    data['g'] = gazeHit.point; // Gaze point in world coordinates
+                }
             }
         } 
         // Handle the case where objectId is passed directly (legacy support based on your tests)
         else if (objectId) {
              data['o'] = objectId;
              // The third argument might be 'point' if it wasn't a complex object
-             if (Array.isArray(gazeHit)) {
-                 data['g'] = gazeHit;
-             }
+             // Note: In strict TS, gazeHit would be null here due to 'else', so we check arguments or rely on legacy flow
+             // but strictly speaking 'gazeHit' is checked above. 
+             // If legacy calls pass (pos, rot, vector, id), the first 'if (gazeHit)' catches it as Array.
+             // If calls pass (pos, rot, null, id), this block handles it.
         }
 
         // If gazeHit is null and no objectId, it's a "sky" gaze, and we only record position and rotation.
