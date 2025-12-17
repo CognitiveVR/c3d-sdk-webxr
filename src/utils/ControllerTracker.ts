@@ -8,9 +8,8 @@ interface C3DInstance {
     sensor: {
         recordSensor: (name: string, value: any) => void;
     };
-    xrSessionManager?: {
-        referenceSpace: XRReferenceSpace;
-    };
+    // Relaxed to 'any' to accept the full XRSessionManager class or null
+    xrSessionManager: any;
 }
 
 // Tracks controller connection status and height relative to the HMD.
@@ -72,7 +71,6 @@ class ControllerTracker {
     }
 
     private _onInputSourcesChange(event: any): void {
-        // FIX: Corrected typo from XRInputSourceChangeEvent to XRInputSourcesChangeEvent
         const xrEvent = event as XRInputSourcesChangeEvent;
         xrEvent.added.forEach((source: XRInputSource) => this._handleControllerRegained(source));
         xrEvent.removed.forEach((source: XRInputSource) => this._handleControllerLost(source));
