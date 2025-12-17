@@ -12,7 +12,24 @@
 
 import { isBrowser } from "./environment";
 
+// Interface for the metrics object passed to the callback
+export interface FPSMetrics {
+    avg: number;
+    '1pl': number;
+}
+
+// Type definition for the callback function
+type FPSCallback = (metrics: FPSMetrics) => void;
+
 class FPSTracker {
+  private animationFrameId: number | null;
+  private lastTime: number;
+  private frameCount: number;
+  private elapsedTime: number;
+  private samplePeriod: number;
+  private deltaTimes: number[];
+  public lastDeltaTime: number; // Public to potentially allow reading the very last delta externally if needed
+
   constructor() {
     this.animationFrameId = null;
     this.lastTime = 0;
@@ -28,10 +45,10 @@ class FPSTracker {
   /**
    * _loop runs on every animation frame, calculates the delta time since the last frame and reports the FPS
    * once the sample period has been reached.
-   * @param {number} currentTime - Timestamp provided by requestAnimationFrame.
-   * @param {function(number): void} callback - The function to call with the FPS value.
+   * @param currentTime - Timestamp provided by requestAnimationFrame.
+   * @param callback - The function to call with the FPS value.
    */
-  _loop(currentTime, callback) { 
+  private _loop(currentTime: number, callback: FPSCallback): void { 
     if (this.lastTime > 0) {
       const deltaTime = currentTime - this.lastTime;
       this.lastDeltaTime = deltaTime;
@@ -72,9 +89,9 @@ class FPSTracker {
 
   /**
    * Starts the FPS tracking.
-   * @param {function(number): void} callback - The function to call with the FPS value (RecordSensor).
+   * @param callback - The function to call with the FPS value (RecordSensor).
    */
-  start(callback) {
+  public start(callback: FPSCallback): void {
     if (!isBrowser || this.animationFrameId) {
       return;
     }
@@ -87,7 +104,7 @@ class FPSTracker {
     this.animationFrameId = requestAnimationFrame((time) => this._loop(time, callback));
   }
 
-  stop() {
+  public stop(): void {
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;

@@ -33,24 +33,29 @@ const commonPlugins = [
   }),
   resolve({
     browser: true,
-    preferBuiltins: true
+    preferBuiltins: true,
+    // Add .ts to extensions so imports from .js files can resolve to .ts files
+    extensions: ['.mjs', '.js', '.json', '.node', '.ts'] 
   }),
   commonjs()
 ];
 
 const input = {
-  'index': 'src/index.js',
+  'index': 'src/index.ts', 
   'adapters/threejs-adapter': 'src/adapters/threejs-adapter.js',
   'adapters/babylon-adapter': 'src/adapters/babylon-adapter.js',
   'adapters/playcanvas-adapter': 'src/adapters/playcanvas-adapter.js',
   'adapters/wonderland-adapter': 'src/adapters/wonderland-adapter.js', 
 };
+
 const external = [
   ...Object.keys(pkg.dependencies || {}),
   ...builtinModules,
   'playcanvas', 
   /^three(\/.*)?$/, // Match 'three' and all sub-paths
-  'babylonjs'
+  'babylonjs',
+  '@wonderlandengine/api', 
+  'gl-matrix' 
 ];
 
 export default [
@@ -83,7 +88,7 @@ export default [
 
   // UMD build for Main SDK
   {
-    input: 'src/index.js',
+    input: 'src/index.ts', 
     output: {
       name: 'C3D',
       file: 'lib/c3d.umd.js',
@@ -177,4 +182,3 @@ export default [
       ]
   }
 ];
-
