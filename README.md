@@ -6,10 +6,10 @@ Welcome!  This SDK allows you to integrate your JavaScript and WebXR Application
   <a href="https://www.cognitive3d.com">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="assets/C3D-Primary-Logo-WhiteText-4k.png" >
-      <img alt="Cognitive3D Logo" src="assets/C3D-Primary-Logo-BlackText-4k.png" width="80%">
+      <img alt="Cognitive3D Logo" src="assets/C3D-Primary-Logo-BlackText-4k.png" width="70%">
     </picture>
   </a>
-  <img src="assets/javascript-typescript-logo.png" alt="TypeScript/ JavaScript Logo" width="16%">
+  <img src="assets/javascript-typescript-logo.png" alt="TypeScript/ JavaScript Logo" width="20%">
 </div>
 
 <br>
