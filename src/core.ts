@@ -1,7 +1,6 @@
 import Config from "./config";
 import { SceneConfig } from "./config";
 
-// FIX: Export these interfaces so d.ts files can use them
 export interface DevicePropertyMap {
     [key: string]: string;
 }
@@ -10,7 +9,6 @@ export interface SessionProperties {
     [key: string]: any;
 }
 
-// FIX: Export the class so other files can use it as a Type
 export class CognitiveVRAnalyticsCore {
     public config: typeof Config;
     public isSessionActive: boolean;

@@ -1,3 +1,6 @@
+// Currently no babylon sample application exists, todo in future
+// Needs testing once a sample app is created
+
 import * as BABYLON from 'babylonjs';
 // @ts-ignore
 import { GLTF2Export } from 'babylonjs-serializers';
@@ -36,8 +39,6 @@ class C3DBabylonAdapter {
         rotation = this.fromQuaternion((camera as any).rotationQuaternion);
     } else {
         // Fallback: Convert Euler to Quaternion if needed, or identity.
-        // For simplicity in analytics, strict Euler might suffice if Quat is missing,
-        // but SDK expects Quat format [x,y,z,w].
         if ((camera as any).rotation) {
              const euler = (camera as any).rotation;
              const quat = BABYLON.Quaternion.RotationYawPitchRoll(euler.y, euler.x, euler.z);
@@ -62,7 +63,7 @@ class C3DBabylonAdapter {
     const settings = {
         scale: 1,
         sceneName: sceneName,
-        sdkVersion: "0.2.2" // Or dynamically get this from your project
+        sdkVersion: __SDK_VERSION__ 
     };
     const settingsString = JSON.stringify(settings, null, 2);
     const settingsBlob = new Blob([settingsString], { type: 'application/json' });

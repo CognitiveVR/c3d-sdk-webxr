@@ -87,7 +87,7 @@ class HMDOrientationTracker {
         this.intervalId = setInterval(() => {
             if (this.xrSession) {
                 this.xrSession.requestAnimationFrame((time, frame) => {
-                    // Safety check for referenceSpace in TS, though JS assumed it existed
+                    // Safety check for referenceSpace in TS
                     if (this.referenceSpace) {
                         const viewerPose = frame.getViewerPose(this.referenceSpace);
                         if (viewerPose) {

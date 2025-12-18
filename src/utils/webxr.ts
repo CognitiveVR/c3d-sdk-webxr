@@ -138,7 +138,7 @@ export class XRSessionManager {
   }
 }
 
-// Controller (profile identifier) lookup table to infer HMD Device 
+// Controller (profile identifier) lookup table to infer HMD Device, note that headset can be different from controller brand 
 const HMD_PROFILE_MAP: { [key: string]: { VRModel: string; VRVendor: string } } = {
     'meta-quest-touch-pro': { VRModel: 'Quest Pro', VRVendor: 'Meta' },
     'meta-quest-touch-plus': { VRModel: 'Quest 3/ Quest 3S', VRVendor: 'Meta' },

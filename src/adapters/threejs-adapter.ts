@@ -19,7 +19,6 @@ interface DynamicObjectOptions {
 
 class C3DThreeAdapter {
     private c3d: C3D;
-    // FIX: Initialize directly to avoid "used before assigned" error
     private _fpsState: FPSState = {
         frameCount: 0,
         timeAccumulator: 0,
@@ -342,7 +341,7 @@ class C3DThreeAdapter {
                 const settings = {
                     scale: 1,
                     sceneName: sceneName,
-                    sdkVersion: "2.3.0"
+                    sdkVersion: __SDK_VERSION__
                 };
                 const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
                 const screenshotDataUrl = renderer.domElement.toDataURL('image/png');
@@ -374,7 +373,6 @@ class C3DThreeAdapter {
     }
 
     public async exportObject(objectToExport: THREE.Object3D, objectName: string, renderer: THREE.WebGLRenderer, camera: THREE.Camera): Promise<void> {
-        // FIX: Cast renderer.xr to any to access 'getScene', which might not exist in standard types but was in your JS
         const originalScene = renderer.xr.isPresenting ? (renderer.xr as any).getScene?.() : camera.parent;
         const tempScene = new THREE.Scene();
         tempScene.background = new THREE.Color(0xe0e0e0);

@@ -55,7 +55,7 @@ class DynamicObject {
     // tracks all used ids in client
     public objectIds: DynamicObjectId[];
     
-    // oustanding snapshots of dynamic objects. cleared on send
+    // outstanding snapshots of dynamic objects. cleared on send
     public snapshots: Snapshot[];
     
     // all objects that have existed in the scene. resent on scene change
@@ -152,7 +152,7 @@ class DynamicObject {
     }
 
     addSnapshot(objectId: string, position: number[], rotation: number[], scale?: number[] | null, properties?: any): void {
-        //if dynamic object id is not in manifest, display warning. likely object ids were cleared from scene change
+        // if dynamic object id is not in manifest, display warning. likely object ids were cleared from scene change
         let foundId = false;
         for (let element of this.objectIds) {
             if (objectId === element.id) {
@@ -163,7 +163,7 @@ class DynamicObject {
         if (!foundId) {
             console.warn("DynamicObject::Snapshot cannot find objectId " + objectId + " in full manifest. Did you Register this object?");
         }
-        //console.log(`Adding snapshot for ${objectId} at position:`, position, "rotation:", rotation);
+        // console.log(`Adding snapshot for ${objectId} at position:`, position, "rotation:", rotation);
 
         let snapshot = this.dynamicObjectSnapshot(position, rotation, objectId, scale, properties);
 
@@ -267,7 +267,6 @@ class DynamicObject {
             time: this.core.getTimestamp(),
             id: objectId
         };
-        //TODO conversion for xyz = -xzy or whatever
         if (scale) {
             ss.scale = scale;
         }
@@ -288,7 +287,7 @@ class DynamicObject {
         return engagementEvent;
     }
 
-    //used in the client to track which ids are used and which can be reused
+    // used in the client to track which ids are used and which can be reused
     dynamicObjectId(id: string, meshname: string): DynamicObjectId {
         return {
             id,
@@ -317,9 +316,9 @@ class DynamicObject {
         this.trackedObjects.clear();
     }
 
-    //re-add all manifest entries when a scene changes.
-    //otherwise there could be snapshots for dynamic
-    //objects without any identification in the new scene
+    // Re-add all manifest entries when a scene changes.
+    // otherwise there could be snapshots for dynamic
+    // objects without any identification in the new scene
     refreshObjectManifest(): void {
         for (var i = 0; i < this.fullManifest.length; i++) {
             var element = this.fullManifest[i];
@@ -328,7 +327,7 @@ class DynamicObject {
     }
 
     removeObject(objectid: string, position: number[], rotation: number[]): void {
-        //end any engagements if the object had any active
+        // end any engagements if the object had any active
         this.endActiveEngagements(objectid);
 
         //one final snapshot to send all the ended engagements
@@ -344,8 +343,8 @@ class DynamicObject {
     }
 
     beginEngagement(objectId: string, name: string, parentId: string | null = null): void {
-        //parentId is the Id of the object that we are engaging with
-        //objectId is the Id of the object getting engaged
+        // parentId is the Id of the object that we are engaging with
+        // objectId is the Id of the object getting engaged
         console.log("DynamicObject::beginEngagement engagement " + name + " on object " + objectId);
         if (!this.engagementCounts[objectId]) {
             this.engagementCounts[objectId] = {};
@@ -377,8 +376,8 @@ class DynamicObject {
     }
 
     endEngagement(objectId: string, name: string, parentId: string): void {
-        //parentId is the Id of the object that we are engaging with
-        //objectId is the Id of the object getting engaged
+        // parentId is the Id of the object that we are engaging with
+        // objectId is the Id of the object getting engaged
         if (this.activeEngagements[objectId]) {
             for (let i = 0; i < this.activeEngagements[objectId].length; i++) {
                 if (parentId) {

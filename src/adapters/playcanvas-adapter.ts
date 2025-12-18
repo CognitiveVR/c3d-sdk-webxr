@@ -1,3 +1,5 @@
+// Scene export, dynamic objects, object exports, heatmaps are currently not supported
+
 import * as pc from 'playcanvas';
 import C3D from '../index';
 
@@ -22,7 +24,6 @@ class C3DPlayCanvasAdapter {
   }
 
   public recordGazeFromCamera(cameraEntity: pc.Entity): void { 
-    // NOTE: In PlayCanvas, position and rotation are on the entity, not the camera component
     const position = this.fromVec3(cameraEntity.getPosition());
     const rotation = this.fromQuat(cameraEntity.getRotation());
 

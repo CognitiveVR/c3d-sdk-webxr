@@ -28,7 +28,7 @@ class FPSTracker {
   private elapsedTime: number;
   private samplePeriod: number;
   private deltaTimes: number[];
-  public lastDeltaTime: number; // Public to potentially allow reading the very last delta externally if needed
+  public lastDeltaTime: number; 
 
   constructor() {
     this.animationFrameId = null;

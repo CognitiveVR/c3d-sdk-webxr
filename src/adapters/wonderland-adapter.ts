@@ -6,7 +6,7 @@ import C3D from '../index';
 
 const COMPONENT_TYPE = { UNSIGNED_SHORT: 5123, UNSIGNED_INT: 5125, FLOAT: 5126 };
 const TARGET = { ARRAY_BUFFER: 34962, ELEMENT_ARRAY_BUFFER: 34963 };
-const SDK_VERSION = "2.4.2";
+const SDK_VERSION = __SDK_VERSION__;
 
 class C3DWonderlandAdapter {
     private c3d: C3D;
@@ -23,7 +23,6 @@ class C3DWonderlandAdapter {
         this.c3d.setDeviceProperty('AppEngineVersion', `${version.major}.${version.minor}.${version.patch}`);
     }
 
-    // FIX: Use ArrayLike<number> to support both gl-matrix types (Float32Array/IndexedCollection) and number[]
     private fromVector3(vec: ArrayLike<number>): number[] { return [vec[0], vec[1], vec[2]]; }
     private fromQuaternion(quat: ArrayLike<number>): number[] { return [quat[0], quat[1], quat[2], quat[3]]; }
 
@@ -236,7 +235,6 @@ class C3DWonderlandAdapter {
         );
         const worldMatrix = mat4.multiply(mat4.create(), parentMatrix, localMatrix);
 
-        // FIX: Handle nullable result from mat4.invert (line 236 error)
         const inverseWorld = mat4.invert(mat4.create(), worldMatrix);
         let normalMatrix3;
         

@@ -25,7 +25,6 @@ interface C3DInstance {
         recordSensor: (name: string, value: any) => void;
     };
     setSessionProperty: (key: string, value: any) => void;
-    // Relaxed to 'any' to accept the full XRSessionManager class or null
     xrSessionManager: any;
 }
 
@@ -33,7 +32,7 @@ class BoundaryTracker {
     private c3d: C3DInstance;
     private intervalId: ReturnType<typeof setInterval> | null;
     private xrSession: XRSession | null;
-    public referenceSpace: XRReferenceSpace | null; // Public so C3D can check it
+    public referenceSpace: XRReferenceSpace | null; 
     private updateInterval: number;
     private previousBoundaryPoints: { x: number; z: number }[];
     private previousRoomSize: { width: number; depth: number; area: number };

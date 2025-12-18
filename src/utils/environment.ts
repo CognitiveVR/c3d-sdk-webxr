@@ -1,5 +1,3 @@
-// Import cross-fetch to re-export it. 
-// Note: You might need to install @types/cross-fetch if you haven't: npm install --save-dev @types/cross-fetch
 import crossFetch from 'cross-fetch';
 
 /**

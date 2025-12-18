@@ -9,7 +9,6 @@ import FPSTracker, { FPSMetrics } from './utils/Framerate';
 import HMDOrientationTracker, { OrientationData } from './utils/HMDOrientation';
 import Profiler from './utils/Profiler';
 import ControllerTracker from './utils/ControllerTracker'; 
-// @ts-ignore
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
 import BoundaryTracker from './utils/BoundaryTracker';
 import { Settings, SceneConfig } from './config';
@@ -120,9 +119,7 @@ class C3D {
 
     if (isBrowser) {
         try {
-            // @ts-ignore
             const fp = await FingerprintJS.load();
-            // @ts-ignore
             const result = await fp.get();
             
             this.core.setDeviceId = result.visitorId;
@@ -214,8 +211,7 @@ class C3D {
 
         checkInputType(xrSession.inputSources);
 
-        // @ts-ignore
-        xrSession.addEventListener('inputsourceschange', (event: any) => {  
+        xrSession.addEventListener('inputsourceschange', (event: XRInputSourcesChangeEvent) => {            
             const xrEvent = event as XRInputSourcesChangeEvent;
             checkInputType(xrEvent.session.inputSources);
             

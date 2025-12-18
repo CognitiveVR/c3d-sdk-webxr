@@ -8,7 +8,6 @@ interface C3DInstance {
     sensor: {
         recordSensor: (name: string, value: any) => void;
     };
-    // Relaxed to 'any' to accept the full XRSessionManager class or null
     xrSessionManager: any;
 }
 

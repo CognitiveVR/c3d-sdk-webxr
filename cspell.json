@@ -27,6 +27,13 @@
         "raycaster",
         "sessionlength",
         "sessionname",
-        "sessiontag"
+        "sessiontag",
+        "meshname",
+        "customid",
+        "eyetracking",
+        "handtracking",
+        "questionset",
+        "cooldown",
+        "engagementtype",
     ]
 }
