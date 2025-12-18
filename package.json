@@ -6,23 +6,28 @@
   "module": "lib/esm/index.esm.js",
   "exports": {
     ".": {
+      "types": "./types/index.d.ts",
       "import": "./lib/esm/index.esm.js",
       "require": "./lib/cjs/index.cjs.js",
       "browser": "./lib/c3d.umd.js"
     },
     "./adapters/threejs": {
+      "types": "./types/adapters/threejs-adapter.d.ts",
       "import": "./lib/esm/adapters/threejs-adapter.esm.js",
       "require": "./lib/cjs/adapters/threejs-adapter.cjs.js"
     },
     "./adapters/babylon": {
+      "types": "./types/adapters/babylon-adapter.d.ts",
       "import": "./lib/esm/adapters/babylon-adapter.esm.js",
       "require": "./lib/cjs/adapters/babylon-adapter.cjs.js"
     },
     "./adapters/playcanvas": {
+      "types": "./types/adapters/playcanvas-adapter.d.ts",
       "import": "./lib/esm/adapters/playcanvas-adapter.esm.js",
       "require": "./lib/cjs/adapters/playcanvas-adapter.cjs.js"
     },
     "./adapters/wonderland": {
+      "types": "./types/adapters/wonderland-adapter.d.ts",
       "import": "./lib/esm/adapters/wonderland-adapter.esm.js",
       "require": "./lib/cjs/adapters/wonderland-adapter.cjs.js"
     }
