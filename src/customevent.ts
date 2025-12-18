@@ -1,8 +1,7 @@
 import Network from './network';
-// We import the Class type to use in the constructor type definition
 import { CognitiveVRAnalyticsCore } from './core';
 
-// Define the shape of a single event payload
+// Shape of a single event payload
 interface CustomEventData {
     name: string;
     time: number;
@@ -71,7 +70,7 @@ class CustomEvents {
 
     endSession(): void {
         this.batchedCustomEvents = [];
-        //restart counter on end session
+        // restart counter on end session
         this.jsonPart = 1;
     }
 }

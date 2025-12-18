@@ -142,8 +142,8 @@ class ExitPoll {
             
             if (this.fullResponse.answers) {
                 for (let i = 0; i < this.fullResponse.answers.length; i++) {
-                    //strings are only for voice responses. these do not show up in dash
-                    //else bool(0-1), null(-32768), number(0-10)
+                    // strings are only for voice responses. these do not show up in dash
+                    // else bool(0-1), null(-32768), number(0-10)
                     properties[`Answer${i}`] = (typeof this.fullResponse.answers[i].value === 'string') ? 0 :
                         this.fullResponse.answers[i].value;
                 }
