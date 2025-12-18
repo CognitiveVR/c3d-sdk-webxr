@@ -167,13 +167,9 @@ export const getHMDInfo = (inputSources: XRInputSourceArray | XRInputSource[]): 
     return null; 
 };
 
-// Interface for XRSession with enabledFeatures (standard in WebXR but maybe missing in strict DOM types)
-interface ExtendedXRSession extends XRSession {
-    enabledFeatures?: string[];
-}
-
-export const getEnabledFeatures = (xrSession: ExtendedXRSession): { handTracking: boolean; eyeTracking: boolean } => {
-    const enabledFeatures = xrSession.enabledFeatures || [];
+export const getEnabledFeatures = (xrSession: XRSession): { handTracking: boolean; eyeTracking: boolean } => {
+    const sessionAny = xrSession as any;
+    const enabledFeatures = (sessionAny.enabledFeatures as string[]) || [];
 
     const handTracking = enabledFeatures.includes('hand-tracking');
     const eyeTracking = enabledFeatures.includes('eye-tracking');
