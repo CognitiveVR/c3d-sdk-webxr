@@ -19,7 +19,7 @@ export interface OrientationData {
     yaw: number;
 }
 
-type OrientationCallback = (data: OrientationData) => void;
+type OrientationCallback = (_data: OrientationData) => void;
 
 /**
  * Convert a WebXR quaternion to Euler angles (YXZ order).

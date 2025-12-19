@@ -41,10 +41,10 @@ const commonPlugins = [
 
 const input = {
   'index': 'src/index.ts',
-  'adapters/threejs-adapter': 'src/adapters/threejs-adapter.ts',      // UPDATED
-  'adapters/babylon-adapter': 'src/adapters/babylon-adapter.ts',      // UPDATED
-  'adapters/playcanvas-adapter': 'src/adapters/playcanvas-adapter.ts',// UPDATED
-  'adapters/wonderland-adapter': 'src/adapters/wonderland-adapter.ts',// UPDATED
+  'adapters/threejs-adapter': 'src/adapters/threejs-adapter.ts',      
+  'adapters/babylon-adapter': 'src/adapters/babylon-adapter.ts',      
+  'adapters/playcanvas-adapter': 'src/adapters/playcanvas-adapter.ts',
+  'adapters/wonderland-adapter': 'src/adapters/wonderland-adapter.ts',
 };
 
 const external = [
@@ -106,7 +106,7 @@ export default [
   },
      // UMD build for PlayCanvas Adapter
   {
-    input: 'src/adapters/playcanvas-adapter.ts', // UPDATED
+    input: 'src/adapters/playcanvas-adapter.ts', 
     output: {
       name: 'C3DPlayCanvasAdapter',
       file: 'lib/c3d-playcanvas-adapter.umd.js',
@@ -124,7 +124,7 @@ export default [
   },
   // UMD build for Three.js Adapter
   {
-    input: 'src/adapters/threejs-adapter.ts', // UPDATED
+    input: 'src/adapters/threejs-adapter.ts', 
     output: {
         name: 'C3DThreeAdapter',
         file: 'lib/c3d-threejs-adapter.umd.js',
@@ -145,7 +145,7 @@ export default [
   },
   // UMD build for Babylon.js Adapter
   {
-      input: 'src/adapters/babylon-adapter.ts', // UPDATED
+      input: 'src/adapters/babylon-adapter.ts', 
       output: {
           name: 'C3DBabylonAdapter',
           file: 'lib/c3d-babylon-adapter.umd.js',
@@ -164,7 +164,7 @@ export default [
   },
   // UMD build for Wonderland Engine Adapter
   {
-      input: 'src/adapters/wonderland-adapter.ts', // UPDATED
+      input: 'src/adapters/wonderland-adapter.ts', 
       output: {
           name: 'C3DWonderlandAdapter',
           file: 'lib/c3d-wonderland-adapter.umd.js',

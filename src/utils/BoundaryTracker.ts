@@ -19,12 +19,12 @@ import { isBrowser } from './environment';
 // Local interface to define the shape of the C3D instance this class interacts with
 interface C3DInstance {
     customEvent: {
-        send: (name: string, position: number[], properties?: any) => void;
+        send: (_name: string, position: number[], properties?: any) => void;
     };
     sensor: {
         recordSensor: (name: string, value: any) => void;
     };
-    setSessionProperty: (key: string, value: any) => void;
+    setSessionProperty: (_key: string, value: any) => void;
     xrSessionManager: any;
 }
 

@@ -19,7 +19,7 @@ export interface FPSMetrics {
 }
 
 // Type definition for the callback function
-type FPSCallback = (metrics: FPSMetrics) => void;
+type FPSCallback = (_metrics: FPSMetrics) => void;
 
 class FPSTracker {
   private animationFrameId: number | null;

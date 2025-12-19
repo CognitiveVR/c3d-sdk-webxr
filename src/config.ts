@@ -20,12 +20,11 @@ export interface Settings {
     customEventBatchSize?: number;
     gazeBatchSize?: number;
     GazeInterval?: number;
-    HMDType?: string; // Explicitly added to fix your specific error
+    HMDType?: string; 
     allSceneData?: SceneConfig[];
 }
 
 class Config {
-    // 1. Declare properties so TypeScript knows they exist on 'this'
     public LOG: boolean;
     public SDKVersion: string;
     public networkHost: string;
@@ -37,30 +36,26 @@ class Config {
     public gazeBatchSize: number;
     public GazeInterval: number;
     public allSceneData: SceneConfig[];
-    public HMDType?: string; // Optional property
+    public HMDType?: string; 
 
     constructor() {
         this.LOG = false;
-        // Check if the global variable is defined (it might not be in tests)
         this.SDKVersion = typeof __SDK_VERSION__ !== 'undefined' ? __SDK_VERSION__ : 'dev';
         
         this.networkHost = (process.env.NODE_ENV === 'production')
             ? 'data.cognitive3d.com'
             : 'data.c3ddev.com';
             
-        this.APIKey = ''; // SET APIKEY for PROD or DEV
+        this.APIKey = ''; 
         this.networkVersion = '0';
         this.sensorDataLimit = 512;
         this.dynamicDataLimit = 512;
         this.customEventBatchSize = 256;
         this.gazeBatchSize = 256;
-        this.GazeInterval = 0.1; // this corresponds to 10 Hz
+        this.GazeInterval = 0.1; 
         this.allSceneData = [];
     }
 
-    /**
-     * Helper to create a scene data object
-     */
     sceneData(sceneName: string, sceneId: string, versionNumber: string): SceneConfig {
         return {
             sceneName,
@@ -73,41 +68,21 @@ class Config {
      * Setter to apply bulk settings
      */
     set settings(settings: Settings) {
-        if (settings.LOG !== undefined) {
-            this.LOG = settings.LOG;
-        }
-        if (settings.SDKVersion) {
-            this.SDKVersion = settings.SDKVersion;
-        }
-        if (settings.networkHost) {
-            this.networkHost = settings.networkHost;
-        }
-        if (settings.APIKey) {
-            this.APIKey = settings.APIKey;
-        }
-        if (settings.networkVersion) {
-            this.networkVersion = settings.networkVersion;
-        }
-        if (settings.sensorDataLimit) {
-            this.sensorDataLimit = settings.sensorDataLimit;
-        }
-        if (settings.dynamicDataLimit) {
-            this.dynamicDataLimit = settings.dynamicDataLimit;
-        }
-        if (settings.customEventBatchSize) {
-            this.customEventBatchSize = settings.customEventBatchSize;
-        }
-        if (settings.gazeBatchSize) {
-            this.gazeBatchSize = settings.gazeBatchSize;
-        }
-        if (settings.GazeInterval) {
-            this.GazeInterval = settings.GazeInterval;
-        }
-        if (settings.HMDType) {
-            this.HMDType = settings.HMDType;
-        }
-        if (settings.allSceneData) {
-            this.allSceneData = settings.allSceneData;
+        // Direct assignment for booleans/critical paths if needed, or included in loop
+        if (settings.LOG !== undefined) this.LOG = settings.LOG;
+
+        // Map Settings keys to Config keys
+        const keys: (keyof Settings)[] = [
+            'SDKVersion', 'networkHost', 'APIKey', 'networkVersion',
+            'sensorDataLimit', 'dynamicDataLimit', 'customEventBatchSize',
+            'gazeBatchSize', 'GazeInterval', 'HMDType', 'allSceneData'
+        ];
+
+        for (const key of keys) {
+            if (settings[key] !== undefined) {
+                // @ts-ignore: TypeScript doesn't like dynamic key assignment without strict typing of the map
+                this[key] = settings[key];
+            }
         }
     }
 }
