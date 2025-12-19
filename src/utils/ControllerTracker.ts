@@ -3,10 +3,10 @@ import { isBrowser } from './environment';
 // Interface for the Main C3D instance dependencies used here
 interface C3DInstance {
     customEvent: {
-        send: (name: string, position: number[], properties?: any) => void;
+        send: (_name: string, position: number[], properties?: any) => void;
     };
     sensor: {
-        recordSensor: (name: string, value: any) => void;
+        recordSensor: (_name: string, value: any) => void;
     };
     xrSessionManager: any;
 }

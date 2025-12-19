@@ -5,7 +5,7 @@
 
 // Dependencies interfaces
 interface GazeTracker {
-    recordGaze: (position: number[], orientation: number[], gazeHitData: any) => void;
+    recordGaze: (_position: number[], orientation: number[], gazeHitData: any) => void;
 }
 
 interface DynamicObject {
