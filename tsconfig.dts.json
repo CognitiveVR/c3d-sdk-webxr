@@ -3,6 +3,7 @@
   "compilerOptions": {
     "declaration": true,
     "emitDeclarationOnly": true,
-    "declarationDir": "types"
+    "declarationDir": "types",
+    "noEmit": false
   }
 }
