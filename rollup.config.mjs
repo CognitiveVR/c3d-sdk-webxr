@@ -11,7 +11,10 @@ import path from 'path';
 const pkg = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf-8'));
 
 const commonPlugins = [
-  typescript(),
+  typescript({
+    noForceEmit: true,  // Add this line
+    tsconfig: './tsconfig.json'
+  }),
   replace({
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     '__SDK_VERSION__': JSON.stringify(pkg.version),
