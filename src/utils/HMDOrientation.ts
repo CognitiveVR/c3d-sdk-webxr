@@ -1,11 +1,32 @@
 import { isBrowser } from './environment';
 
+interface Quaternion {
+    x: number;
+    y: number;
+    z: number;
+    w: number;
+}
+
+interface Euler {
+    x: number;
+    y: number;
+    z: number;
+}
+
+// Interface for the callback data
+export interface OrientationData {
+    pitch: number;
+    yaw: number;
+}
+
+type OrientationCallback = (_data: OrientationData) => void;
+
 /**
  * Convert a WebXR quaternion to Euler angles (YXZ order).
- * @param {{x: number, y: number, z: number, w: number}} q The quaternion.
- * @returns {{x: number, y: number, z: number}} Euler angles in radians.
+ * @param q The quaternion.
+ * @returns Euler angles in radians.
  */
-function quaternionToEulerYXZ(q) {
+function quaternionToEulerYXZ(q: Quaternion): Euler {
     const { x, y, z, w } = q;
     const euler = { x: 0, y: 0, z: 0 };
 
@@ -33,15 +54,20 @@ function quaternionToEulerYXZ(q) {
 
 /**
  * Converts radians to degrees.
- * @param {number} radians The angle in radians.
- * @returns {number} The angle in degrees.
+ * @param radians The angle in radians.
+ * @returns The angle in degrees.
  */
-function radToDeg(radians) {
+function radToDeg(radians: number): number {
     return radians * (180 / Math.PI);
 }
 
 // Tracks the HMD's pitch and yaw at a 1 sec interval.
 class HMDOrientationTracker {
+    private intervalId: ReturnType<typeof setInterval> | null;
+    private xrSession: XRSession | null;
+    private referenceSpace: XRReferenceSpace | null;
+    private callback: OrientationCallback | null;
+
     constructor() {
         this.intervalId = null;
         this.xrSession = null;
@@ -49,7 +75,7 @@ class HMDOrientationTracker {
         this.callback = null;
     }
 
-    start(xrSession, referenceSpace, callback) {
+    start(xrSession: XRSession, referenceSpace: XRReferenceSpace, callback: OrientationCallback): void {
         if (!isBrowser || this.intervalId) {
             return;
         }
@@ -59,23 +85,28 @@ class HMDOrientationTracker {
         this.callback = callback;
 
         this.intervalId = setInterval(() => {
-            this.xrSession.requestAnimationFrame((time, frame) => {
-                const viewerPose = frame.getViewerPose(this.referenceSpace);
-                if (viewerPose) {
-                    this.processPose(viewerPose);
-                }
-            });
+            if (this.xrSession) {
+                this.xrSession.requestAnimationFrame((time, frame) => {
+                    // Safety check for referenceSpace in TS
+                    if (this.referenceSpace) {
+                        const viewerPose = frame.getViewerPose(this.referenceSpace);
+                        if (viewerPose) {
+                            this.processPose(viewerPose);
+                        }
+                    }
+                });
+            }
         }, 1000);
     }
 
-    stop() {
+    stop(): void {
         if (this.intervalId) {
             clearInterval(this.intervalId);
             this.intervalId = null;
         }
     }
 
-    processPose(pose) {
+    processPose(pose: XRViewerPose): void {
         const { orientation } = pose.transform;
 
         const euler = quaternionToEulerYXZ(orientation);
@@ -89,7 +120,9 @@ class HMDOrientationTracker {
         let yaw = radToDeg(euler.y);
         if (yaw > 180) yaw -= 360;
 
-        this.callback({ pitch, yaw });
+        if (this.callback) {
+            this.callback({ pitch, yaw });
+        }
     }
 }
 
