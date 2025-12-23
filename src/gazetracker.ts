@@ -104,10 +104,10 @@ class GazeTracker {
         });
     }
 
-    private _getChangedProperties(): { [key: string]: any } {
+    private _getChangedProperties(): { [key: string]: any } { // TODO: Replace 'any' with a specific type
         const allSessionProperties = this.core.sessionProperties || {};
         const sentSessionProperties = this.core.sentSessionProperties || {};
-        const newOrChangedProperties: { [key: string]: any } = {};
+        const newOrChangedProperties: { [key: string]: any } = {}; // TODO: Replace 'any' with a specific type
 
         for (const key in allSessionProperties) {
             if (allSessionProperties[key] !== sentSessionProperties[key]) {
@@ -117,8 +117,8 @@ class GazeTracker {
         return newOrChangedProperties;
     }
 
-    private _createPayload(properties: any): any {
-        let payload: any = {};
+    private _createPayload(properties: any): any { // TODO: Replace 'any' with specific types
+        let payload: any = {}; // TODO: Replace 'any' with a specific type (e.g. GazePayload interface)
         payload['userid'] = this.core.userId;
         payload['timestamp'] = parseInt(this.core.getTimestamp() as unknown as string, 10);
         payload['sessionid'] = this.core.getSessionId();

@@ -3,7 +3,7 @@ import crossFetch from 'cross-fetch';
 interface NavigatorUAData {
     mobile: boolean;
     brands: Array<{ brand: string; version: string }>;
-    getHighEntropyValues(_hints: string[]): Promise<{ platform: string; platformVersion: string; [key: string]: any }>;
+    getHighEntropyValues(_hints: string[]): Promise<{ platform: string; platformVersion: string; [key: string]: any }>; // TODO: Replace 'any' with specific type
 }
 
 interface ExtendedNavigator extends Navigator {

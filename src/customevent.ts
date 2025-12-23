@@ -52,7 +52,7 @@ class CustomEvents {
                 resolve(msg);
                 return;
             } else {
-                let payload: any = {};
+                let payload: any = {}; // TODO: Replace 'any' with a specific type (e.g. CustomEventPayload interface)
                 payload['userid'] = this.core.userId;
                 payload['timestamp'] = parseInt(this.core.getTimestamp() as unknown as string, 10); // getTimestamp returns number, but existing logic parsed it
                 payload['sessionid'] = this.core.getSessionId();

@@ -3,7 +3,7 @@ import { CognitiveVRAnalyticsCore } from './core';
 
 interface SensorDataPoint {
     name: string;
-    data: Array<[number, any]>; // [timestamp, value]
+    data: Array<[number, any]>; // TODO: Replace 'any' with a specific type for sensor values
 }
 
 class Sensors {
@@ -22,8 +22,8 @@ class Sensors {
         this.jsonPart = 1;
     }
 
-    recordSensor(name: string, value: any): void {
-        let point: [number, any] = [this.core.getTimestamp(), value];
+    recordSensor(name: string, value: any): void { // TODO: Replace 'any' with a specific type
+        let point: [number, any] = [this.core.getTimestamp(), value]; // TODO: Replace 'any' with a specific type
         let sensor = this.allSensors.find(sensor => sensor.name === name);
         
         // Append value to sensor in list if it exists, otherwise create new entry
@@ -53,7 +53,7 @@ class Sensors {
                 return;
             }
 
-            let payload: any = {};
+            let payload: any = {}; // TODO: Replace 'any' with a specific type (e.g. SensorPayload interface)
             payload['name'] = this.core.userId;
             payload['sessionid'] = this.core.getSessionId();
             payload['timestamp'] = parseInt(this.core.getTimestamp() as unknown as string, 10);

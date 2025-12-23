@@ -25,7 +25,7 @@ class C3DThreeAdapter {
         lastTime: performance.now(),
         frameTimes: []
     };
-    private exportDirHandle: any = null;
+    private exportDirHandle: any = null; // TODO: Replace 'any' with FileSystemDirectoryHandle type
 
     constructor(c3dInstance: C3D) {
         if (!c3dInstance) {
@@ -95,7 +95,7 @@ class C3DThreeAdapter {
         this._initFPSState();
 
         // 4. Hook into the Render Loop
-        const renderLoop = (timestamp: number, frame: any) => {
+        const renderLoop = (timestamp: number, frame: any) => { // TODO: Replace 'any' with XRFrame (if available)
             // Update FPS logic
             this._updateFPS();
 
@@ -265,7 +265,7 @@ class C3DThreeAdapter {
         });
     }
 
-    async _ensureExportDir(): Promise<any> {
+    async _ensureExportDir(): Promise<any> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
         if (this.exportDirHandle) return this.exportDirHandle;
         // @ts-ignore
         if (!window.showDirectoryPicker) return null;
@@ -283,7 +283,7 @@ class C3DThreeAdapter {
         }
     }
 
-    async _writeFile(dirHandle: any, filename: string, blob: Blob): Promise<void> {
+    async _writeFile(dirHandle: any, filename: string, blob: Blob): Promise<void> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
         const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(blob);
@@ -322,7 +322,7 @@ class C3DThreeAdapter {
 
         exporter.parse(
             exportRoot,
-            async (gltf: any) => {
+            async (gltf: any) => { // TODO: Replace 'any' with specific type
                 const dir = await this._ensureExportDir();
 
                 const prefix = "data:application/octet-stream;base64,";
@@ -373,7 +373,7 @@ class C3DThreeAdapter {
     }
 
     public async exportObject(objectToExport: THREE.Object3D, objectName: string, renderer: THREE.WebGLRenderer, camera: THREE.Camera): Promise<void> {
-        const originalScene = renderer.xr.isPresenting ? (renderer.xr as any).getScene?.() : camera.parent;
+        const originalScene = renderer.xr.isPresenting ? (renderer.xr as any).getScene?.() : camera.parent; // TODO: Replace 'any' with specific type
         const tempScene = new THREE.Scene();
         tempScene.background = new THREE.Color(0xe0e0e0);
         const tempLight = new THREE.AmbientLight(0xffffff, 3.0);
@@ -399,7 +399,7 @@ class C3DThreeAdapter {
 
         exporter.parse(
             exportRoot,
-            async (gltf: any) => {
+            async (gltf: any) => { // TODO: Replace 'any' with specific type
                 const dir = await this._ensureExportDir();
                 const prefix = "data:application/octet-stream;base64,";
                 const uri = gltf.buffers?.[0]?.uri || "";

@@ -5,7 +5,8 @@ import CustomEvents from './customevent';
 // Interface for the Answer object structure
 interface Answer {
     type: string;
-    value: any;
+    // PR FIX: Updated value type
+    value: string | number | boolean | null;
 }
 
 // Interface for the FullResponse object structure
@@ -18,7 +19,7 @@ interface FullResponse {
     questionSetName?: string;
     questionSetVersion?: string;
     answers?: Answer[];
-    [key: string]: any;
+    [key: string]: any; // TODO: Replace 'any' with a specific type
 }
 
 class ExitPoll {
@@ -27,7 +28,7 @@ class ExitPoll {
     private customEvent: CustomEvents;
     private currentQuestionSetString: string;
     public fullResponse: FullResponse;
-    private currentQuestionSet: any;
+    private currentQuestionSet: any; // TODO: Replace 'any' with a specific QuestionSet type
     private answerType: { [key: string]: string };
 
     constructor(core: CognitiveVRAnalyticsCore, customEvent: CustomEvents) {
@@ -65,7 +66,7 @@ class ExitPoll {
         });
     }
 
-    receiveQuestionSet(questionset: any, hook: string): void {
+    receiveQuestionSet(questionset: any, hook: string): void { // TODO: Replace 'any' with a specific QuestionSet type
         this.currentQuestionSetString = JSON.stringify(questionset);
         this.fullResponse['hook'] = hook;
         this.fullResponse['userId'] = this.core.userId;
@@ -89,7 +90,7 @@ class ExitPoll {
         return this.currentQuestionSetString;
     }
 
-    getQuestionSet(): any {
+    getQuestionSet(): any { // TODO: Replace 'any' with a specific type
         if (!this.currentQuestionSet) {
             console.log('ExitPoll.GetQuestionSet no active question set. Returning empty json');
         }
@@ -102,7 +103,7 @@ class ExitPoll {
         this.fullResponse = {};
     }
 
-    addAnswer(type: string, answer: any): void {
+    addAnswer(type: string, answer: any): void { // TODO: Replace 'any' with the specific value type (string | number | boolean | null)
         if (!type || answer === undefined || answer === null) {
             console.error('ExitPoll.addAnswer: cannot add anser, it takes two arguments, type and answer');
             return;
@@ -135,7 +136,7 @@ class ExitPoll {
             }
 
             if (!pos) { pos = [0, 0, 0]; }
-            let properties: { [key: string]: any } = {};
+            let properties: { [key: string]: any } = {}; // TODO: Replace 'any' with a specific type
             properties['userId'] = this.core.userId;
             properties['questionSetId'] = this.fullResponse.questionSetId;
             properties['hook'] = this.fullResponse.hook;

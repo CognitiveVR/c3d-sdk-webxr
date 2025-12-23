@@ -15,7 +15,7 @@ interface ExtendedPerformance extends Performance {
 // Interface for the C3D instance dependencies
 interface C3DInstance {
     sensor: {
-        recordSensor: (_name: string, value: any) => void;
+        recordSensor: (_name: string, value: any) => void; // TODO: Replace 'any' with specific type
     };
     fpsTracker?: {
         lastDeltaTime: number;

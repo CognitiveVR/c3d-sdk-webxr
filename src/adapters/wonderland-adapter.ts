@@ -10,10 +10,10 @@ const SDK_VERSION = __SDK_VERSION__;
 
 class C3DWonderlandAdapter {
     private c3d: C3D;
-    private WL: any;
-    private exportDirHandle: any = null;
+    private WL: any; // TODO: Replace 'any' with specific Wonderland Engine type
+    private exportDirHandle: any = null; // TODO: Replace 'any' with FileSystemDirectoryHandle type
 
-    constructor(c3dInstance: C3D, wonderlandEngineInstance: any) {
+    constructor(c3dInstance: C3D, wonderlandEngineInstance: any) { // TODO: Replace 'any' with specific type
         if (!c3dInstance) throw new Error("A C3D instance must be provided.");
         if (!wonderlandEngineInstance) throw new Error("The Wonderland Engine instance (WL) must be provided.");
         this.c3d = c3dInstance;
@@ -68,7 +68,7 @@ class C3DWonderlandAdapter {
         });
     }
 
-    async _ensureExportDir(): Promise<any> {
+    async _ensureExportDir(): Promise<any> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
         if (this.exportDirHandle) return this.exportDirHandle;
         // @ts-ignore
         if (!window.showDirectoryPicker) return null;
@@ -85,7 +85,7 @@ class C3DWonderlandAdapter {
         }
     }
 
-    async _writeFile(dirHandle: any, filename: string, content: Blob | ArrayBuffer): Promise<void> {
+    async _writeFile(dirHandle: any, filename: string, content: Blob | ArrayBuffer): Promise<void> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
         if (!content) return;
         const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
@@ -104,7 +104,7 @@ class C3DWonderlandAdapter {
         setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
     }
 
-    async _performExport(rootObject: any, sceneName: string, scale: number, filterDynamic: boolean): Promise<void> {
+    async _performExport(rootObject: any, sceneName: string, scale: number, filterDynamic: boolean): Promise<void> { // TODO: Replace 'any' with specific Object type
         console.log("Cognitive3D: Generating geometry...");
         const binFilename = "scene.bin";
         const {json, binaryBuffer} = this._createGltfData(rootObject, scale, binFilename, filterDynamic);
@@ -140,8 +140,8 @@ class C3DWonderlandAdapter {
         }
     }
 
-    _createGltfData(wleObject: any, scale: number, binFilename: string, filterDynamic: boolean): { json: any, binaryBuffer: ArrayBuffer } {
-        const meshData: any = { positions: [], normals: [], uvs: [], indices: [], hasNormals: false, hasUvs: false };
+    _createGltfData(wleObject: any, scale: number, binFilename: string, filterDynamic: boolean): { json: any, binaryBuffer: ArrayBuffer } { // TODO: Replace 'any' with specific types
+        const meshData: any = { positions: [], normals: [], uvs: [], indices: [], hasNormals: false, hasUvs: false }; // TODO: Replace 'any' with specific type
         const minBounds = [Infinity, Infinity, Infinity];
         const maxBounds = [-Infinity, -Infinity, -Infinity];
 
@@ -170,7 +170,7 @@ class C3DWonderlandAdapter {
         if (uvBuffer) { binaryView.set(new Uint8Array(uvBuffer.buffer), byteOffset); byteOffset += uvBuffer.byteLength; }
         binaryView.set(new Uint8Array(indicesBuffer.buffer), byteOffset);
 
-        const json: any = {
+        const json: any = { // TODO: Replace 'any' with specific GLTF JSON type
             asset: {version: "2.0", generator: "Cognitive3D WLE Adapter"},
             scene: 0, scenes: [{nodes: [0]}], nodes: [{mesh: 0, name: "MergedExport"}],
             meshes: [{primitives: [{attributes: {POSITION: 0}, indices: 0}]}],
@@ -213,7 +213,7 @@ class C3DWonderlandAdapter {
         return {json, binaryBuffer};
     }
 
-    _collectAndTransformMeshData(wleObject: any, parentMatrix: any, data: any, indexOffset: number, min: number[], max: number[], filterDynamic: boolean): number {
+    _collectAndTransformMeshData(wleObject: any, parentMatrix: any, data: any, indexOffset: number, min: number[], max: number[], filterDynamic: boolean): number { // TODO: Replace 'any' with specific types
         if (typeof wleObject.getComponent !== 'function') {
             const children = wleObject.children || [];
             for (let i = 0; i < children.length; i++) {
@@ -297,7 +297,7 @@ class C3DWonderlandAdapter {
         return indexOffset;
     }
 
-    public async exportScene(sceneName: string, scale: number = 1.0, rootObjectOrName: any = null): Promise<void> {
+    public async exportScene(sceneName: string, scale: number = 1.0, rootObjectOrName: any = null): Promise<void> { // TODO: Replace 'any' with specific type
         let rootObject = this.WL.scene;
 
         if (rootObjectOrName) {
