@@ -1,25 +1,29 @@
+// Scene export, dynamic objects, object exports, heatmaps are currently not supported
+
 import * as pc from 'playcanvas';
+import C3D from '../index';
 
 class C3DPlayCanvasAdapter {
-  constructor(c3dInstance) {
+  private c3d: C3D;
+
+  constructor(c3dInstance: C3D) {
     if (!c3dInstance) {
       throw new Error("A C3D instance must be provided to the PlayCanvas adapter.");
     }
     this.c3d = c3dInstance;
     this.c3d.setDeviceProperty("AppEngine", 'PlayCanvas');
-    this.c3d.setDeviceProperty('AppEngineVersion', pc.VERSION);
-
+    this.c3d.setDeviceProperty('AppEngineVersion', pc.version);
   }
 
-  fromVec3(vec3) {
+  private fromVec3(vec3: pc.Vec3): number[] {
     return [vec3.x, vec3.y, vec3.z];
   }
 
-  fromQuat(quat) {
+  private fromQuat(quat: pc.Quat): number[] {
     return [quat.x, quat.y, quat.z, quat.w];
   }
 
-  recordGazeFromCamera(cameraEntity) { // NOTE: In PlayCanvas, position and rotation are on the entity, not the camera component
+  public recordGazeFromCamera(cameraEntity: pc.Entity): void { 
     const position = this.fromVec3(cameraEntity.getPosition());
     const rotation = this.fromQuat(cameraEntity.getRotation());
 

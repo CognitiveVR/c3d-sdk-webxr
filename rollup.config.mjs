@@ -3,6 +3,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
 import terser from '@rollup/plugin-terser';
 import replace from '@rollup/plugin-replace';
+import typescript from '@rollup/plugin-typescript';
 import { builtinModules } from 'module';
 import fs from 'fs';
 import path from 'path';
@@ -10,6 +11,10 @@ import path from 'path';
 const pkg = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf-8'));
 
 const commonPlugins = [
+  typescript({
+    noForceEmit: true,  
+    tsconfig: './tsconfig.json'
+  }),
   replace({
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     '__SDK_VERSION__': JSON.stringify(pkg.version),
@@ -23,30 +28,37 @@ const commonPlugins = [
           node: '20', 
           browsers: pkg.browserslist,
         },
-      }]
+      }],
+      '@babel/preset-typescript',
     ],
-    exclude: 'node_modules/**'
+    exclude: 'node_modules/**',
+    extensions: ['.js', '.jsx', '.ts', '.tsx'],
   }),
   resolve({
     browser: true,
-    preferBuiltins: true
+    preferBuiltins: true,
+    extensions: ['.mjs', '.js', '.json', '.node', '.ts'] 
   }),
   commonjs()
 ];
 
 const input = {
-  'index': 'src/index.js',
-  'adapters/threejs-adapter': 'src/adapters/threejs-adapter.js',
-  'adapters/babylon-adapter': 'src/adapters/babylon-adapter.js',
-  'adapters/playcanvas-adapter': 'src/adapters/playcanvas-adapter.js',
-  'adapters/wonderland-adapter': 'src/adapters/wonderland-adapter.js', 
+  'index': 'src/index.ts',
+  'adapters/threejs-adapter': 'src/adapters/threejs-adapter.ts',      
+  'adapters/babylon-adapter': 'src/adapters/babylon-adapter.ts',      
+  'adapters/playcanvas-adapter': 'src/adapters/playcanvas-adapter.ts',
+  'adapters/wonderland-adapter': 'src/adapters/wonderland-adapter.ts',
 };
+
 const external = [
   ...Object.keys(pkg.dependencies || {}),
   ...builtinModules,
   'playcanvas', 
-  /^three(\/.*)?$/, // Match 'three' and all sub-paths
-  'babylonjs'
+  /^three(\/.*)?$/,
+  'babylonjs',
+  'babylonjs-serializers',
+  '@wonderlandengine/api',
+  'gl-matrix'
 ];
 
 export default [
@@ -79,7 +91,7 @@ export default [
 
   // UMD build for Main SDK
   {
-    input: 'src/index.js',
+    input: 'src/index.ts',
     output: {
       name: 'C3D',
       file: 'lib/c3d.umd.js',
@@ -97,7 +109,7 @@ export default [
   },
      // UMD build for PlayCanvas Adapter
   {
-    input: 'src/adapters/playcanvas-adapter.js',
+    input: 'src/adapters/playcanvas-adapter.ts', 
     output: {
       name: 'C3DPlayCanvasAdapter',
       file: 'lib/c3d-playcanvas-adapter.umd.js',
@@ -115,13 +127,12 @@ export default [
   },
   // UMD build for Three.js Adapter
   {
-    input: 'src/adapters/threejs-adapter.js',
+    input: 'src/adapters/threejs-adapter.ts', 
     output: {
         name: 'C3DThreeAdapter',
         file: 'lib/c3d-threejs-adapter.umd.js',
         format: 'umd',
         sourcemap: true,
-        // Make globals a function to handle sub-paths
         globals: (id) => {
           if (/^three/.test(id)) {
             return 'THREE';
@@ -129,7 +140,7 @@ export default [
           return id;
         }
     },
-    external: [/^three/], // Regex to externalize all 'three' imports
+    external: [/^three/],
     plugins: [
         ...commonPlugins,
         terser()
@@ -137,17 +148,18 @@ export default [
   },
   // UMD build for Babylon.js Adapter
   {
-      input: 'src/adapters/babylon-adapter.js',
+      input: 'src/adapters/babylon-adapter.ts', 
       output: {
           name: 'C3DBabylonAdapter',
           file: 'lib/c3d-babylon-adapter.umd.js',
           format: 'umd',
           sourcemap: true,
           globals: {
-              'babylonjs': 'BABYLON'
+              'babylonjs': 'BABYLON',
+              'babylonjs-serializers': 'BABYLON'
           }
       },
-      external: ['babylonjs'],
+      external: ['babylonjs', 'babylonjs-serializers'],
       plugins: [
           ...commonPlugins,
           terser()
@@ -155,7 +167,7 @@ export default [
   },
   // UMD build for Wonderland Engine Adapter
   {
-      input: 'src/adapters/wonderland-adapter.js',
+      input: 'src/adapters/wonderland-adapter.ts', 
       output: {
           name: 'C3DWonderlandAdapter',
           file: 'lib/c3d-wonderland-adapter.umd.js',
@@ -173,4 +185,3 @@ export default [
       ]
   }
 ];
-

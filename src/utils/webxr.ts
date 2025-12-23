@@ -3,8 +3,39 @@
  * such as gaze data, and vr device information 
  */
 
+// Dependencies interfaces
+interface GazeTracker {
+    recordGaze: (_position: number[], orientation: number[], gazeHitData: any) => void; // TODO: Replace 'any' with specific type
+}
+
+interface DynamicObject {
+    // Define properties if needed, currently unused in logic
+}
+
+type GazeRaycaster = () => any; // Returns gaze hit data. TODO: Replace 'any' with specific type
+
+interface SessionStartResult {
+    referenceSpace: XRReferenceSpace | null;
+    boundedReferenceSpace: XRReferenceSpace | null;
+    type: string | null;
+}
+
 export class XRSessionManager {
-  constructor(gazeTracker, xrSession, dynamicObject = null, gazeRaycaster = null) {
+  private gazeTracker: GazeTracker;
+  private xrSession: XRSession;
+  private dynamicObject: DynamicObject | null;
+  private gazeRaycaster: GazeRaycaster | null;
+  
+  public referenceSpace: XRReferenceSpace | null;  // For gaze tracking (local-floor)
+  public boundedReferenceSpace: XRReferenceSpace | null; // For boundary tracking (bounded-floor)
+  public referenceSpaceType: string | null;
+  
+  private isTracking: boolean;
+  private animationFrameHandle: number | null;
+  private lastUpdateTime: number;
+  private interval: number;
+
+  constructor(gazeTracker: GazeTracker, xrSession: XRSession, dynamicObject: DynamicObject | null = null, gazeRaycaster: GazeRaycaster | null = null) {
     this.gazeTracker = gazeTracker; 
     this.xrSession = xrSession; 
     this.dynamicObject = dynamicObject;
@@ -19,7 +50,7 @@ export class XRSessionManager {
     this.interval = 100; 
   }
 
-  async start() {
+  async start(): Promise<SessionStartResult | null> {
       if (this.isTracking) return { 
           referenceSpace: this.referenceSpace, 
           boundedReferenceSpace: this.boundedReferenceSpace,
@@ -43,6 +74,7 @@ export class XRSessionManager {
       
       // 2. Try to get bounded-floor for boundary tracking (optional)
       try {
+          // @ts-ignore: 'bounded-floor' might not be in standard definitions depending on tsconfig lib
           this.boundedReferenceSpace = await this.xrSession.requestReferenceSpace('bounded-floor');
           this.referenceSpaceType = 'bounded-floor';
           console.log('Cog3D-XR-Session-Manager: "bounded-floor" available for boundary tracking.');
@@ -63,11 +95,14 @@ export class XRSessionManager {
       };
   }
   
-  onXRFrame(timestamp, frame) { 
+  onXRFrame(timestamp: number, frame: XRFrame): void { 
     if (!this.isTracking) return;
 
     if (timestamp - this.lastUpdateTime >= this.interval) {
         this.lastUpdateTime = timestamp;
+        // @ts-ignore: referenceSpace check handled by logic flow, but strictly nullable in TS
+        if(!this.referenceSpace) return; 
+
         const viewerPose = frame.getViewerPose(this.referenceSpace); // Uses local-floor
 
         if (viewerPose) {
@@ -91,7 +126,8 @@ export class XRSessionManager {
     
     this.animationFrameHandle = this.xrSession.requestAnimationFrame(this.onXRFrame); 
   }
-  stop() { 
+  
+  stop(): void { 
     if (!this.isTracking) return;
 
     this.isTracking = false;
@@ -101,8 +137,9 @@ export class XRSessionManager {
     console.log('Cog3D-XR-Session-Manager: Gaze tracking stopped.');
   }
 }
-// Controller (profile identifier) lookup table to infer HMD Device 
-const HMD_PROFILE_MAP = {
+
+// Controller (profile identifier) lookup table to infer HMD Device, note that headset can be different from controller brand 
+const HMD_PROFILE_MAP: { [key: string]: { VRModel: string; VRVendor: string } } = {
     'meta-quest-touch-pro': { VRModel: 'Quest Pro', VRVendor: 'Meta' },
     'meta-quest-touch-plus': { VRModel: 'Quest 3/ Quest 3S', VRVendor: 'Meta' },
     'oculus-touch-v3': { VRModel: 'Quest 2', VRVendor: 'Meta' },
@@ -112,7 +149,7 @@ const HMD_PROFILE_MAP = {
     'microsoft-mixed-reality': { VRModel: 'Mixed Reality', VRVendor: 'Microsoft' }
 };
 
-export const getHMDInfo = (inputSources) => {
+export const getHMDInfo = (inputSources: XRInputSourceArray | XRInputSource[]): { VRModel: string; VRVendor: string } | null => {
     for (const source of inputSources) {
         if (!source.profiles) continue;
 
@@ -130,8 +167,9 @@ export const getHMDInfo = (inputSources) => {
     return null; 
 };
 
-export const getEnabledFeatures = (xrSession) => {
-    const enabledFeatures = xrSession.enabledFeatures || [];
+export const getEnabledFeatures = (xrSession: XRSession): { handTracking: boolean; eyeTracking: boolean } => {
+    const sessionAny = xrSession as any; // TODO: Replace 'any' with correct type once standard libraries update
+    const enabledFeatures = (sessionAny.enabledFeatures as string[]) || [];
 
     const handTracking = enabledFeatures.includes('hand-tracking');
     const eyeTracking = enabledFeatures.includes('eye-tracking');

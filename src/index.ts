@@ -1,16 +1,17 @@
-import CognitiveVRAnalyticsCore from './core';
+import coreInstance, { CognitiveVRAnalyticsCore } from './core';
 import GazeTracker from './gazetracker';
 import CustomEvent from './customevent';
 import Network from './network';
 import Sensor from './sensors';
 import ExitPoll from './exitpoll';
 import DynamicObject from './dynamicobject';
-import FPSTracker from './utils/Framerate';
-import HMDOrientationTracker from './utils/HMDOrientation';
+import FPSTracker, { FPSMetrics } from './utils/Framerate';
+import HMDOrientationTracker, { OrientationData } from './utils/HMDOrientation';
 import Profiler from './utils/Profiler';
 import ControllerTracker from './utils/ControllerTracker'; 
-import FingerprintJS from '@fingerprintjs/fingerprintjs'
+import FingerprintJS from '@fingerprintjs/fingerprintjs';
 import BoundaryTracker from './utils/BoundaryTracker';
+import { Settings, SceneConfig } from './config';
 
 import {
   getDeviceMemory,
@@ -25,33 +26,61 @@ import {
 import { 
   XRSessionManager,
   getHMDInfo,
-  getEnabledFeatures 
+  getEnabledFeatures,
+  XRSessionManager as XRSessionManagerType
 } from './utils/webxr';
 
+interface C3DConstructorSettings {
+    config: Settings;
+}
+
 class C3D {
-  constructor(settings, renderer = null) {
-    this.core = CognitiveVRAnalyticsCore;
-    if (settings) { this.core.config.settings = settings.config; }
+  public core: CognitiveVRAnalyticsCore;
+  public xrSessionManager: XRSessionManagerType | null;
+  public gazeRaycaster: (() => any) | null; // TODO: Replace 'any' with specific type
+  public lastInputType: 'none' | 'hand' | 'controller';
+  public network: Network;
+  public gaze: GazeTracker;
+  public customEvent: CustomEvent;
+  public hmdOrientation: HMDOrientationTracker;
+  public profiler: Profiler;
+  public controllerTracker: ControllerTracker;
+  public sensor: Sensor;
+  public exitpoll: ExitPoll;
+  public dynamicObject: DynamicObject;
+  public fpsTracker: FPSTracker;
+  public renderer: any; // TODO: Replace 'any' with specific Renderer type
+  public boundaryTracker: BoundaryTracker;
+
+  constructor(settings?: C3DConstructorSettings, renderer: any = null) { // TODO: Replace 'any' with specific Renderer type
+    this.core = coreInstance;
+    
+    if (settings) { 
+        this.core.config.settings = settings.config; 
+    }
 
     this.xrSessionManager = null; 
     this.gazeRaycaster = null;
 
     this.setUserProperty("c3d.version", this.core.config.SDKVersion);  
-    this.lastInputType = 'none'; // Can be 'none', 'hand', or 'controller'
+    this.lastInputType = 'none';
+    
+    const self = this as any; // TODO: Replace 'any' with safe 'this' reference
+    
+    // @ts-ignore
     this.network = new Network(this.core);
     this.gaze = new GazeTracker(this.core);
     this.customEvent = new CustomEvent(this.core);
     this.hmdOrientation = new HMDOrientationTracker();
-    this.profiler = new Profiler(this);
-    this.controllerTracker = new ControllerTracker(this);
+    this.profiler = new Profiler(self);
+    this.controllerTracker = new ControllerTracker(self);
     this.sensor = new Sensor(this.core);
     this.exitpoll = new ExitPoll(this.core, this.customEvent);
     this.dynamicObject = new DynamicObject(this.core, this.customEvent);
     this.fpsTracker = new FPSTracker(); 
     this.renderer = renderer; 
-    this.boundaryTracker = new BoundaryTracker(this);
+    this.boundaryTracker = new BoundaryTracker(self);
 
-    // Set default device properties using environment utils
     const deviceMemory = getDeviceMemory();
     if (deviceMemory) {
       this.setDeviceProperty('DeviceMemory', deviceMemory * 1000); 
@@ -84,55 +113,58 @@ class C3D {
       this.setDeviceProperty('DeviceGPUVendor', gpuInfo.vendor);
     }
   }
-  async startSession(xrSession = null) { 
+
+  async startSession(xrSession: XRSession | null = null): Promise<boolean> { 
     if (this.core.isSessionActive) { return false; }
 
     if (isBrowser) {
-      try {
-        const fp = await FingerprintJS.load();
-        const result = await fp.get();
-        this.core.setDeviceId = result.visitorId; // Device Identifier
-        this.setSessionProperty("c3d.deviceid", result.visitorId); 
-        this.setSessionProperty("c3d.deviceid.confidence", result.confidence.score); // Device identifier confidence score
-        console.log('Device ID:', result.visitorId, 'Confidence:', result.confidence.score);
-      } catch (error) {
-        console.error('FingerprintJS failed to load or get visitor ID:', error);
-      }
-    } else {
-      console.log('Not in a browser environment, skipping FingerprintJS.');
+        try {
+            const fp = await FingerprintJS.load();
+            const result = await fp.get();
+            
+            this.core.setDeviceId = result.visitorId;
+            this.setSessionProperty("c3d.deviceid", result.visitorId); 
+            this.setSessionProperty("c3d.deviceid.confidence", result.confidence.score);
+            // console.log('Device ID:', result.visitorId);
+        } catch (error) {
+            console.warn('FingerprintJS failed:', error);
+        }
     }
   
     if (this.renderer) { 
       this.profiler.start(this.renderer);
     }
-    this.fpsTracker.start(metrics => {
+    this.fpsTracker.start((metrics: FPSMetrics) => {
       this.sensor.recordSensor('c3d.fps.avg', metrics.avg);
       this.sensor.recordSensor('c3d.fps.1pl', metrics['1pl']);
-
     });
 
     if (xrSession) {  
       this.xrSessionManager = new XRSessionManager(this.gaze, xrSession, this.dynamicObject, this.gazeRaycaster);
-      const sessionInfo = await this.xrSessionManager.start();
+      
+      let sessionInfo = null;
+      try {
+        sessionInfo = await this.xrSessionManager.start();
+      } catch (e) {
+        console.error("C3D: Failed to start XRSessionManager. Gaze tracking may be disabled.", e);
+      }
+
       this.controllerTracker.start(xrSession);
 
-      // Only start boundary tracking if we have a bounded-floor space
       if (sessionInfo && sessionInfo.boundedReferenceSpace) {
           this.boundaryTracker.start(xrSession, sessionInfo.boundedReferenceSpace);
           console.log('C3D: Boundary tracking started with bounded-floor reference space');
       } else {
-          console.warn('C3D: Boundary tracking not available - requires bounded-floor reference space');
+          console.warn('C3D: Boundary tracking not available');
       }
 
       const referenceSpace = sessionInfo ? sessionInfo.referenceSpace : null;
-
-
 
       if (referenceSpace) {
         this.hmdOrientation.start(
           xrSession,
           referenceSpace,
-          (orientation) => {
+          (orientation: OrientationData) => {
             this.sensor.recordSensor('c3d.hmd.pitch', orientation.pitch);
             this.sensor.recordSensor('c3d.hmd.yaw', orientation.yaw);
           }
@@ -140,26 +172,28 @@ class C3D {
       } else {
         console.warn('C3D: Could not start HMD orientation tracking, no reference space available.');
       }
+      
+      // @ts-ignore
       const features = getEnabledFeatures(xrSession);
       this.setDeviceProperty("HandTracking", features.handTracking);
       this.setDeviceProperty("EyeTracking", features.eyeTracking);
     }
     else{
-        console.warn("C3D: No XR session was provided. Gaze data will not be tracked for this session. This session will be tagged as junk on the Cognitive3D Dashboard, find the session under Test Mode.");
+        console.warn("C3D: No XR session was provided. Gaze data will not be tracked.");
     }
 
-    if (xrSession && xrSession.inputSources) { // check what is connected right now 
+    if (xrSession && xrSession.inputSources) { 
         const hmdInfo = getHMDInfo(xrSession.inputSources);
         if (hmdInfo) {
             this.setDeviceProperty('VRModel', hmdInfo.VRModel);
             this.setDeviceProperty('VRVendor', hmdInfo.VRVendor);
         } 
 
-  const checkInputType = (sources) => {
+        const checkInputType = (sources: XRInputSourceArray) => {
             const hasHand = Array.from(sources).some(source => source.hand);
             const hasController = Array.from(sources).some(source => !source.hand && source.targetRayMode === 'tracked-pointer');
             
-            let currentInputType = 'none';
+            let currentInputType: 'none' | 'hand' | 'controller' = 'none';
             if (hasHand) {
                 currentInputType = 'hand';
             } else if (hasController) {
@@ -167,7 +201,6 @@ class C3D {
             }
 
             if (currentInputType !== this.lastInputType) {
-                console.log(`Cognitive3D: Input changed from '${this.lastInputType}' to '${currentInputType}'.`);
                 this.customEvent.send('c3d.input.tracking.changed', [0,0,0], {
                     "Previously Tracking": this.lastInputType,
                     "Now Tracking": currentInputType
@@ -178,11 +211,11 @@ class C3D {
 
         checkInputType(xrSession.inputSources);
 
-        xrSession.addEventListener('inputsourceschange', (event) => {  // Check whenever the input sources change
-            checkInputType(event.session.inputSources);
+        xrSession.addEventListener('inputsourceschange', (event: XRInputSourcesChangeEvent) => {            
+            const xrEvent = event as XRInputSourcesChangeEvent;
+            checkInputType(xrEvent.session.inputSources);
             
-            // HMD info might change
-            const newHmdInfo = getHMDInfo(event.session.inputSources);
+            const newHmdInfo = getHMDInfo(xrEvent.session.inputSources);
             if (newHmdInfo) {
                 this.setDeviceProperty('VRModel', newHmdInfo.VRModel);
                 this.setDeviceProperty('VRVendor', newHmdInfo.VRVendor);
@@ -197,8 +230,7 @@ class C3D {
     return true;
   }
   
-  
-  endSession() {
+  endSession(): Promise<number | string> {
     return new Promise((resolve, reject) => {
       if (!this.core.isSessionActive) {
         reject('session is not active');
@@ -214,32 +246,28 @@ class C3D {
           this.controllerTracker.stop(); 
       }
       if (this.boundaryTracker) {
-      this.boundaryTracker.stop(); 
-    }      
+          this.boundaryTracker.stop(); 
+      }      
       if (this.xrSessionManager) {
-      this.xrSessionManager.stop();
-      this.xrSessionManager = null;
+          this.xrSessionManager.stop();
+          this.xrSessionManager = null;
       }
       
-      // Calculate session length
-      const props = {};
+      const props: any = {}; // TODO: Replace 'any' with specific type
       const endPos = [0, 0, 0];
-      const sessionLength = this.core.getTimestamp() - this.core.sessionTimestamp;
+      const sessionLength = this.core.getTimestamp() - (this.core.sessionTimestamp as number);
       props['sessionlength'] = sessionLength;
       props['Reason'] = "User exited the application";
-
 
       this.customEvent.send('c3d.sessionEnd', endPos, props);
 
       this.sendData()
         .then(res => {
-          // Clear out session's start timestamp, id and status
           this.core.setSessionTimestamp = '';
           this.core.setSessionId = '';
           this.core.setSessionStatus = false;
           this.core.resetNewUserDeviceProperties();
 
-          // Clear out data containers for events
           this.gaze.endSession();
           this.customEvent.endSession();
           this.sensor.endSession();
@@ -250,53 +278,50 @@ class C3D {
         .catch(err => reject(err));
     });
   }
-  /**
-   * Checks the current primary input method.
-   * @returns {'hand' | 'controller' | 'none'} The current input type.
-   */
-  getCurrentInputType() {
+
+  getCurrentInputType(): 'hand' | 'controller' | 'none' {
       return this.lastInputType;
   }
-  sceneData(name, id, version) {
+
+  sceneData(name: string, id: string, version: string): SceneConfig {
     return this.core.getSceneData(name, id, version);
   }
 
-  config(property, value) {
+  config(property: string, value: any): void { // TODO: Replace 'any' with specific type
+    // @ts-ignore
     this.core.config[property] = value;
   }
 
-  addToAllSceneData(scene) {
+  addToAllSceneData(scene: SceneConfig): void {
     this.core.config.allSceneData.push(scene);
   }
 
-  setScene(name) {
+  setScene(name: string): void {
     console.log(`CognitiveVRAnalytics::SetScene: ${name}`);
     if (this.core.sceneData.sceneId) {
       this.sendData();
       this.dynamicObject.refreshObjectManifest();
     }
 
-    // Force the boundary tracker to re-send boundary info for the new scene
-    if (this.boundaryTracker && this.boundaryTracker.referenceSpace) {
+    if (this.boundaryTracker) {
         this.boundaryTracker.forceBoundaryUpdate();
     }
 
     this.core.setScene(name);
   }
 
-  set allSceneData(allSceneData) {
-    this.core.allSceneData = allSceneData;
+  set allSceneData(allSceneData: SceneConfig[]) {
+    this.core.config.allSceneData = allSceneData;
   }
 
-   sendData() {
+   sendData(): Promise<number | string> {
     return new Promise((resolve, reject) => {
       if (!this.core.isSessionActive) {
-        console.log("Cognitive3DAnalyticsCore::SendData failed: no session active");
         resolve("Cognitive3DAnalyticsCore::SendData failed: no session active");
         return;
       }
       
-      if (!this.core.sceneData.sceneId) {  // Check for a scene ID before attempting to send any data
+      if (!this.core.sceneData.sceneId) { 
         reject('no scene selected'); 
         return;
       }
@@ -306,66 +331,45 @@ class C3D {
       const sensor = this.sensor.sendData();
       const dynamicObject = this.dynamicObject.sendData();
 
-      const promises = [custom, gaze, sensor, dynamicObject];
-
-      Promise.all(promises)
+      Promise.all([custom, gaze, sensor, dynamicObject])
         .then(() => resolve(200))
         .catch(err => reject(err));
     });
   }
 
-  isSessionActive() {
-    return this.core.isSessionActive;
-  }
+  isSessionActive(): boolean { return this.core.isSessionActive; }
+  wasInitSuccessful(): boolean { return this.core.isSessionActive; }
+  getSessionTimestamp(): number | string { return this.core.getSessionTimestamp(); }
+  getSessionId(): string { return this.core.getSessionId(); }
 
-  wasInitSuccessful() {
-    return this.core.isSessionActive;
-  }
-
-  getSessionTimestamp() {
-    return this.core.getSessionTimestamp();
-  }
-
-  getSessionId() {
-    return this.core.getSessionId();
-  }
-
-  getUserProperties() {    
-    // Filter sessionProperties to return only "user" properties
+  getUserProperties(): any { // TODO: Replace 'any' with specific type
     const allProps = this.core.sessionProperties || {};
-    const userProps = {};
+    const userProps: any = {}; // TODO: Replace 'any' with specific type
     const deviceKeys = new Set(Object.values(this.core.devicePropertyMap));
-    deviceKeys.add('c3d.device.name'); // Manually added from setDeviceName
+    deviceKeys.add('c3d.device.name'); 
 
     for (const key in allProps) {
         if (!deviceKeys.has(key) && !key.startsWith('c3d.session.') && !key.startsWith('c3d.cohort.') && !key.startsWith('c3d.experiment.') && !key.startsWith('c3d.trial.') && !key.startsWith('c3d.participant.')) {
-            // "user properties" are those NOT in the device map and not part of other specific session properties.
             userProps[key] = allProps[key];
         }
     }
-    // Need to also grab participant properties for the tests
     const participantPrefix = 'c3d.participant.';
     for (const key in allProps) {
         if (key.startsWith(participantPrefix)) {
              userProps[key.substring(participantPrefix.length)] = allProps[key];
         }
     }
-    // And c3d.name from setParticipantFullName
      if (allProps['c3d.name']) {
         userProps['c3d.name'] = allProps['c3d.name'];
      }
-
-
     return userProps;
   }
 
-  getDeviceProperties() {
-    
-    // Filter sessionProperties to return only "device" properties
+  getDeviceProperties(): any { // TODO: Replace 'any' with specific type
     const allProps = this.core.sessionProperties || {};
-    const deviceProps = {};
+    const deviceProps: any = {}; // TODO: Replace 'any' with specific type
     const deviceKeys = new Set(Object.values(this.core.devicePropertyMap));
-    deviceKeys.add('c3d.device.name'); // Manually added from setDeviceName
+    deviceKeys.add('c3d.device.name'); 
 
     for (const key in allProps) {
         if (deviceKeys.has(key)) {
@@ -375,98 +379,44 @@ class C3D {
     return deviceProps;
   }
 
-  set userId(userId) {
-    this.core.setUserId = userId;
-  }
+  set userId(userId: string) { this.core.setUserId = userId; }
   
-  // USER PROPERTIES 
-  setUserProperty(propertyOrObject, value) {
+  setUserProperty(propertyOrObject: string | object, value?: any): void { // TODO: Replace 'any' with specific type
       if (typeof propertyOrObject === 'object') {
-          Object.entries(propertyOrObject).forEach(([key, val]) =>
-              this.core.setUserProperty(key, val)
-          );
-      } 
-      else {
+          Object.entries(propertyOrObject).forEach(([key, val]) => this.core.setUserProperty(key, val));
+      } else if (typeof propertyOrObject === 'string') {
           this.core.setUserProperty(propertyOrObject, value);
       }
   }
 
-  setParticipantFullName(name) {
-      this.core.setUserId = name;
-      this.setUserProperty('c3d.name', name);
-  }
+  setParticipantFullName(name: string): void { this.core.setUserId = name; this.setUserProperty('c3d.name', name); }
+  setParticipantId(id: string): void { this.core.setUserId = id; this.setParticipantProperty('id', id); }
+  setSessionName(name: string): void { this.setUserProperty('c3d.sessionname', name); }
+  setAppVersion(version: string): void { this.setDeviceProperty('AppVersion', version); }
+  setLobbyId(id: string): void { this.core.setLobbyId(id); }
+  setDeviceName(name: string): void { this.core.setDeviceId = name; this.core.setSessionProperty('c3d.device.name', name); }
 
-  setParticipantId(id) {
-      this.core.setUserId = id;
-      this.setParticipantProperty('id', id);
-  }
-
-  setSessionName(name) {
-    this.setUserProperty('c3d.sessionname', name);
-  }
-  setAppVersion(version) {
-    this.setDeviceProperty('AppVersion', version);
-  }
-
-  setLobbyId(id) {
-    this.core.setLobbyId(id);
-  }
-
-  setDeviceName(name) {
-    this.core.setDeviceId = name;
-    this.core.setSessionProperty('c3d.device.name', name); 
-  }
-
-  setDeviceProperty(propertyOrObject, value) {
+  setDeviceProperty(propertyOrObject: string | object, value?: any): void { // TODO: Replace 'any' with specific type
       if (typeof propertyOrObject === 'object') {
-          Object.entries(propertyOrObject).forEach(([key, val]) =>
-              this.core.setDeviceProperty(key, val)
-          );
-      } 
-      else {
+          Object.entries(propertyOrObject).forEach(([key, val]) => this.core.setDeviceProperty(key, val));
+      } else if (typeof propertyOrObject === 'string') {
           this.core.setDeviceProperty(propertyOrObject, value);
       }
   }
 
-  // SESSION PROPERTIES
-  setSessionProperty(propertyOrObject, value) {
+  setSessionProperty(propertyOrObject: string | object, value?: any): void { // TODO: Replace 'any' with specific type
     if (typeof propertyOrObject === 'object') {
-        Object.entries(propertyOrObject).forEach(([key, val]) =>
-            this.core.setSessionProperty(key, val)
-        );
-    } else {
+        Object.entries(propertyOrObject).forEach(([key, val]) => this.core.setSessionProperty(key, val));
+    } else if (typeof propertyOrObject === 'string') {
         this.core.setSessionProperty(propertyOrObject, value);
     }
+  }
+  setParticipantProperty(key: string, value: any): void { this.setSessionProperty('c3d.participant.' + key, value); } // TODO: Replace 'any' with specific type
+  setParticipantProperties(obj: object): void { Object.entries(obj).forEach(([key, value]) => this.setParticipantProperty(key, value)); }
+  setSessionTag(tag: string, value: boolean = true): void { if (typeof tag !== 'string' || tag.length === 0 || tag.length > 12) return; this.setSessionProperty('c3d.sessiontag.' + tag, value); }
+  set deviceId(deviceId: string) { this.core.setDeviceId = deviceId; }
+  getApiKey(): string { return this.core.getApiKey(); }
+  getSceneId(): string { return this.core.sceneData.sceneId; }
 }
-  // PARTICIPANT PROPERTY 
-  setParticipantProperty(key, value) {
-      this.setSessionProperty('c3d.participant.' + key, value);
-  }
-
-  // PARTICIPANT PROPERTIES (batch)
-  setParticipantProperties(obj) {
-      Object.entries(obj).forEach(([key, value]) =>
-          this.setParticipantProperty(key, value)
-      );
-  }
-  // SESSION TAG
-  setSessionTag(tag, value = true) {
-      if (typeof tag !== 'string' || tag.length === 0 || tag.length > 12) return;
-      this.setSessionProperty('c3d.sessiontag.' + tag, value);
-  }
-
-  set deviceId(deviceId) {
-    this.core.setDeviceId = deviceId;
-  }
-
-  getApiKey() {
-    return this.core.getApiKey();
-  }
-
-  getSceneId() {
-    return this.core.sceneData.sceneId;
-  }
-}
-
 
 export default C3D;

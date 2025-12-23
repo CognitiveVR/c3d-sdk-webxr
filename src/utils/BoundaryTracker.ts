@@ -1,22 +1,29 @@
-/*
- * LIMITATIONS / TODO 
- * ----------------------------------------
- * 1. Missing 'reset' Event Handling:
- *    The code does not listen for `referenceSpace.addEventListener('reset',...)`. 
- *    If a user opens the OS menu and switches from Stationary to Room Scale during the session,
- *    the `referenceSpace` object may become invalid or jump origins. The tracker will fail 
- *    to detect this runtime switch without the event listener.
- *
- * 2. Missing Threshold Heuristic:
- *    To definitively identify the mode, you must implement a logic gate:
- *    IF (Area < 1.6m²) THEN "Stationary" ELSE "Room Scale". 
- *    Webxr API does not provide explicit Stationary vs Room Scale mode info only capabilities. 
-
- */
 import { isBrowser } from './environment';
 
+// Local interface to define the shape of the C3D instance this class interacts with
+interface C3DInstance {
+    customEvent: {
+        send: (_name: string, position: number[], properties?: any) => void; // TODO: Replace 'any' with specific type
+    };
+    sensor: {
+        recordSensor: (name: string, value: any) => void; // TODO: Replace 'any' with specific type
+    };
+    setSessionProperty: (_key: string, value: any) => void; // TODO: Replace 'any' with specific type
+    xrSessionManager: any; // TODO: Replace 'any' with XRSessionManager type
+}
+
 class BoundaryTracker {
-    constructor(c3dInstance) {
+    private c3d: C3DInstance;
+    private intervalId: ReturnType<typeof setInterval> | null;
+    private xrSession: XRSession | null;
+    public referenceSpace: XRReferenceSpace | null; 
+    private updateInterval: number;
+    private previousBoundaryPoints: { x: number; z: number }[];
+    private previousRoomSize: { width: number; depth: number; area: number };
+    private isHMDOutsideBoundary: boolean;
+    private boundaryType: string;
+
+    constructor(c3dInstance: C3DInstance) {
         this.c3d = c3dInstance;
         this.intervalId = null;
         this.xrSession = null;
@@ -29,10 +36,10 @@ class BoundaryTracker {
         this.isHMDOutsideBoundary = false;
         this.boundaryType = "Unknown";
 
-        console.log("C3D-SDK: BoundaryTracker initialized."); // LOG
+        console.log("C3D-SDK: BoundaryTracker initialized."); 
     }
 
-    start(xrSession, referenceSpace) {
+    start(xrSession: XRSession, referenceSpace: XRReferenceSpace): void {
         console.log("C3D-SDK: BoundaryTracker.start() called.");
         if (!isBrowser || this.intervalId || !xrSession || !referenceSpace) {
             console.warn("C3D-SDK: BoundaryTracker.start() exiting early.");
@@ -42,9 +49,12 @@ class BoundaryTracker {
         this.xrSession = xrSession;
         this.referenceSpace = referenceSpace;
 
-        if (referenceSpace.boundsGeometry && referenceSpace.boundsGeometry.length > 0) {
+        // Check if boundsGeometry exists (standard in Bounded Reference Spaces)
+        const boundsGeometry = (referenceSpace as any).boundsGeometry as DOMPointReadOnly[]; // TODO: Replace 'any' with updated WebXR types
+
+        if (boundsGeometry && boundsGeometry.length > 0) {
             this.boundaryType = "Room Scale";
-            this.previousBoundaryPoints = referenceSpace.boundsGeometry.map(p => ({ x: p.x, z: p.z }));
+            this.previousBoundaryPoints = boundsGeometry.map(p => ({ x: p.x, z: p.z }));
 
             // Set room size session properties only for room scale
             const newRoomSize = this._getRoomSize(this.previousBoundaryPoints);
@@ -68,8 +78,8 @@ class BoundaryTracker {
         }, 1000);
     }
 
-    stop() {
-        console.log("C3D-SDK: BoundaryTracker.stop() called."); // LOG
+    stop(): void {
+        console.log("C3D-SDK: BoundaryTracker.stop() called."); 
         if (this.intervalId) {
             clearInterval(this.intervalId);
             this.intervalId = null;
@@ -82,21 +92,19 @@ class BoundaryTracker {
         this.boundaryType = "Unknown";
     }
     
-    /**
-     * Main update loop called by setInterval.
-     * @param {boolean} isInitialCheck - Flag to set initial properties without firing events.
-     */
-    _checkBoundary(isInitialCheck = false) {
+    private _checkBoundary(isInitialCheck: boolean = false): void {
         if (!this.xrSession || !this.referenceSpace) {
-            console.warn("C3D-SDK: BoundaryTracker._checkBoundary exiting - no session or reference space."); // LOG
+            console.warn("C3D-SDK: BoundaryTracker._checkBoundary exiting - no session or reference space."); 
             return;
         }
 
+        const boundsGeometry = (this.referenceSpace as any).boundsGeometry as DOMPointReadOnly[]; // TODO: Replace 'any'
+
         // Only do boundary change and user position exit detection if Room Scale
-        if (this.boundaryType === "Room Scale" && this.referenceSpace.boundsGeometry && this.referenceSpace.boundsGeometry.length > 0) {
-            const boundaryChanged = this._hasBoundaryChanged(this.referenceSpace.boundsGeometry);
+        if (this.boundaryType === "Room Scale" && boundsGeometry && boundsGeometry.length > 0) {
+            const boundaryChanged = this._hasBoundaryChanged(boundsGeometry);
             if (boundaryChanged) {
-                this.previousBoundaryPoints = this.referenceSpace.boundsGeometry.map(p => ({ x: p.x, z: p.z }));
+                this.previousBoundaryPoints = boundsGeometry.map(p => ({ x: p.x, z: p.z }));
                 const newRoomSize = this._getRoomSize(this.previousBoundaryPoints);
                 this.previousRoomSize = newRoomSize;
                 this.c3d.setSessionProperty("c3d.roomsizeMeters", newRoomSize.area);
@@ -114,13 +122,16 @@ class BoundaryTracker {
 
             // Exit Boundary Detection
             this.xrSession.requestAnimationFrame((time, frame) => {
+                // Ensure referenceSpace is still valid
+                if (!this.referenceSpace) return;
+                
                 const viewerPose = frame.getViewerPose(this.referenceSpace);
                 if (viewerPose) {
                     const hmdPosition = viewerPose.transform.position;
                     const isInside = this._isPointInPolygon(hmdPosition, this.previousBoundaryPoints);
 
                     if (!isInside && !this.isHMDOutsideBoundary) {
-                        console.log("C3D-SDK: BoundaryTracker: User exited boundary. Sending event."); // LOG
+                        console.log("C3D-SDK: BoundaryTracker: User exited boundary. Sending event."); 
                         this.c3d.customEvent.send('c3d.user.exited.boundary', [0, 0, 0]);
                         this.isHMDOutsideBoundary = true;
                     } else if (isInside && this.isHMDOutsideBoundary) {
@@ -132,19 +143,19 @@ class BoundaryTracker {
         }
     }
 
-    forceBoundaryUpdate() {
+    public forceBoundaryUpdate(): void {
         if (!this.referenceSpace) {
-            console.warn("C3D-SDK: BoundaryTracker.forceBoundaryUpdate failed - no reference space."); // LOG
+            console.warn("C3D-SDK: BoundaryTracker.forceBoundaryUpdate failed - no reference space."); 
             return;
         }
 
         const boundaryPoints = this.previousBoundaryPoints;
         if (!boundaryPoints || boundaryPoints.length === 0) {
-            console.log("C3D-SDK: BoundaryTracker.forceBoundaryUpdate - no boundary points found."); // LOG
-            return; // No boundary to send
+            console.log("C3D-SDK: BoundaryTracker.forceBoundaryUpdate - no boundary points found."); 
+            return; 
         }
 
-        console.log("C3D-SDK: BoundaryTracker: Forcing boundary update for new scene."); // LOG
+        console.log("C3D-SDK: BoundaryTracker: Forcing boundary update for new scene."); 
         const newRoomSize = this._getRoomSize(boundaryPoints);
         const newArea = newRoomSize.area;
 
@@ -156,22 +167,15 @@ class BoundaryTracker {
         this.previousRoomSize = newRoomSize;
     }
 
-    _hasBoundaryChanged(newPoints) {
-        if (this.previousBoundaryPoints.length === 0 && newPoints.length > 0) {
-            return true;
-        }
-        if (this.previousBoundaryPoints.length !== newPoints.length) {
-            return true;
-        }
+    private _hasBoundaryChanged(newPoints: any): boolean { // TODO: Replace 'any' with DOMPointReadOnly[]
+        // Simple length check
+        if (this.previousBoundaryPoints.length !== newPoints.length) return true;
+        if (newPoints.length === 0) return false;
 
-        if (this.previousBoundaryPoints.length > 0 && newPoints.length === 0) {
-            return false;
-        }
-
+        // Point-by-point comparison (with small tolerance)
         for (let i = 0; i < newPoints.length; i++) {
             const prev = this.previousBoundaryPoints[i];
             const curr = newPoints[i];
-
             if (Math.abs(prev.x - curr.x) >= 0.1 || Math.abs(prev.z - curr.z) >= 0.1) {
                 return true;
             }
@@ -179,10 +183,7 @@ class BoundaryTracker {
         return false;
     }
 
-   /**
-     * Calculates the room size (width and depth) from boundary points.
-     */
-    _getRoomSize(points) {
+    private _getRoomSize(points: { x: number; z: number }[]): { width: number; depth: number; area: number } {
         if (!points || points.length === 0) {
             return { width: 0, depth: 0, area: 0 };
         }
@@ -205,10 +206,7 @@ class BoundaryTracker {
         };
     }
 
-    /**
-     * Checks if a point is inside a polygon using the ray-casting algorithm.
-     */
-    _isPointInPolygon(point, polygon) {
+    private _isPointInPolygon(point: { x: number; z: number }, polygon: { x: number; z: number }[]): boolean {
         if (!polygon || polygon.length < 3) {
             return false;
         }

@@ -1,20 +1,19 @@
-import { vec3, mat4, mat3 } from 'gl-matrix'; 
-import { MeshAttribute, MeshComponent } from '@wonderlandengine/api'; 
+// @ts-ignore
+import { vec3, mat4, mat3 } from 'gl-matrix';
+// @ts-ignore
+import { MeshAttribute, MeshComponent } from '@wonderlandengine/api';
+import C3D from '../index';
 
-// Constants for GLTF binary format
 const COMPONENT_TYPE = { UNSIGNED_SHORT: 5123, UNSIGNED_INT: 5125, FLOAT: 5126 };
 const TARGET = { ARRAY_BUFFER: 34962, ELEMENT_ARRAY_BUFFER: 34963 };
-const SDK_VERSION = typeof __SDK_VERSION__ !== 'undefined' ? __SDK_VERSION__ : 'dev';
+const SDK_VERSION = __SDK_VERSION__;
 
 class C3DWonderlandAdapter {
-    exportDirHandle = null;
+    private c3d: C3D;
+    private WL: any; // TODO: Replace 'any' with specific Wonderland Engine type
+    private exportDirHandle: any = null; // TODO: Replace 'any' with FileSystemDirectoryHandle type
 
-    /**
-     * Initializes the adapter with the C3D SDK and Wonderland Engine instance.
-     * @param {object} c3dInstance - The initialized Cognitive3D SDK.
-     * @param {object} wonderlandEngineInstance - The Wonderland Engine instance (usually 'engine' or 'WL').
-     */
-    constructor(c3dInstance, wonderlandEngineInstance) {
+    constructor(c3dInstance: C3D, wonderlandEngineInstance: any) { // TODO: Replace 'any' with specific type
         if (!c3dInstance) throw new Error("A C3D instance must be provided.");
         if (!wonderlandEngineInstance) throw new Error("The Wonderland Engine instance (WL) must be provided.");
         this.c3d = c3dInstance;
@@ -24,10 +23,10 @@ class C3DWonderlandAdapter {
         this.c3d.setDeviceProperty('AppEngineVersion', `${version.major}.${version.minor}.${version.patch}`);
     }
 
-    fromVector3(vec) { return [vec[0], vec[1], vec[2]]; }
-    fromQuaternion(q) { return [q[0], q[1], q[2], q[3]]; }
+    private fromVector3(vec: ArrayLike<number>): number[] { return [vec[0], vec[1], vec[2]]; }
+    private fromQuaternion(quat: ArrayLike<number>): number[] { return [quat[0], quat[1], quat[2], quat[3]]; }
 
-    recordGazeFromCamera() {
+    public recordGazeFromCamera(): void {
         const cameraObject = this.WL.scene.activeViews[0]?.object;
         if (!cameraObject) return;
         
@@ -36,19 +35,18 @@ class C3DWonderlandAdapter {
         
         const forwardVector = [0, 0, -1]; 
         const gaze = vec3.create(); 
+        // @ts-ignore: gl-matrix types can be strict about number[] vs ReadonlyVec3
         vec3.transformQuat(gaze, forwardVector, rotation);
+        
         this.c3d.gaze.recordGaze(this.fromVector3(position), this.fromQuaternion(rotation), this.fromVector3(gaze));
     }
 
-    /**
-     * Internal: Captures a PNG screenshot from the Wonderland Engine canvas.
-     */
-    _captureScreenshot() {
+    private _captureScreenshot(): Promise<Blob | null> {
         return new Promise((resolve) => {
             const callback = () => {
-                // Ensure listener is removed immediately to prevent repeated calls/crashes
-                this.WL.scene.onPostRender.remove(callback);
                 try {
+                    this.WL.scene.onPostRender.remove(callback);
+
                     const canvas = this.WL.canvas;
                     if (!canvas) {
                         console.warn("Cognitive3D: Canvas not found, cannot take screenshot.");
@@ -56,7 +54,7 @@ class C3DWonderlandAdapter {
                         return;
                     }
 
-                    canvas.toBlob((blob) => {
+                    canvas.toBlob((blob: Blob | null) => {
                         resolve(blob);
                     }, 'image/png');
 
@@ -70,40 +68,33 @@ class C3DWonderlandAdapter {
         });
     }
 
-    // --- File System Utilities ---
-
-    async _ensureExportDir() {
+    async _ensureExportDir(): Promise<any> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
         if (this.exportDirHandle) return this.exportDirHandle;
+        // @ts-ignore
         if (!window.showDirectoryPicker) return null;
         try {
+            // @ts-ignore
             const root = await window.showDirectoryPicker();
             const sceneDir = await root.getDirectoryHandle("scene", { create: true });
+            // @ts-ignore
             await sceneDir.requestPermission?.({ mode: "readwrite" }); 
             this.exportDirHandle = sceneDir;
             return sceneDir;
         } catch (err) {
-            console.error("Cognitive3D: Export directory access failed.", err);
             return null;
         }
     }
 
-    async _writeFile(dirHandle, filename, content) {
-        if (!content) {
-            console.warn(`Cognitive3D: Skipping write for ${filename} (content is null/empty).`);
-            return;
-        }
-        try {
-            const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
-            const writable = await fileHandle.createWritable();
-            const blob = content instanceof ArrayBuffer ? new Blob([content]) : content;
-            await writable.write(blob);
-            await writable.close();
-        } catch (error) {
-            console.error(`Cognitive3D: Failed to write ${filename}`, error);
-        }
+    async _writeFile(dirHandle: any, filename: string, content: Blob | ArrayBuffer): Promise<void> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
+        if (!content) return;
+        const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+        const writable = await fileHandle.createWritable();
+        const blob = content instanceof ArrayBuffer ? new Blob([content]) : content;
+        await writable.write(blob);
+        await writable.close();
     }
 
-    _downloadBlob(blob, filename) {
+    _downloadBlob(blob: Blob, filename: string): void {
         if (!blob) return;
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
@@ -113,57 +104,47 @@ class C3DWonderlandAdapter {
         setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
     }
 
-    // --- GLTF EXPORT LOGIC ---
-
-    async _performExport(rootObject, sceneName, scale, filterDynamic) {
+    async _performExport(rootObject: any, sceneName: string, scale: number, filterDynamic: boolean): Promise<void> { // TODO: Replace 'any' with specific Object type
         console.log("Cognitive3D: Generating geometry...");
         const binFilename = "scene.bin";
         const {json, binaryBuffer} = this._createGltfData(rootObject, scale, binFilename, filterDynamic);
 
         if (!json || binaryBuffer.byteLength === 0) {
-            console.error("Cognitive3D Export failed: No geometry found. Check if MeshComponents are detected.");
+            console.error("Export failed: No geometry found. Check if MeshComponents are detected.");
             return;
         }
 
-        // 1. Prepare Scene Files
         const gltfBlob = new Blob([JSON.stringify(json, null, 2)], { type: "model/gltf+json" });
         const binBlob = new Blob([binaryBuffer], { type: "application/octet-stream" });
         const settings = { scale: scale, sceneName: sceneName, sdkVersion: SDK_VERSION };
         const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
 
-        // 2. Capture Screenshot (Waits for the next render frame)
         console.log("Cognitive3D: Capturing screenshot...");
         const screenshotBlob = await this._captureScreenshot();
 
-        // 3. Save All Files
-        try {
-            const dir = await this._ensureExportDir();
-            if (dir) {
-                await this._writeFile(dir, "scene.bin", binBlob);
-                await this._writeFile(dir, "scene.gltf", gltfBlob);
-                await this._writeFile(dir, "settings.json", settingsBlob);
-                if (screenshotBlob) {
-                    await this._writeFile(dir, "screenshot.png", screenshotBlob);
-                }
-                console.log(`Cognitive3D: Exported static scene files to '${dir.name}'.`);
-            } else {
-                console.warn("Cognitive3D: File System Access API unavailable; downloading files individually.");
-                this._downloadBlob(gltfBlob, "scene.gltf");
-                this._downloadBlob(binBlob, "scene.bin");
-                this._downloadBlob(settingsBlob, "settings.json");
-                this._downloadBlob(screenshotBlob, "screenshot.png");
+        const dir = await this._ensureExportDir();
+        if (dir) {
+            await this._writeFile(dir, "scene.bin", binBlob);
+            await this._writeFile(dir, "scene.gltf", gltfBlob);
+            await this._writeFile(dir, "settings.json", settingsBlob);
+            if (screenshotBlob) {
+                await this._writeFile(dir, "screenshot.png", screenshotBlob);
             }
-        } catch (e) {
-            console.error("Cognitive3D: Critical error during scene export file writing.", e);
+            console.log(`Exported static scene files (including screenshot) to '${dir.name}'.`);
+        } else {
+            console.warn("File System Access API unavailable; downloading files individually.");
+            this._downloadBlob(gltfBlob, "scene.gltf");
+            this._downloadBlob(binBlob, "scene.bin");
+            this._downloadBlob(settingsBlob, "settings.json");
+            if (screenshotBlob) this._downloadBlob(screenshotBlob, "screenshot.png");
         }
     }
 
-    _createGltfData(wleObject, scale, binFilename, filterDynamic) {
-        const meshData = { positions: [], normals: [], uvs: [], indices: [], hasNormals: false, hasUvs: false };
+    _createGltfData(wleObject: any, scale: number, binFilename: string, filterDynamic: boolean): { json: any, binaryBuffer: ArrayBuffer } { // TODO: Replace 'any' with specific types
+        const meshData: any = { positions: [], normals: [], uvs: [], indices: [], hasNormals: false, hasUvs: false }; // TODO: Replace 'any' with specific type
         const minBounds = [Infinity, Infinity, Infinity];
         const maxBounds = [-Infinity, -Infinity, -Infinity];
 
-        // Convert to Left-Handed Coordinate system (Scale X by -1, Scale Z by -1)
         const FLIP_MATRIX = mat4.fromScaling(mat4.create(), [-1, 1, -1]); 
         const scaleMatrix = mat4.fromScaling(mat4.create(), [scale, scale, scale]);
         const rootMatrix = mat4.multiply(mat4.create(), FLIP_MATRIX, scaleMatrix);
@@ -189,7 +170,7 @@ class C3DWonderlandAdapter {
         if (uvBuffer) { binaryView.set(new Uint8Array(uvBuffer.buffer), byteOffset); byteOffset += uvBuffer.byteLength; }
         binaryView.set(new Uint8Array(indicesBuffer.buffer), byteOffset);
 
-        const json = {
+        const json: any = { // TODO: Replace 'any' with specific GLTF JSON type
             asset: {version: "2.0", generator: "Cognitive3D WLE Adapter"},
             scene: 0, scenes: [{nodes: [0]}], nodes: [{mesh: 0, name: "MergedExport"}],
             meshes: [{primitives: [{attributes: {POSITION: 0}, indices: 0}]}],
@@ -232,7 +213,7 @@ class C3DWonderlandAdapter {
         return {json, binaryBuffer};
     }
 
-    _collectAndTransformMeshData(wleObject, parentMatrix, data, indexOffset, min, max, filterDynamic) {
+    _collectAndTransformMeshData(wleObject: any, parentMatrix: any, data: any, indexOffset: number, min: number[], max: number[], filterDynamic: boolean): number { // TODO: Replace 'any' with specific types
         if (typeof wleObject.getComponent !== 'function') {
             const children = wleObject.children || [];
             for (let i = 0; i < children.length; i++) {
@@ -246,29 +227,25 @@ class C3DWonderlandAdapter {
             return indexOffset;
         }
 
-        // Calculate Transform
-        const pos = wleObject.getTranslationLocal ? wleObject.getTranslationLocal([]) : wleObject.getPositionLocal([]);
         const localMatrix = mat4.fromRotationTranslationScale(
             mat4.create(),
             wleObject.getRotationLocal([]),
-            pos,
+            wleObject.getPositionLocal([]),
             wleObject.getScalingLocal([])
         );
         const worldMatrix = mat4.multiply(mat4.create(), parentMatrix, localMatrix);
 
-        // Calculate Normal Matrix (Inverse Transpose)
-        const invertedWorld = mat4.invert(mat4.create(), worldMatrix);
+        const inverseWorld = mat4.invert(mat4.create(), worldMatrix);
         let normalMatrix3;
-
-        // Check if matrix is invertible (scale 0 objects are not)
-        if (invertedWorld) {
-            const normalMatrix4 = mat4.transpose(mat4.create(), invertedWorld);
-            normalMatrix3 = mat3.fromMat4(mat3.create(), normalMatrix4);
+        
+        if (inverseWorld) {
+             const normalMatrix4 = mat4.transpose(mat4.create(), inverseWorld);
+             normalMatrix3 = mat3.fromMat4(mat3.create(), normalMatrix4);
         } else {
-            // Singular matrix, likely 0 scale "root" object. 
-            // Fallback to identity to avoid crash.
-            normalMatrix3 = mat3.create();
+             // Fallback if matrix is not invertible (e.g. scale 0)
+             normalMatrix3 = mat3.create(); 
         }
+
         let meshComponents = wleObject.getComponents(MeshComponent);
         if (!meshComponents || meshComponents.length === 0) {
             meshComponents = wleObject.getComponents('mesh');
@@ -287,7 +264,6 @@ class C3DWonderlandAdapter {
 
             const tempV3 = vec3.create();
             for (let i = 0; i < mesh.vertexCount; ++i) {
-                // Position
                 positions.get(i, tempV3);
                 vec3.transformMat4(tempV3, tempV3, worldMatrix);
                 data.positions.push(tempV3[0], tempV3[1], tempV3[2]);
@@ -296,14 +272,12 @@ class C3DWonderlandAdapter {
                 min[1] = Math.min(min[1], tempV3[1]); max[1] = Math.max(max[1], tempV3[1]);
                 min[2] = Math.min(min[2], tempV3[2]); max[2] = Math.max(max[2], tempV3[2]);
 
-                // Normal
                 if (normals) {
                     normals.get(i, tempV3);
                     vec3.transformMat3(tempV3, tempV3, normalMatrix3);
                     vec3.normalize(tempV3, tempV3);
                     data.normals.push(tempV3[0], tempV3[1], tempV3[2]);
                 }
-                // UV
                 if (uvs) {
                     const tempV2 = [0, 0];
                     uvs.get(i, tempV2);
@@ -323,28 +297,26 @@ class C3DWonderlandAdapter {
         return indexOffset;
     }
 
-    /**
-     * Public Method: exportScene
-     * Handles geometry generation, screenshot capture, and file saving.
-     */
-    async exportScene(sceneName, scale = 1.0, rootObjectOrName = null) {
-        // Default to the full scene export if no root specified 
+    public async exportScene(sceneName: string, scale: number = 1.0, rootObjectOrName: any = null): Promise<void> { // TODO: Replace 'any' with specific type
         let rootObject = this.WL.scene;
 
         if (rootObjectOrName) {
             if (typeof rootObjectOrName === 'string') {
                 const found = this.WL.scene.findByName(rootObjectOrName); 
                 if (found.length > 0) {
-                   rootObject = found[0];
+                   rootObject = found[0] || found;
                    console.log(`Cognitive3D: Found export root by name: "${rootObjectOrName}"`);
                 } else {
                    console.warn(`Cognitive3D: Object "${rootObjectOrName}" not found. Exporting full scene.`);
+                   rootObject = this.WL.scene.children[0]?.parent || this.WL.scene;
                 }
             } else if (typeof rootObjectOrName === 'object') {
                 rootObject = rootObjectOrName;
                 console.log(`Cognitive3D: Using custom export root object: "${rootObject.name}"`);
             }
-        } 
+        } else {
+             rootObject = this.WL.scene.children[0]?.parent || this.WL.scene;
+        }
 
         console.log(`Cognitive3D: Starting export on root: "${rootObject.name || 'Scene'}"`);
         await this._performExport(rootObject, sceneName, scale, true); 
