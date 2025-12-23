@@ -25,22 +25,56 @@ export interface EngagementEvent {
     endTime?: number;
 }
 
+// New Interface for the engagement data sent to server
+interface EngagementPayload {
+    engagementtype: string;
+    engagementparent: string | null;
+    engagement_count: number;
+    engagement_time: number | undefined;
+}
+
+// New Interface for the full network payload
+interface DynamicsPayload {
+    userid: string;
+    timestamp: number;
+    sessionid: string;
+    part: number;
+    manifest: Record<string, ManifestPayloadEntry>;
+    data: SnapshotPayload[];
+}
+
+interface ManifestPayloadEntry {
+    name: string;
+    mesh: string;
+    fileType: string;
+}
+
+interface SnapshotPayload {
+    id: string;
+    time: number;
+    p: number[];
+    r: number[];
+    s?: number[];
+    engagements?: EngagementPayload[];
+    properties?: any; // TODO: Replace 'any' with a specific type for properties
+}
+
 export interface Snapshot {
     position: number[];
     rotation: number[];
     time: number;
     id: string;
     scale?: number[] | null;
-    properties?: any;
-    engagements?: any[];
+    properties?: any; // TODO: Replace 'any' with a specific type for properties
+    engagements?: EngagementPayload[];
 }
 
 export interface TrackedObjectEntry {
-    object: any; 
+    object: any; // TODO: Replace 'any' with a specific type (e.g., generic Object3D type)
     positionThreshold: number;
     rotationThreshold: number;
     scaleThreshold: number;
-    [key: string]: any; 
+    [key: string]: any; // TODO: Replace 'any' with a specific type
 }
 
 class DynamicObject {
@@ -118,7 +152,7 @@ class DynamicObject {
         return newObjectId.id;
     }
 
-    trackObject(id: string, object: any, options: { positionThreshold?: number, rotationThreshold?: number, scaleThreshold?: number } = {}): void {
+    trackObject(id: string, object: any, options: { positionThreshold?: number, rotationThreshold?: number, scaleThreshold?: number } = {}): void { // TODO: Replace 'any' with a specific type for object
         if (!id || !object) {
             console.error("DynamicObject.trackObject: id and object must be provided.");
             return;
@@ -131,7 +165,7 @@ class DynamicObject {
         });
     }
 
-    addSnapshot(objectId: string, position: number[], rotation: number[], scale?: number[] | null, properties?: any): void {
+    addSnapshot(objectId: string, position: number[], rotation: number[], scale?: number[] | null, properties?: any): void { // TODO: Replace 'any' with a specific type for properties
         let foundId = this.objectIds.some(element => objectId === element.id);
         if (!foundId) {
             console.warn("DynamicObject::Snapshot cannot find objectId " + objectId + " in full manifest. Did you Register this object?");
@@ -154,11 +188,13 @@ class DynamicObject {
             snapshot.engagements = [];
         }
         for (let e of this.allEngagements[objectId]) {
-            let engagementEvent: any = {};
-            engagementEvent['engagementtype'] = e.name;
-            engagementEvent['engagementparent'] = e.id;
-            engagementEvent['engagement_count'] = e.engagementNumber;
-            engagementEvent['engagement_time'] = e.isActive ? (this.core.getTimestamp() - e.startTime) : e.endTime;
+            // PR FIX: Typed engagementEvent
+            let engagementEvent: EngagementPayload = {
+                engagementtype: e.name,
+                engagementparent: e.id,
+                engagement_count: e.engagementNumber,
+                engagement_time: e.isActive ? (this.core.getTimestamp() - e.startTime) : e.endTime
+            };
             snapshot.engagements.push(engagementEvent);
         }
         this.removeInActiveEngagementsOfAnObject(objectId);
@@ -189,15 +225,16 @@ class DynamicObject {
                 return;
             }
 
-            let sendJson: any = {};
-            sendJson['userid'] = this.core.userId;
-            sendJson['timestamp'] = this.core.getTimestamp();
-            sendJson['sessionid'] = this.core.sessionId;
-            sendJson['part'] = this.jsonPart;
+            // PR FIX: Typed sendJson
+            let sendJson: DynamicsPayload = {
+                userid: this.core.userId,
+                timestamp: this.core.getTimestamp(),
+                sessionid: this.core.sessionId,
+                part: this.jsonPart,
+                manifest: this._buildManifest(),
+                data: this._buildSnapshotData()
+            };
             this.jsonPart++;
-
-            sendJson['manifest'] = this._buildManifest();
-            sendJson['data'] = this._buildSnapshotData();
 
             this.network.networkCall('dynamics', sendJson)
                 .then(res => (res === 200) ? resolve(200) : reject(res));
@@ -207,26 +244,28 @@ class DynamicObject {
         });
     }
 
-    private _buildManifest(): any {
-        let manifest: any = {};
+    // PR FIX: Typed return
+    private _buildManifest(): Record<string, ManifestPayloadEntry> {
+        let manifest: Record<string, ManifestPayloadEntry> = {};
         for (let element of this.manifestEntries) {
-            let entryValues: any = {};
-            entryValues["name"] = element.name;
-            entryValues["mesh"] = element.mesh;
-            entryValues["fileType"] = "gltf"; 
-            manifest[element.id] = entryValues;
+            manifest[element.id] = {
+                name: element.name,
+                mesh: element.mesh,
+                fileType: "gltf"
+            };
         }
         return manifest;
     }
 
-    private _buildSnapshotData(): any[] {
-        let data: any[] = [];
+    private _buildSnapshotData(): SnapshotPayload[] {
+        let data: SnapshotPayload[] = [];
         for (let element of this.snapshots) {
-            let entry: any = {};
-            entry['id'] = element.id;
-            entry['time'] = element.time;
-            entry['p'] = element.position;
-            entry['r'] = element.rotation;
+            let entry: SnapshotPayload = {
+                id: element.id,
+                time: element.time,
+                p: element.position,
+                r: element.rotation
+            };
             if (element.scale) {
                 entry['s'] = element.scale;
             }
@@ -237,7 +276,7 @@ class DynamicObject {
         return data;
     }
 
-    dynamicObjectSnapshot(position: number[], rotation: number[], objectId: string, scale?: number[] | null, properties?: any): Snapshot {
+    dynamicObjectSnapshot(position: number[], rotation: number[], objectId: string, scale?: number[] | null, properties?: any): Snapshot { // TODO: Replace 'any' with a specific type for properties
         let ss: Snapshot = {
             position: position,
             rotation: rotation,

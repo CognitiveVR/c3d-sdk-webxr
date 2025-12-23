@@ -6,7 +6,7 @@ export interface DevicePropertyMap {
 }
 
 export interface SessionProperties {
-    [key: string]: any;
+    [key: string]: any; // TODO: Replace 'any' with a specific type (e.g., string | number | boolean)
 }
 
 export class CognitiveVRAnalyticsCore {
@@ -142,18 +142,18 @@ export class CognitiveVRAnalyticsCore {
         this.sessionTimestamp = value;
     }
 
-    setUserProperty(key: string, value: any): void {
+    setUserProperty(key: string, value: any): void { // TODO: Replace 'any' with a specific type
         this.sessionProperties = this.sessionProperties || {};
         this.sessionProperties[key] = value;
     }
 
-    setDeviceProperty(key: string, value: any): void {
+    setDeviceProperty(key: string, value: any): void { // TODO: Replace 'any' with a specific type
         this.sessionProperties = this.sessionProperties || {};
         const mappedKey = this.devicePropertyMap[key] || key;
         this.sessionProperties[mappedKey] = value;
     }
 
-    setSessionProperty(key: string, value: any): void {
+    setSessionProperty(key: string, value: any): void { // TODO: Replace 'any' with a specific type
         this.sessionProperties = this.sessionProperties || {};
         this.sessionProperties[key] = value;
     }
@@ -162,7 +162,7 @@ export class CognitiveVRAnalyticsCore {
         return this.config.APIKey;
     }
 
-    devicePropertyString(property: string, value: any): string {
+    devicePropertyString(property: string, value: any): string { // TODO: Replace 'any' with a specific type
         return this.devicePropertyMap[property] ? this.devicePropertyMap[property] : "unknown.property";
     }
 

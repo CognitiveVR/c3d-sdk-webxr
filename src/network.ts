@@ -4,7 +4,7 @@ import Core from './core';
 // Define the shape of the QuestionSet response
 export interface QuestionSet {
     id: string;
-    [key: string]: any;
+    [key: string]: any; // TODO: Replace 'any' with specific QuestionSet property types
 }
 
 class Network {

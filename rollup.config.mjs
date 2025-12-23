@@ -12,7 +12,7 @@ const pkg = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf-8'));
 
 const commonPlugins = [
   typescript({
-    noForceEmit: true,  // Add this line
+    noForceEmit: true,  
     tsconfig: './tsconfig.json'
   }),
   replace({

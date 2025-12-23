@@ -35,12 +35,12 @@ class C3DBabylonAdapter {
     let rotation = [0, 0, 0, 1];
     
     // Some Babylon cameras (ArcRotate) use rotation by default, others (WebXR) use rotationQuaternion.
-    if ((camera as any).rotationQuaternion) {
-        rotation = this.fromQuaternion((camera as any).rotationQuaternion);
+    if ((camera as any).rotationQuaternion) { // TODO: Replace 'any' with specific type
+        rotation = this.fromQuaternion((camera as any).rotationQuaternion); // TODO: Replace 'any' with specific type
     } else {
         // Fallback: Convert Euler to Quaternion if needed, or identity.
-        if ((camera as any).rotation) {
-             const euler = (camera as any).rotation;
+        if ((camera as any).rotation) { // TODO: Replace 'any' with specific type
+             const euler = (camera as any).rotation; // TODO: Replace 'any' with specific type
              const quat = BABYLON.Quaternion.RotationYawPitchRoll(euler.y, euler.x, euler.z);
              rotation = this.fromQuaternion(quat);
         }
@@ -55,7 +55,7 @@ class C3DBabylonAdapter {
 
   public exportGLTF(scene: BABYLON.Scene, sceneName: string, engine: BABYLON.Engine): void {
     // Export GLTF and BIN
-    GLTF2Export.GLTFAsync(scene, "scene").then((gltf: any) => {
+    GLTF2Export.GLTFAsync(scene, "scene").then((gltf: any) => { // TODO: Replace 'any' with specific type
         gltf.downloadFiles();
     });
 

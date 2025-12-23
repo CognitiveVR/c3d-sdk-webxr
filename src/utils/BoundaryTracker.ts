@@ -1,31 +1,15 @@
-/*
- * LIMITATIONS / TODO 
- * ----------------------------------------
- * 1. Missing 'reset' Event Handling:
- *    The code does not listen for `referenceSpace.addEventListener('reset',...)`. 
- *    If a user opens the OS menu and switches from Stationary to Room Scale during the session,
- *    the `referenceSpace` object may become invalid or jump origins. The tracker will fail 
- *    to detect this runtime switch without the event listener.
- *
- * 2. Missing Threshold Heuristic:
- *    To definitively identify the mode, you must implement a logic gate:
- *    IF (Area < 1.6m²) THEN "Stationary" ELSE "Room Scale". 
- *    Webxr API does not provide explicit Stationary vs Room Scale mode info only capabilities. 
-
- */
-
 import { isBrowser } from './environment';
 
 // Local interface to define the shape of the C3D instance this class interacts with
 interface C3DInstance {
     customEvent: {
-        send: (_name: string, position: number[], properties?: any) => void;
+        send: (_name: string, position: number[], properties?: any) => void; // TODO: Replace 'any' with specific type
     };
     sensor: {
-        recordSensor: (name: string, value: any) => void;
+        recordSensor: (name: string, value: any) => void; // TODO: Replace 'any' with specific type
     };
-    setSessionProperty: (_key: string, value: any) => void;
-    xrSessionManager: any;
+    setSessionProperty: (_key: string, value: any) => void; // TODO: Replace 'any' with specific type
+    xrSessionManager: any; // TODO: Replace 'any' with XRSessionManager type
 }
 
 class BoundaryTracker {
@@ -66,7 +50,7 @@ class BoundaryTracker {
         this.referenceSpace = referenceSpace;
 
         // Check if boundsGeometry exists (standard in Bounded Reference Spaces)
-        const boundsGeometry = (referenceSpace as any).boundsGeometry as DOMPointReadOnly[];
+        const boundsGeometry = (referenceSpace as any).boundsGeometry as DOMPointReadOnly[]; // TODO: Replace 'any' with updated WebXR types
 
         if (boundsGeometry && boundsGeometry.length > 0) {
             this.boundaryType = "Room Scale";
@@ -114,7 +98,7 @@ class BoundaryTracker {
             return;
         }
 
-        const boundsGeometry = (this.referenceSpace as any).boundsGeometry as DOMPointReadOnly[];
+        const boundsGeometry = (this.referenceSpace as any).boundsGeometry as DOMPointReadOnly[]; // TODO: Replace 'any'
 
         // Only do boundary change and user position exit detection if Room Scale
         if (this.boundaryType === "Room Scale" && boundsGeometry && boundsGeometry.length > 0) {
@@ -183,7 +167,7 @@ class BoundaryTracker {
         this.previousRoomSize = newRoomSize;
     }
 
-    private _hasBoundaryChanged(newPoints: any): boolean {
+    private _hasBoundaryChanged(newPoints: any): boolean { // TODO: Replace 'any' with DOMPointReadOnly[]
         // Simple length check
         if (this.previousBoundaryPoints.length !== newPoints.length) return true;
         if (newPoints.length === 0) return false;

@@ -80,7 +80,7 @@ class Config {
 
         for (const key of keys) {
             if (settings[key] !== undefined) {
-                // @ts-ignore: TypeScript doesn't like dynamic key assignment without strict typing of the map
+                // @ts-ignore: TypeScript doesn't like dynamic key assignment without strict typing of the map. TODO: Refactor to avoid @ts-ignore
                 this[key] = settings[key];
             }
         }

@@ -5,14 +5,14 @@
 
 // Dependencies interfaces
 interface GazeTracker {
-    recordGaze: (_position: number[], orientation: number[], gazeHitData: any) => void;
+    recordGaze: (_position: number[], orientation: number[], gazeHitData: any) => void; // TODO: Replace 'any' with specific type
 }
 
 interface DynamicObject {
     // Define properties if needed, currently unused in logic
 }
 
-type GazeRaycaster = () => any; // Returns gaze hit data
+type GazeRaycaster = () => any; // Returns gaze hit data. TODO: Replace 'any' with specific type
 
 interface SessionStartResult {
     referenceSpace: XRReferenceSpace | null;
@@ -168,7 +168,7 @@ export const getHMDInfo = (inputSources: XRInputSourceArray | XRInputSource[]): 
 };
 
 export const getEnabledFeatures = (xrSession: XRSession): { handTracking: boolean; eyeTracking: boolean } => {
-    const sessionAny = xrSession as any;
+    const sessionAny = xrSession as any; // TODO: Replace 'any' with correct type once standard libraries update
     const enabledFeatures = (sessionAny.enabledFeatures as string[]) || [];
 
     const handTracking = enabledFeatures.includes('hand-tracking');
