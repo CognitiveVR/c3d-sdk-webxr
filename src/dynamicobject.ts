@@ -188,7 +188,6 @@ class DynamicObject {
             snapshot.engagements = [];
         }
         for (let e of this.allEngagements[objectId]) {
-            // PR FIX: Typed engagementEvent
             let engagementEvent: EngagementPayload = {
                 engagementtype: e.name,
                 engagementparent: e.id,
@@ -225,7 +224,6 @@ class DynamicObject {
                 return;
             }
 
-            // PR FIX: Typed sendJson
             let sendJson: DynamicsPayload = {
                 userid: this.core.userId,
                 timestamp: this.core.getTimestamp(),
@@ -244,7 +242,6 @@ class DynamicObject {
         });
     }
 
-    // PR FIX: Typed return
     private _buildManifest(): Record<string, ManifestPayloadEntry> {
         let manifest: Record<string, ManifestPayloadEntry> = {};
         for (let element of this.manifestEntries) {
@@ -276,7 +273,8 @@ class DynamicObject {
         return data;
     }
 
-    dynamicObjectSnapshot(position: number[], rotation: number[], objectId: string, scale?: number[] | null, properties?: any): Snapshot { // TODO: Replace 'any' with a specific type for properties
+    dynamicObjectSnapshot(position: number[], rotation: number[], objectId: string, scale?: number[] | null, properties?: any): Snapshot { // TODO: Replace 'any' with a specific type for properties 
+        // Data passed here is expected to be in Unity Coordinate System (LHS, Y-Up)
         let ss: Snapshot = {
             position: position,
             rotation: rotation,
