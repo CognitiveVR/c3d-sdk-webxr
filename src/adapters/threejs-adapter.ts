@@ -25,38 +25,33 @@ class C3DThreeAdapter {
         lastTime: performance.now(),
         frameTimes: []
     };
-    private exportDirHandle: any = null; 
+    private exportDirHandle: any = null; // TODO: Replace 'any' with FileSystemDirectoryHandle type
 
     constructor(c3dInstance: C3D) {
         if (!c3dInstance) {
             throw new Error("A C3D instance must be provided to the Three.js adapter.");
         }
         this.c3d = c3dInstance;
-        
+        // _fpsState is already initialized above
+
         this.c3d.setDeviceProperty('AppEngine', 'Three.js');
         this.c3d.setDeviceProperty('AppEngineVersion', THREE.REVISION);
     }
 
     private fromVector3(vec3: THREE.Vector3): number[] {
-        // CONVERSION: Three.js (RHS) to Unity (LHS)
-        // Flip Z
-        return [vec3.x, vec3.y, -vec3.z];
+        return [vec3.x, vec3.y, vec3.z];
     }
 
     private fromQuaternion(quat: THREE.Quaternion): number[] {
-        // CONVERSION: Three.js (RHS) to Unity (LHS)
-        // Flip Z and W
-        return [quat.x, quat.y, -quat.z, -quat.w];
+        return [quat.x, quat.y, quat.z, quat.w];
     }
 
     public recordGazeFromCamera(camera: THREE.Camera): void {
         const position = this.fromVector3(camera.position);
         const rotation = this.fromQuaternion(camera.quaternion);
-        
         const forward = new THREE.Vector3(0, 0, -1);
         forward.applyQuaternion(camera.quaternion);
-        // Direction vector also needs Z-flip
-        const gaze = [forward.x, forward.y, -forward.z];
+        const gaze = this.fromVector3(forward);
 
         this.c3d.gaze.recordGaze(position, rotation, gaze);
     }
@@ -64,45 +59,55 @@ class C3DThreeAdapter {
     public startTracking(
         renderer: THREE.WebGLRenderer, 
         camera: THREE.Camera, 
-        interactableGroup: THREE.Group | null = null, 
+        scene: THREE.Object3D, // Changed from interactableGroup to generic scene
         userRenderFn: ((timestamp: number, frame: XRFrame) => void) | null = null
     ): void {
-        if (!renderer || !camera) {
-            console.error("Cognitive3D: renderer and camera must be provided to startTracking.");
+        if (!renderer || !camera || !scene) {
+            console.error("Cognitive3D: renderer, camera, and scene must be provided to startTracking.");
             return;
         }
 
+        // 1. Stop default tracker
         if (this.c3d.fpsTracker) {
             this.c3d.fpsTracker.stop();
+            console.log("Cognitive3D: Stopped default FPS tracker in favor of XR-synced tracking.");
         }
 
-        if (interactableGroup) {
-            this._setupGazeRaycasting(camera, interactableGroup);
-            console.log('Cognitive3D: Gaze raycasting enabled.');
+        // 2. Setup Raycasting & Scan for Dynamic Objects
+        this._setupGazeRaycasting(camera, scene);
+        console.log('Cognitive3D: Gaze raycasting enabled on full scene.');
 
-            interactableGroup.children.forEach(child => {
-                if (child.userData.isDynamic && child.userData.c3dId) {
-                    const options: DynamicObjectOptions = {
-                        positionThreshold: child.userData.positionThreshold,
-                        rotationThreshold: child.userData.rotationThreshold,
-                        scaleThreshold: child.userData.scaleThreshold
-                    };
-                    this.trackDynamicObject(child, child.userData.c3dId, options);
-                }
-            });
-        }
+        // Recursively scan the scene for objects marked as dynamic
+        scene.traverse((child) => {
+            if (child.userData && child.userData.c3dId && child.userData.isDynamic) {
+                const options: DynamicObjectOptions = {
+                    positionThreshold: child.userData.positionThreshold,
+                    rotationThreshold: child.userData.rotationThreshold,
+                    scaleThreshold: child.userData.scaleThreshold
+                };
+                this.trackDynamicObject(child, child.userData.c3dId, options);
+                console.log(`Cognitive3D: Automatically started tracking dynamic object: ${child.name}`);
+            }
+        });
 
+        // 3. Initialize FPS State (Reset)
         this._initFPSState();
 
-        const renderLoop = (timestamp: number, frame: any) => { 
+        // 4. Hook into the Render Loop
+        const renderLoop = (timestamp: number, frame: any) => { // TODO: Replace 'any' with XRFrame (if available)
+            // Update FPS logic
             this._updateFPS();
+
+            // Run user's original render function
             if (userRenderFn) {
                 userRenderFn(timestamp, frame);
             }
+
             this.updateTrackedObjectTransforms();
         };
 
         renderer.setAnimationLoop(renderLoop);
+        console.log('Cognitive3D: Hooked into the render loop for analytics.');
     }
 
     private _initFPSState(): void {
@@ -116,7 +121,9 @@ class C3DThreeAdapter {
 
     private _updateFPS(): void {
         const now = performance.now();
-        let delta = (now - this._fpsState.lastTime) / 1000; 
+        let delta = (now - this._fpsState.lastTime) / 1000; // delta in seconds
+
+        // Ignore massive jumps (session paused/resumed)
         if (delta > 1.0) delta = 0;
 
         this._fpsState.lastTime = now;
@@ -124,8 +131,11 @@ class C3DThreeAdapter {
         this._fpsState.frameCount++;
         this._fpsState.frameTimes.push(delta);
 
+        // Report every 1 second
         if (this._fpsState.timeAccumulator >= 1.0) {
             this._sendFPSData();
+
+            // Reset counters for next interval
             this._fpsState.frameCount = 0;
             this._fpsState.timeAccumulator = 0;
             this._fpsState.frameTimes = [];
@@ -134,67 +144,73 @@ class C3DThreeAdapter {
 
     private _sendFPSData(): void {
         const { frameCount, timeAccumulator, frameTimes } = this._fpsState;
+
+        // A. Average FPS
         const avgFps = frameCount / timeAccumulator;
         this.c3d.sensor.recordSensor('c3d.fps.avg', avgFps);
 
+        // B. 1% Low FPS
         frameTimes.sort((a, b) => b - a);
+
         const onePercentCount = Math.ceil(frameTimes.length * 0.01);
         const slowestFrames = frameTimes.slice(0, onePercentCount);
 
         if (slowestFrames.length > 0) {
             const totalSlowestTime = slowestFrames.reduce((sum, t) => sum + t, 0);
             const avgSlowestTime = totalSlowestTime / slowestFrames.length;
+
             const fps1pl = avgSlowestTime > 0 ? (1 / avgSlowestTime) : avgFps;
+
             this.c3d.sensor.recordSensor('c3d.fps.1pl', fps1pl);
         }
     }
 
-    private _setupGazeRaycasting(camera: THREE.Camera, interactableGroup: THREE.Group): void {
+    private _setupGazeRaycasting(camera: THREE.Camera, scene: THREE.Object3D): void {
         const raycaster = new THREE.Raycaster();
         raycaster.far = 1000;
+        
         this.c3d.gazeRaycaster = () => {
             raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-            const intersects = raycaster.intersectObjects(interactableGroup.children, true);
+            
+            // Raycast against the entire scene recursively
+            const intersects = raycaster.intersectObject(scene, true);
 
             if (intersects.length > 0) {
                 const intersection = intersects[0];
-                const intersectedObject = intersection.object;
-                let targetObject: THREE.Object3D | null = intersectedObject;
+                let targetObject: THREE.Object3D | null = intersection.object;
                 let isDynamic = false;
+                let c3dId = null;
 
+                // Traverse up to find if we hit a dynamic object component
                 while (targetObject) {
-                    if (targetObject.userData.c3dId) {
+                    if (targetObject.userData && targetObject.userData.c3dId) {
                         isDynamic = true;
+                        c3dId = targetObject.userData.c3dId;
                         break;
                     }
-                    if (!targetObject.parent || targetObject.parent === interactableGroup) {
+                    if (targetObject === scene) {
                         break;
                     }
                     targetObject = targetObject.parent;
                 }
 
-                if (isDynamic && targetObject) {
-                    // FIX: Dynamic Objects require LOCAL coordinates for Heatmaps.
-                    const localPoint = intersection.point.clone();
-                    
-                    // 1. Convert World -> Local (Removes Scale/Rotation/Position of object)
-                    //    This satisfies the requirement to map onto the mesh.
-                    targetObject.worldToLocal(localPoint);
+                if (isDynamic && targetObject && c3dId) {
+                    // Dynamic Hit: Convert to Local and apply Z flip (Matches working code)
+                    const worldPoint = intersection.point.clone();
+                    targetObject.worldToLocal(worldPoint);
+                    worldPoint.x *= 1;
+                    worldPoint.z *= -1;
 
-                    // 2. Flip Z for Unity Coordinate System (LHS)
-                    //    This satisfies the developer's request to "multiply gaze.z by -1"
                     return {
-                        objectId: targetObject.userData.c3dId,
-                        point: [localPoint.x, localPoint.y, -localPoint.z]
+                        objectId: c3dId,
+                        point: [worldPoint.x, worldPoint.y, worldPoint.z]
                     };
                 } else {
-                    // Static Objects require WORLD coordinates.
+                    // Static Hit: Return World point as-is (Matches working code)
                     const worldPoint = intersection.point;
-                    
-                    // Convert World -> Unity World (LHS)
                     return {
                         objectId: null,
-                        point: [worldPoint.x, worldPoint.y, -worldPoint.z]
+                        point: [worldPoint.x, worldPoint.y, worldPoint.z]
                     };
                 }
             }
@@ -204,6 +220,7 @@ class C3DThreeAdapter {
 
     public trackDynamicObject(object: THREE.Object3D, id: string, options: DynamicObjectOptions): void {
         this.c3d.dynamicObject.trackObject(id, object, options);
+
         const tracked = this.c3d.dynamicObject.trackedObjects.get(id);
         if (tracked) {
             tracked.lastPosition = new THREE.Vector3(Infinity, Infinity, Infinity);
@@ -237,7 +254,6 @@ class C3DThreeAdapter {
             const scaleChanged = worldScale.distanceTo(threeLastScale) > (scaleThreshold || 0.01);
 
             if (positionChanged || rotationChanged || scaleChanged) {
-                // CONVERSION: ThreeJS to Unity
                 const correctedPosition = worldPosition.clone();
                 correctedPosition.z *= -1;
 
@@ -254,7 +270,7 @@ class C3DThreeAdapter {
         });
     }
 
-    async _ensureExportDir(): Promise<any> { 
+    async _ensureExportDir(): Promise<any> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
         if (this.exportDirHandle) return this.exportDirHandle;
         // @ts-ignore
         if (!window.showDirectoryPicker) return null;
@@ -267,11 +283,12 @@ class C3DThreeAdapter {
             this.exportDirHandle = sceneDir;
             return sceneDir;
         } catch (err) {
+            console.error("Error getting directory handle:", err);
             return null;
         }
     }
 
-    async _writeFile(dirHandle: any, filename: string, blob: Blob): Promise<void> { 
+    async _writeFile(dirHandle: any, filename: string, blob: Blob): Promise<void> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
         const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(blob);
@@ -305,11 +322,12 @@ class C3DThreeAdapter {
         const exportRoot = new THREE.Group();
         exportRoot.name = "CoordinateSystemFix";
         exportRoot.add(staticScene);
-        exportRoot.scale.set(1, 1, 1); 
+        exportRoot.scale.z = -1;
+        exportRoot.scale.x = -1;
 
         exporter.parse(
             exportRoot,
-            async (gltf: any) => { 
+            async (gltf: any) => { // TODO: Replace 'any' with specific type
                 const dir = await this._ensureExportDir();
 
                 const prefix = "data:application/octet-stream;base64,";
@@ -328,7 +346,7 @@ class C3DThreeAdapter {
                 const settings = {
                     scale: 1,
                     sceneName: sceneName,
-                    sdkVersion: "1.0.0" 
+                    sdkVersion: __SDK_VERSION__
                 };
                 const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
                 const screenshotDataUrl = renderer.domElement.toDataURL('image/png');
@@ -341,6 +359,7 @@ class C3DThreeAdapter {
                     await this._writeFile(dir, "screenshot.png", screenshotBlob);
                     console.log("Exported static scene files to the 'scene' directory.");
                 } else {
+                    console.warn("File System Access API not available; falling back to zip download.");
                     const zip = new JSZip();
                     if (binBlob) zip.file("scene.bin", binBlob);
                     zip.file("scene.gltf", gltfBlob);
@@ -359,7 +378,7 @@ class C3DThreeAdapter {
     }
 
     public async exportObject(objectToExport: THREE.Object3D, objectName: string, renderer: THREE.WebGLRenderer, camera: THREE.Camera): Promise<void> {
-        const originalScene = renderer.xr.isPresenting ? (renderer.xr as any).getScene?.() : camera.parent; 
+        const originalScene = renderer.xr.isPresenting ? (renderer.xr as any).getScene?.() : camera.parent; // TODO: Replace 'any' with specific type
         const tempScene = new THREE.Scene();
         tempScene.background = new THREE.Color(0xe0e0e0);
         const tempLight = new THREE.AmbientLight(0xffffff, 3.0);
@@ -385,7 +404,7 @@ class C3DThreeAdapter {
 
         exporter.parse(
             exportRoot,
-            async (gltf: any) => { 
+            async (gltf: any) => { // TODO: Replace 'any' with specific type
                 const dir = await this._ensureExportDir();
                 const prefix = "data:application/octet-stream;base64,";
                 const uri = gltf.buffers?.[0]?.uri || "";
@@ -408,6 +427,7 @@ class C3DThreeAdapter {
                     await this._writeFile(dir, `${objectName}.png`, screenshotBlob);
                     console.log(`Exported object files for '${objectName}' to the 'scene' directory.`);
                 } else {
+                    console.warn("File System Access API not available; falling back to zip download.");
                     const zip = new JSZip();
                     if (binBlob) zip.file(`${objectName}.bin`, binBlob);
                     zip.file(`${objectName}.gltf`, gltfBlob);
