@@ -26,6 +26,7 @@ class C3DThreeAdapter {
         frameTimes: []
     };
     private exportDirHandle: any = null; // TODO: Replace 'any' with FileSystemDirectoryHandle type
+    private _interactableObjects: THREE.Object3D[] = [];  // Dedicated registry for dynamic objects
 
     constructor(c3dInstance: C3D) {
         if (!c3dInstance) {
@@ -56,10 +57,33 @@ class C3DThreeAdapter {
         this.c3d.gaze.recordGaze(position, rotation, gaze);
     }
 
+    //  Helper function for recursively finding dynamic interactable objects in a three.scene or three.group
+    private _scanForInteractables(root: THREE.Object3D): void {
+        root.traverse((child) => {
+            // Check if this object is marked for tracking
+            if (child.userData && child.userData.c3dId) {
+                // Store the REFERENCE, do not change the parent
+                this._interactableObjects.push(child);
+                
+                // Optional: Automatically start tracking dynamic transforms if needed
+                if (child.userData.isDynamic) {
+                     const options: DynamicObjectOptions = {
+                        positionThreshold: child.userData.positionThreshold,
+                        rotationThreshold: child.userData.rotationThreshold,
+                        scaleThreshold: child.userData.scaleThreshold
+                    };
+                    this.trackDynamicObject(child, child.userData.c3dId, options);
+                    console.log(`Cognitive3D: Automatically started tracking dynamic object: ${child.name}`);
+                }
+            }
+        });
+    }
+
     public startTracking(
         renderer: THREE.WebGLRenderer, 
         camera: THREE.Camera, 
-        interactableGroup: THREE.Group | null = null, 
+        // Accept a Scene, a specific Group, or a manual list of objects
+        trackableTarget: THREE.Object3D | THREE.Object3D[] | null = null, 
         userRenderFn: ((timestamp: number, frame: XRFrame) => void) | null = null
     ): void {
         if (!renderer || !camera) {
@@ -74,21 +98,23 @@ class C3DThreeAdapter {
         }
 
         // 2. Setup Dynamic Objects & Gaze
-        if (interactableGroup) {
-            this._setupGazeRaycasting(camera, interactableGroup);
-            console.log('Cognitive3D: Gaze raycasting enabled.');
+        // Clear previous list
+        this._interactableObjects = [];
 
-            interactableGroup.children.forEach(child => {
-                if (child.userData.isDynamic && child.userData.c3dId) {
-                    const options: DynamicObjectOptions = {
-                        positionThreshold: child.userData.positionThreshold,
-                        rotationThreshold: child.userData.rotationThreshold,
-                        scaleThreshold: child.userData.scaleThreshold
-                    };
-                    this.trackDynamicObject(child, child.userData.c3dId, options);
-                    console.log(`Cognitive3D: Automatically started tracking dynamic object: ${child.name}`);
-                }
-            });
+        if (trackableTarget) {
+            if (Array.isArray(trackableTarget)) {
+                // User manually provided a list of objects
+                this._interactableObjects = trackableTarget;
+            } else {
+                // User provided the Scene or a Group -> Scan it
+                this._scanForInteractables(trackableTarget);
+            }
+
+            console.log(`Cognitive3D: Tracking ${this._interactableObjects.length} objects.`);
+            
+            // Setup Raycaster with the new list (no longer passing a specific group)
+            this._setupGazeRaycasting(camera);
+            console.log('Cognitive3D: Gaze raycasting enabled.');
         }
 
         // 3. Initialize FPS State (Reset)
@@ -166,32 +192,35 @@ class C3DThreeAdapter {
         }
     }
 
-    private _setupGazeRaycasting(camera: THREE.Camera, interactableGroup: THREE.Group): void {
+    private _setupGazeRaycasting(camera: THREE.Camera): void {
         const raycaster = new THREE.Raycaster();
         raycaster.far = 1000;
         this.c3d.gazeRaycaster = () => {
-            // FIX: Use new THREE.Vector2(0, 0) instead of plain object
+            // Use new THREE.Vector2(0, 0) instead of plain object
             raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-            const intersects = raycaster.intersectObjects(interactableGroup.children, true);
+            
+            // Intersect against the cached array, NOT a specific group
+            const intersects = raycaster.intersectObjects(this._interactableObjects, true);
 
             if (intersects.length > 0) {
                 const intersection = intersects[0];
-                const intersectedObject = intersection.object;
-                let targetObject: THREE.Object3D | null = intersectedObject;
-                let isDynamic = false;
+                let targetObject: THREE.Object3D | null = intersection.object;
 
+                // Traverse up from the hit mesh to find the actual 'tracked' parent (if applicable)
+                // This handles cases where we track a "Car" (Group) but hit the "Tire" (Mesh)
                 while (targetObject) {
-                    if (targetObject.userData.c3dId) {
-                        isDynamic = true;
+                    if (targetObject.userData && targetObject.userData.c3dId) {
                         break;
                     }
-                    if (!targetObject.parent || targetObject.parent === interactableGroup) {
+                    // Stop if we hit the scene root or run out of parents
+                    if (!targetObject.parent) {
+                        targetObject = null;
                         break;
                     }
                     targetObject = targetObject.parent;
                 }
 
-                if (isDynamic && targetObject) {
+                if (targetObject && targetObject.userData.c3dId) {
                     const worldPoint = intersection.point.clone();
                     targetObject.worldToLocal(worldPoint);
                     worldPoint.x *= 1;
@@ -199,12 +228,6 @@ class C3DThreeAdapter {
 
                     return {
                         objectId: targetObject.userData.c3dId,
-                        point: [worldPoint.x, worldPoint.y, worldPoint.z]
-                    };
-                } else {
-                    const worldPoint = intersection.point;
-                    return {
-                        objectId: null,
                         point: [worldPoint.x, worldPoint.y, worldPoint.z]
                     };
                 }
