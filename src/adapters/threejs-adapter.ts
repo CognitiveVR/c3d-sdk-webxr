@@ -28,6 +28,11 @@ class C3DThreeAdapter {
     private exportDirHandle: any = null; // TODO: Replace 'any' with FileSystemDirectoryHandle type
     private _interactableObjects: THREE.Object3D[] = [];  // Dedicated registry for dynamic objects
 
+    // Object Pooling for GC optimization
+    private _tempVec = new THREE.Vector3();
+    private _tempQuat = new THREE.Quaternion();
+    private _tempScale = new THREE.Vector3();
+
     constructor(c3dInstance: C3D) {
         if (!c3dInstance) {
             throw new Error("A C3D instance must be provided to the Three.js adapter.");
@@ -260,30 +265,23 @@ class C3DThreeAdapter {
             const threeLastScale = lastScale as THREE.Vector3;
 
             threeObject.updateWorldMatrix(true, false);
+            threeObject.matrixWorld.decompose(this._tempVec, this._tempQuat, this._tempScale);
 
-            const worldPosition = new THREE.Vector3();
-            const worldQuaternion = new THREE.Quaternion();
-            const worldScale = new THREE.Vector3();
-
-            threeObject.matrixWorld.decompose(worldPosition, worldQuaternion, worldScale);
-
-            const positionChanged = worldPosition.distanceTo(threeLastPos) > (positionThreshold || 0.01);
-            const rotationChanged = worldQuaternion.angleTo(threeLastRot) * (180 / Math.PI) > (rotationThreshold || 1);
-            const scaleChanged = worldScale.distanceTo(threeLastScale) > (scaleThreshold || 0.01);
+            const positionChanged = this._tempVec.distanceTo(threeLastPos) > (positionThreshold || 0.01);
+            const rotationChanged = this._tempQuat.angleTo(threeLastRot) * (180 / Math.PI) > (rotationThreshold || 1);
+            const scaleChanged = this._tempScale.distanceTo(threeLastScale) > (scaleThreshold || 0.01);
 
             if (positionChanged || rotationChanged || scaleChanged) {
-                const correctedPosition = worldPosition.clone();
-                correctedPosition.z *= -1;
+                // OPTIMIZATION: Manually construct arrays to avoid .clone() and .toArray() allocations
+                const posArray = [this._tempVec.x, this._tempVec.y, this._tempVec.z * -1];
+                const quatArray = [this._tempQuat.x, this._tempQuat.y, this._tempQuat.z * -1, this._tempQuat.w * -1];
+                const scaleArray = [this._tempScale.x, this._tempScale.y, this._tempScale.z];
 
-                const correctedQuaternion = worldQuaternion.clone();
-                correctedQuaternion.z *= -1;
-                correctedQuaternion.w *= -1;
+                dynamicObjectManager.addSnapshot(id, posArray, quatArray, scaleArray);
 
-                dynamicObjectManager.addSnapshot(id, correctedPosition.toArray(), correctedQuaternion.toArray(), worldScale.toArray());
-
-                threeLastPos.copy(worldPosition);
-                threeLastRot.copy(worldQuaternion);
-                threeLastScale.copy(worldScale);
+                threeLastPos.copy(this._tempVec);
+                threeLastRot.copy(this._tempQuat);
+                threeLastScale.copy(this._tempScale);
             }
         });
     }
