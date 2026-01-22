@@ -1,13 +1,12 @@
 /**
  * FPSTracker.js
- * 
- * Purpose:
+ * * Purpose:
  * - Provides a generic browser FPS tracker for non-XR applications.
  * - Uses window.requestAnimationFrame to measure the framerate delivered by the browser's main rendering loop.
  * - Should be used as the fallback when no engine-specific or XR render loop integration is possible.
  * Note:
  * - The adapters for engines handle switching between this generic tracker and their engine-synced loop 
- *   automatically based on the application's state (immersive XR or not).
+ * automatically based on the application's state (immersive XR or not).
  */
 
 import { isBrowser } from "./environment";
@@ -29,6 +28,7 @@ class FPSTracker {
   private samplePeriod: number;
   private deltaTimes: number[];
   public lastDeltaTime: number; 
+  private _currentCallback: FPSCallback | null = null; // OPTIMIZATION: Store callback to avoid closures
 
   constructor() {
     this.animationFrameId = null;
@@ -39,6 +39,7 @@ class FPSTracker {
     this.deltaTimes = []; // delta take for each frame in a sample period 
     this.lastDeltaTime = 0;
 
+    // Pre-bind the loop so it can be passed directly to requestAnimationFrame
     this._loop = this._loop.bind(this);
   }
 
@@ -46,9 +47,8 @@ class FPSTracker {
    * _loop runs on every animation frame, calculates the delta time since the last frame and reports the FPS
    * once the sample period has been reached.
    * @param currentTime - Timestamp provided by requestAnimationFrame.
-   * @param callback - The function to call with the FPS value.
    */
-  private _loop(currentTime: number, callback: FPSCallback): void { 
+  private _loop(currentTime: number): void { 
     if (this.lastTime > 0) {
       const deltaTime = currentTime - this.lastTime;
       this.lastDeltaTime = deltaTime;
@@ -70,11 +70,13 @@ class FPSTracker {
             onePercentLowFps = 1000 / averageSlowestTime;
         }
 
-        // Call the callback with a metrics object
-        callback({
-            avg: averageFps,
-            '1pl': onePercentLowFps
-        });
+        // Call the callback with a metrics object (using stored property)
+        if (this._currentCallback) {
+            this._currentCallback({
+                avg: averageFps,
+                '1pl': onePercentLowFps
+            });
+        }
 
         // Reset for the next sample period
         this.frameCount = 0;
@@ -84,7 +86,9 @@ class FPSTracker {
     }
 
     this.lastTime = currentTime;
-    this.animationFrameId = requestAnimationFrame((time) => this._loop(time, callback));
+    
+    // OPTIMIZATION: Pass bound function directly, preventing closure allocation
+    this.animationFrameId = requestAnimationFrame(this._loop);
   }
 
   /**
@@ -96,18 +100,21 @@ class FPSTracker {
       return;
     }
     
+    this._currentCallback = callback; // Store callback
     this.lastTime = 0;
     this.frameCount = 0;
     this.elapsedTime = 0;
     this.deltaTimes = [];
     
-    this.animationFrameId = requestAnimationFrame((time) => this._loop(time, callback));
+    // OPTIMIZATION: Pass bound function directly
+    this.animationFrameId = requestAnimationFrame(this._loop);
   }
 
   public stop(): void {
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
+      this._currentCallback = null; // Clean up reference
     }
   }
 }
