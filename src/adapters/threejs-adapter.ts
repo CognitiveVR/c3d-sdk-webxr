@@ -84,12 +84,16 @@ class C3DThreeAdapter {
         });
     }
 
+    /**
+     * Initializes the tracking systems (Gaze, Dynamic Objects, FPS).
+     * NOTE: This no longer takes control of the render loop. 
+     * You MUST call c3dAdapter.update() in your own render loop.
+     */
     public startTracking(
         renderer: THREE.WebGLRenderer, 
         camera: THREE.Camera, 
         // Accept a Scene, a specific Group, or a manual list of objects
-        trackableTarget: THREE.Object3D | THREE.Object3D[] | null = null, 
-        userRenderFn: ((timestamp: number, frame: XRFrame) => void) | null = null
+        trackableTarget: THREE.Object3D | THREE.Object3D[] | null = null
     ): void {
         if (!renderer || !camera) {
             console.error("Cognitive3D: renderer and camera must be provided to startTracking.");
@@ -125,21 +129,18 @@ class C3DThreeAdapter {
         // 3. Initialize FPS State (Reset)
         this._initFPSState();
 
-        // 4. Hook into the Render Loop
-        const renderLoop = (timestamp: number, frame: any) => { // TODO: Replace 'any' with XRFrame (if available)
-            // Update FPS logic
-            this._updateFPS();
+        console.log('Cognitive3D: Adapter initialized. Please ensure you call c3dAdapter.update() within your render loop.');
+    }
 
-            // Run user's original render function
-            if (userRenderFn) {
-                userRenderFn(timestamp, frame);
-            }
-
-            this.updateTrackedObjectTransforms();
-        };
-
-        renderer.setAnimationLoop(renderLoop);
-        console.log('Cognitive3D: Hooked into the render loop for analytics.');
+    /**
+     * MUST be called once per frame in your application's render loop.
+     * Handles FPS recording and Dynamic Object updates.
+     * @param timestamp Optional timestamp from requestAnimationFrame/WebXR
+     * @param frame Optional XRFrame from WebXR
+     */
+    public update(timestamp?: number, frame?: any): void {
+        this._updateFPS();
+        this.updateTrackedObjectTransforms();
     }
 
     private _initFPSState(): void {
