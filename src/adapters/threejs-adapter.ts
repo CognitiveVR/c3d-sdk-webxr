@@ -329,7 +329,7 @@ class C3DThreeAdapter {
         const staticScene = scene.clone(true);
 
         staticScene.traverse((obj) => {
-            if (obj.userData && obj.userData.c3dId) {
+            if (obj.userData && (obj.userData.c3dId || obj.userData.isDynamic)) {
                 if (obj.parent) {
                     obj.parent.remove(obj);
                 }
@@ -441,14 +441,14 @@ class C3DThreeAdapter {
                 if (dir) {
                     if (binBlob) await this._writeFile(dir, `${objectName}.bin`, binBlob);
                     await this._writeFile(dir, `${objectName}.gltf`, gltfBlob);
-                    await this._writeFile(dir, `${objectName}.png`, screenshotBlob);
+                    await this._writeFile(dir, "cvr_object_thumbnail.png", screenshotBlob);
                     console.log(`Exported object files for '${objectName}' to the 'scene' directory.`);
                 } else {
                     console.warn("File System Access API not available; falling back to zip download.");
                     const zip = new JSZip();
                     if (binBlob) zip.file(`${objectName}.bin`, binBlob);
                     zip.file(`${objectName}.gltf`, gltfBlob);
-                    zip.file(`${objectName}.png`, screenshotBlob);
+                    zip.file("cvr_object_thumbnail.png", screenshotBlob);
                     const zipBlob = await zip.generateAsync({ type: "blob" });
                     this._downloadBlob(zipBlob, `${objectName}-export.zip`);
                 }
