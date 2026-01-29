@@ -286,6 +286,11 @@ class C3DThreeAdapter {
             }
         });
     }
+    public addInteractable(object: THREE.Object3D): void {
+        if (!this._interactableObjects.includes(object)) {
+            this._interactableObjects.push(object);
+        }
+    }
 
     async _ensureExportDir(): Promise<any> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
         if (this.exportDirHandle) return this.exportDirHandle;
