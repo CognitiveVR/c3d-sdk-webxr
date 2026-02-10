@@ -5,8 +5,11 @@ export interface DevicePropertyMap {
     [key: string]: string;
 }
 
+// Define specific allowed types for session properties
+export type SessionPropertyValue = string | number | boolean;
+
 export interface SessionProperties {
-    [key: string]: any; // TODO: Replace 'any' with a specific type (e.g., string | number | boolean)
+    [key: string]: SessionPropertyValue;
 }
 
 export class CognitiveVRAnalyticsCore {
@@ -142,18 +145,18 @@ export class CognitiveVRAnalyticsCore {
         this.sessionTimestamp = value;
     }
 
-    setUserProperty(key: string, value: any): void { // TODO: Replace 'any' with a specific type
+    setUserProperty(key: string, value: SessionPropertyValue): void {
         this.sessionProperties = this.sessionProperties || {};
         this.sessionProperties[key] = value;
     }
 
-    setDeviceProperty(key: string, value: any): void { // TODO: Replace 'any' with a specific type
+    setDeviceProperty(key: string, value: SessionPropertyValue): void {
         this.sessionProperties = this.sessionProperties || {};
         const mappedKey = this.devicePropertyMap[key] || key;
         this.sessionProperties[mappedKey] = value;
     }
 
-    setSessionProperty(key: string, value: any): void { // TODO: Replace 'any' with a specific type
+    setSessionProperty(key: string, value: SessionPropertyValue): void {
         this.sessionProperties = this.sessionProperties || {};
         this.sessionProperties[key] = value;
     }
@@ -162,7 +165,7 @@ export class CognitiveVRAnalyticsCore {
         return this.config.APIKey;
     }
 
-    devicePropertyString(property: string, value: any): string { // TODO: Replace 'any' with a specific type
+    devicePropertyString(property: string, value: SessionPropertyValue): string {
         return this.devicePropertyMap[property] ? this.devicePropertyMap[property] : "unknown.property";
     }
 

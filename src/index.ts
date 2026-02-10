@@ -1,4 +1,4 @@
-import coreInstance, { CognitiveVRAnalyticsCore } from './core';
+import coreInstance, { CognitiveVRAnalyticsCore, SessionPropertyValue } from './core';
 import GazeTracker from './gazetracker';
 import CustomEvent from './customevent';
 import Network from './network';
@@ -27,17 +27,31 @@ import {
   XRSessionManager,
   getHMDInfo,
   getEnabledFeatures,
-  XRSessionManager as XRSessionManagerType
+  XRSessionManager as XRSessionManagerType,
+  GazeHitData
 } from './utils/webxr';
 
 interface C3DConstructorSettings {
     config: Settings;
 }
 
+// Minimal interface for Renderer to satisfy Profiler requirements (Three.js structure)
+interface Renderer {
+    info?: {
+        render: {
+            calls: number;
+            triangles: number;
+            points: number;
+            lines: number;
+        };
+    };
+    [key: string]: unknown;
+}
+
 class C3D {
   public core: CognitiveVRAnalyticsCore;
   public xrSessionManager: XRSessionManagerType | null;
-  public gazeRaycaster: (() => any) | null; // TODO: Replace 'any' with specific type
+  public gazeRaycaster: (() => GazeHitData | null) | null;
   public lastInputType: 'none' | 'hand' | 'controller';
   public network: Network;
   public gaze: GazeTracker;
@@ -49,10 +63,10 @@ class C3D {
   public exitpoll: ExitPoll;
   public dynamicObject: DynamicObject;
   public fpsTracker: FPSTracker;
-  public renderer: any; // TODO: Replace 'any' with specific Renderer type
+  public renderer: Renderer | null; 
   public boundaryTracker: BoundaryTracker;
 
-  constructor(settings?: C3DConstructorSettings, renderer: any = null) { // TODO: Replace 'any' with specific Renderer type
+  constructor(settings?: C3DConstructorSettings, renderer: Renderer | null = null) { 
     this.core = coreInstance;
     
     if (settings) { 
@@ -65,7 +79,8 @@ class C3D {
     this.setUserProperty("c3d.version", this.core.config.SDKVersion);  
     this.lastInputType = 'none';
     
-    const self = this as any; // TODO: Replace 'any' with safe 'this' reference
+    // Explicitly cast to unknown first to avoid circular type issues if strictly typed in deps
+    const self = this as unknown as any; 
     
     // @ts-ignore
     this.network = new Network(this.core);
@@ -173,7 +188,6 @@ class C3D {
         console.warn('C3D: Could not start HMD orientation tracking, no reference space available.');
       }
       
-      // @ts-ignore
       const features = getEnabledFeatures(xrSession);
       this.setDeviceProperty("HandTracking", features.handTracking);
       this.setDeviceProperty("EyeTracking", features.eyeTracking);
@@ -212,6 +226,7 @@ class C3D {
         checkInputType(xrSession.inputSources);
 
         xrSession.addEventListener('inputsourceschange', (event: XRInputSourcesChangeEvent) => {            
+            // @ts-ignore
             const xrEvent = event as XRInputSourcesChangeEvent;
             checkInputType(xrEvent.session.inputSources);
             
@@ -253,7 +268,7 @@ class C3D {
           this.xrSessionManager = null;
       }
       
-      const props: any = {}; // TODO: Replace 'any' with specific type
+      const props: Record<string, SessionPropertyValue> = {};
       const endPos = [0, 0, 0];
       const sessionLength = this.core.getTimestamp() - (this.core.sessionTimestamp as number);
       props['sessionlength'] = sessionLength;
@@ -287,8 +302,8 @@ class C3D {
     return this.core.getSceneData(name, id, version);
   }
 
-  config(property: string, value: any): void { // TODO: Replace 'any' with specific type
-    // @ts-ignore
+  config(property: keyof Settings, value: unknown): void { 
+    // @ts-ignore: Dynamic config assignment
     this.core.config[property] = value;
   }
 
@@ -342,9 +357,9 @@ class C3D {
   getSessionTimestamp(): number | string { return this.core.getSessionTimestamp(); }
   getSessionId(): string { return this.core.getSessionId(); }
 
-  getUserProperties(): any { // TODO: Replace 'any' with specific type
+  getUserProperties(): Record<string, SessionPropertyValue> { 
     const allProps = this.core.sessionProperties || {};
-    const userProps: any = {}; // TODO: Replace 'any' with specific type
+    const userProps: Record<string, SessionPropertyValue> = {}; 
     const deviceKeys = new Set(Object.values(this.core.devicePropertyMap));
     deviceKeys.add('c3d.device.name'); 
 
@@ -365,9 +380,9 @@ class C3D {
     return userProps;
   }
 
-  getDeviceProperties(): any { // TODO: Replace 'any' with specific type
+  getDeviceProperties(): Record<string, SessionPropertyValue> { 
     const allProps = this.core.sessionProperties || {};
-    const deviceProps: any = {}; // TODO: Replace 'any' with specific type
+    const deviceProps: Record<string, SessionPropertyValue> = {};
     const deviceKeys = new Set(Object.values(this.core.devicePropertyMap));
     deviceKeys.add('c3d.device.name'); 
 
@@ -381,10 +396,10 @@ class C3D {
 
   set userId(userId: string) { this.core.setUserId = userId; }
   
-  setUserProperty(propertyOrObject: string | object, value?: any): void { // TODO: Replace 'any' with specific type
+  setUserProperty(propertyOrObject: string | Record<string, SessionPropertyValue>, value?: SessionPropertyValue): void {
       if (typeof propertyOrObject === 'object') {
           Object.entries(propertyOrObject).forEach(([key, val]) => this.core.setUserProperty(key, val));
-      } else if (typeof propertyOrObject === 'string') {
+      } else if (typeof propertyOrObject === 'string' && value !== undefined) {
           this.core.setUserProperty(propertyOrObject, value);
       }
   }
@@ -396,23 +411,23 @@ class C3D {
   setLobbyId(id: string): void { this.core.setLobbyId(id); }
   setDeviceName(name: string): void { this.core.setDeviceId = name; this.core.setSessionProperty('c3d.device.name', name); }
 
-  setDeviceProperty(propertyOrObject: string | object, value?: any): void { // TODO: Replace 'any' with specific type
+  setDeviceProperty(propertyOrObject: string | Record<string, SessionPropertyValue>, value?: SessionPropertyValue): void {
       if (typeof propertyOrObject === 'object') {
           Object.entries(propertyOrObject).forEach(([key, val]) => this.core.setDeviceProperty(key, val));
-      } else if (typeof propertyOrObject === 'string') {
+      } else if (typeof propertyOrObject === 'string' && value !== undefined) {
           this.core.setDeviceProperty(propertyOrObject, value);
       }
   }
 
-  setSessionProperty(propertyOrObject: string | object, value?: any): void { // TODO: Replace 'any' with specific type
+  setSessionProperty(propertyOrObject: string | Record<string, SessionPropertyValue>, value?: SessionPropertyValue): void {
     if (typeof propertyOrObject === 'object') {
         Object.entries(propertyOrObject).forEach(([key, val]) => this.core.setSessionProperty(key, val));
-    } else if (typeof propertyOrObject === 'string') {
+    } else if (typeof propertyOrObject === 'string' && value !== undefined) {
         this.core.setSessionProperty(propertyOrObject, value);
     }
   }
-  setParticipantProperty(key: string, value: any): void { this.setSessionProperty('c3d.participant.' + key, value); } // TODO: Replace 'any' with specific type
-  setParticipantProperties(obj: object): void { Object.entries(obj).forEach(([key, value]) => this.setParticipantProperty(key, value)); }
+  setParticipantProperty(key: string, value: SessionPropertyValue): void { this.setSessionProperty('c3d.participant.' + key, value); }
+  setParticipantProperties(obj: Record<string, SessionPropertyValue>): void { Object.entries(obj).forEach(([key, value]) => this.setParticipantProperty(key, value)); }
   setSessionTag(tag: string, value: boolean = true): void { if (typeof tag !== 'string' || tag.length === 0 || tag.length > 12) return; this.setSessionProperty('c3d.sessiontag.' + tag, value); }
   set deviceId(deviceId: string) { this.core.setDeviceId = deviceId; }
   getApiKey(): string { return this.core.getApiKey(); }

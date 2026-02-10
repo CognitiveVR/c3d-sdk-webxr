@@ -3,6 +3,30 @@ import { GLTFExporter, GLTFExporterOptions } from 'three/examples/jsm/exporters/
 // @ts-ignore
 import JSZip from 'jszip';
 import C3D from '../index';
+import { GazeHitData } from '../utils/webxr'; // Assumes GazeHitData is exported from webxr.ts
+
+// Define File System Access API types locally if not available globally
+interface FileSystemFileHandle {
+    createWritable(): Promise<FileSystemWritableFileStream>;
+    getFile(): Promise<File>;
+}
+interface FileSystemWritableFileStream extends WritableStream {
+    write(data: BufferSource | Blob | string): Promise<void>;
+    seek(position: number): Promise<void>;
+    truncate(size: number): Promise<void>;
+    close(): Promise<void>;
+}
+interface FileSystemDirectoryHandle {
+    getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<FileSystemDirectoryHandle>;
+    getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>;
+    requestPermission?(descriptor: { mode: 'read' | 'readwrite' }): Promise<'granted' | 'denied' | 'prompt'>;
+}
+
+// Define minimal GLTF structure for the exporter output
+interface GLTFOutput {
+    buffers?: Array<{ uri?: string }>;
+    [key: string]: unknown;
+}
 
 interface FPSState {
     frameCount: number;
@@ -17,6 +41,11 @@ interface DynamicObjectOptions {
     scaleThreshold?: number;
 }
 
+// Helper interface for extended WebXRManager
+interface ExtendedWebXRManager extends THREE.WebXRManager {
+    getScene?: () => THREE.Scene;
+}
+
 class C3DThreeAdapter {
     private c3d: C3D;
     private _fpsState: FPSState = {
@@ -25,7 +54,7 @@ class C3DThreeAdapter {
         lastTime: performance.now(),
         frameTimes: []
     };
-    private exportDirHandle: any = null; // TODO: Replace 'any' with FileSystemDirectoryHandle type
+    private exportDirHandle: FileSystemDirectoryHandle | null = null;
     private _interactableObjects: THREE.Object3D[] = [];  // Dedicated registry for dynamic objects
 
     // Object Pooling for GC optimization
@@ -77,7 +106,7 @@ class C3DThreeAdapter {
         root.traverse((child) => {
             // Check if this object is marked for tracking
             if (child.userData && child.userData.c3dId) {
-                // Store the REFERENCE
+                // Store the REFERENCE, do not change the parent
                 this._interactableObjects.push(child);
                 
                 // Optional: Automatically start tracking dynamic transforms if needed
@@ -96,6 +125,7 @@ class C3DThreeAdapter {
 
     /**
      * Initializes the tracking systems (Gaze, Dynamic Objects, FPS).
+     * NOTE: This no longer takes control of the render loop. 
      * You MUST call c3dAdapter.update() in your own render loop.
      */
     public startTracking(
@@ -147,7 +177,7 @@ class C3DThreeAdapter {
      * @param timestamp Optional timestamp from requestAnimationFrame/WebXR
      * @param frame Optional XRFrame from WebXR
      */
-    public update(timestamp?: number, frame?: any): void {
+    public update(timestamp?: number, frame?: XRFrame): void {
         this._updateFPS();
         this.updateTrackedObjectTransforms();
     }
@@ -210,7 +240,7 @@ class C3DThreeAdapter {
     private _setupGazeRaycasting(camera: THREE.Camera): void {
         const raycaster = new THREE.Raycaster();
         raycaster.far = 1000;
-        this.c3d.gazeRaycaster = () => {
+        this.c3d.gazeRaycaster = (): GazeHitData | null => {
             // Use new THREE.Vector2(0, 0) instead of plain object
             raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
             
@@ -301,13 +331,13 @@ class C3DThreeAdapter {
         }
     }
 
-    async _ensureExportDir(): Promise<any> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
+    async _ensureExportDir(): Promise<FileSystemDirectoryHandle | null> {
         if (this.exportDirHandle) return this.exportDirHandle;
         // @ts-ignore
         if (!window.showDirectoryPicker) return null;
         try {
             // @ts-ignore
-            const root = await window.showDirectoryPicker();
+            const root: FileSystemDirectoryHandle = await window.showDirectoryPicker();
             const sceneDir = await root.getDirectoryHandle("scene", { create: true });
             const perm = await sceneDir.requestPermission?.({ mode: "readwrite" });
             if (perm && perm !== "granted") throw new Error("Write permission denied");
@@ -319,7 +349,7 @@ class C3DThreeAdapter {
         }
     }
 
-    async _writeFile(dirHandle: any, filename: string, blob: Blob): Promise<void> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
+    async _writeFile(dirHandle: FileSystemDirectoryHandle, filename: string, blob: Blob): Promise<void> {
         const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(blob);
@@ -358,7 +388,8 @@ class C3DThreeAdapter {
 
         exporter.parse(
             exportRoot,
-            async (gltf: any) => { // TODO: Replace 'any' with specific type
+            async (gltfInput: unknown) => {
+                const gltf = gltfInput as GLTFOutput;
                 const dir = await this._ensureExportDir();
 
                 const prefix = "data:application/octet-stream;base64,";
@@ -370,7 +401,9 @@ class C3DThreeAdapter {
                     const bytes = new Uint8Array(raw.length);
                     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
                     binBlob = new Blob([bytes.buffer], { type: "application/octet-stream" });
-                    gltf.buffers[0].uri = "scene.bin";
+                    if (gltf.buffers && gltf.buffers[0]) {
+                        gltf.buffers[0].uri = "scene.bin";
+                    }
                 }
 
                 const gltfBlob = new Blob([JSON.stringify(gltf, null, 2)], { type: "model/gltf+json" });
@@ -409,13 +442,14 @@ class C3DThreeAdapter {
     }
 
     public async exportObject(objectToExport: THREE.Object3D, objectName: string, renderer: THREE.WebGLRenderer, camera: THREE.Camera): Promise<void> {
-        const originalScene = renderer.xr.isPresenting ? (renderer.xr as any).getScene?.() : camera.parent; 
+        const xrManager = renderer.xr as ExtendedWebXRManager;
+        const originalScene = xrManager.isPresenting ? xrManager.getScene?.() : camera.parent; 
         const tempScene = new THREE.Scene();
         tempScene.background = new THREE.Color(0xe0e0e0);
         const tempLight = new THREE.AmbientLight(0xffffff, 3.0);
         tempScene.add(tempLight);
 
-        // 1. Screenshot Setup: Attempt to center a clone for the thumbnail
+        // 1. Screenshot Setup: Center a clone for the thumbnail
         const objectClone = objectToExport.clone();
         const box = new THREE.Box3().setFromObject(objectClone);
         const center = box.getCenter(new THREE.Vector3());
@@ -445,7 +479,8 @@ class C3DThreeAdapter {
         // This prevents creating an extra "ExportRoot" node in the GLTF.
         exporter.parse(
             gltfClone,
-            async (gltf: any) => { 
+            async (gltfInput: unknown) => { 
+                const gltf = gltfInput as GLTFOutput;
                 const dir = await this._ensureExportDir();
                 const prefix = "data:application/octet-stream;base64,";
                 const uri = gltf.buffers?.[0]?.uri || "";
@@ -457,7 +492,9 @@ class C3DThreeAdapter {
                     const bytes = new Uint8Array(raw.length);
                     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
                     binBlob = new Blob([bytes.buffer], { type: "application/octet-stream" });
-                    gltf.buffers[0].uri = `${objectName}.bin`;
+                    if (gltf.buffers && gltf.buffers[0]) {
+                        gltf.buffers[0].uri = `${objectName}.bin`;
+                    }
                 }
 
                 const gltfBlob = new Blob([JSON.stringify(gltf, null, 2)], { type: "model/gltf+json" });

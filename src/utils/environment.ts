@@ -1,9 +1,18 @@
 import crossFetch from 'cross-fetch';
 
+interface UADataValues {
+    platform: string;
+    platformVersion: string;
+    architecture?: string;
+    model?: string;
+    uaFullVersion?: string;
+    [key: string]: string | undefined;
+}
+
 interface NavigatorUAData {
     mobile: boolean;
     brands: Array<{ brand: string; version: string }>;
-    getHighEntropyValues(_hints: string[]): Promise<{ platform: string; platformVersion: string; [key: string]: any }>; // TODO: Replace 'any' with specific type
+    getHighEntropyValues(_hints: string[]): Promise<UADataValues>;
 }
 
 interface ExtendedNavigator extends Navigator {
@@ -89,7 +98,6 @@ export const getSystemInfo = async (): Promise<SystemInfo> => {
 
 export interface GPUInfo { vendor: string; renderer: string; }
 
-// REFACTORED: Reduced complexity
 export const getGPUInfo = (): GPUInfo | null => {
     if (!isBrowser) return null;
     try {

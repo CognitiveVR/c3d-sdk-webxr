@@ -58,7 +58,7 @@ class FPSTracker {
 
       if (this.elapsedTime >= this.samplePeriod) {
         // Average FPS 
-        const averageFps = (this.frameCount / this.elapsedTime) * 1000;
+        let averageFps = (this.frameCount / this.elapsedTime) * 1000;
 
         // 1%L FPS
         let onePercentLowFps = averageFps; 
@@ -67,7 +67,7 @@ class FPSTracker {
             const onePercentCount = Math.ceil(this.deltaTimes.length * 0.01);
             const slowestFrames = this.deltaTimes.slice(0, onePercentCount);
             const averageSlowestTime = slowestFrames.reduce((a, b) => a + b, 0) / slowestFrames.length;
-            onePercentLowFps = 1000 / averageSlowestTime;
+            onePercentLowFps = averageSlowestTime > 0 ? 1000 / averageSlowestTime : averageFps;
         }
 
         // Call the callback with a metrics object (using stored property)

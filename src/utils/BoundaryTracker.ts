@@ -1,15 +1,17 @@
 import { isBrowser } from './environment';
+import { SessionPropertyValue } from '../core';
+import { XRSessionManager } from './webxr';
 
 // Local interface to define the shape of the C3D instance this class interacts with
 interface C3DInstance {
     customEvent: {
-        send: (_name: string, position: number[], properties?: any) => void; // TODO: Replace 'any' with specific type
+        send: (_name: string, position: number[], properties?: Record<string, SessionPropertyValue>) => void;
     };
     sensor: {
-        recordSensor: (name: string, value: any) => void; // TODO: Replace 'any' with specific type
+        recordSensor: (name: string, value: number | string) => void;
     };
-    setSessionProperty: (_key: string, value: any) => void; // TODO: Replace 'any' with specific type
-    xrSessionManager: any; // TODO: Replace 'any' with XRSessionManager type
+    setSessionProperty: (_key: string, value: SessionPropertyValue) => void;
+    xrSessionManager: XRSessionManager;
 }
 
 class BoundaryTracker {
@@ -50,7 +52,8 @@ class BoundaryTracker {
         this.referenceSpace = referenceSpace;
 
         // Check if boundsGeometry exists (standard in Bounded Reference Spaces)
-        const boundsGeometry = (referenceSpace as any).boundsGeometry as DOMPointReadOnly[]; // TODO: Replace 'any' with updated WebXR types
+        // @ts-ignore: boundsGeometry is standard on XRReferenceSpace but might be missing in some type defs
+        const boundsGeometry = referenceSpace.boundsGeometry as DOMPointReadOnly[];
 
         if (boundsGeometry && boundsGeometry.length > 0) {
             this.boundaryType = "Room Scale";
@@ -98,7 +101,8 @@ class BoundaryTracker {
             return;
         }
 
-        const boundsGeometry = (this.referenceSpace as any).boundsGeometry as DOMPointReadOnly[]; // TODO: Replace 'any'
+        // @ts-ignore
+        const boundsGeometry = this.referenceSpace.boundsGeometry as DOMPointReadOnly[];
 
         // Only do boundary change and user position exit detection if Room Scale
         if (this.boundaryType === "Room Scale" && boundsGeometry && boundsGeometry.length > 0) {
@@ -167,7 +171,7 @@ class BoundaryTracker {
         this.previousRoomSize = newRoomSize;
     }
 
-    private _hasBoundaryChanged(newPoints: any): boolean { // TODO: Replace 'any' with DOMPointReadOnly[]
+    private _hasBoundaryChanged(newPoints: DOMPointReadOnly[]): boolean {
         // Simple length check
         if (this.previousBoundaryPoints.length !== newPoints.length) return true;
         if (newPoints.length === 0) return false;

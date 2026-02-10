@@ -30,21 +30,20 @@ function quaternionToEulerYXZ(q: Quaternion): Euler {
     const { x, y, z, w } = q;
     const euler = { x: 0, y: 0, z: 0 };
 
-    const sinX = 2 * (w * x - y * z);     // sin(pitch)
-
-    // Handle gimbal lock 
+    // Calculate pitch (x-axis rotation)
+    const sinX = 2 * (w * x - y * z); 
     if (Math.abs(sinX) >= 1) {
-        euler.x = Math.sign(sinX) * Math.PI / 2;
+        euler.x = Math.sign(sinX) * Math.PI / 2; // Use 90 degrees if out of range
     } else {
         euler.x = Math.asin(sinX);
     }
 
-    // yaw
+    // Calculate yaw (y-axis rotation)
     const sinY_cosX = 2 * (w * y + z * x);
     const cosY_cosX = 1 - 2 * (x * x + y * y);
     euler.y = Math.atan2(sinY_cosX, cosY_cosX);
 
-    // roll
+    // Calculate roll (z-axis rotation)
     const sinZ_cosX = 2 * (w * z + x * y);
     const cosZ_cosX = 1 - 2 * (z * z + x * x);
     euler.z = Math.atan2(sinZ_cosX, cosZ_cosX);
@@ -104,6 +103,9 @@ class HMDOrientationTracker {
             clearInterval(this.intervalId);
             this.intervalId = null;
         }
+        this.xrSession = null;
+        this.referenceSpace = null;
+        this.callback = null;
     }
 
     processPose(pose: XRViewerPose): void {
