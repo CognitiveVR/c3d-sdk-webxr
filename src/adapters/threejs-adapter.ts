@@ -33,6 +33,16 @@ class C3DThreeAdapter {
     private _tempQuat = new THREE.Quaternion();
     private _tempScale = new THREE.Vector3();
 
+    // Helper to log object hierarchy recursively for during object export debugging 
+    private _logHierarchy(obj: THREE.Object3D, depth = 0): void {
+        const indent = "  ".repeat(depth);
+        const info = `Type: ${obj.type}, Name: "${obj.name}"`;
+        console.log(`${indent}- ${info}`);
+        if (obj.children) {
+            obj.children.forEach(child => this._logHierarchy(child, depth + 1));
+        }
+    }
+
     constructor(c3dInstance: C3D) {
         if (!c3dInstance) {
             throw new Error("A C3D instance must be provided to the Three.js adapter.");
@@ -67,7 +77,7 @@ class C3DThreeAdapter {
         root.traverse((child) => {
             // Check if this object is marked for tracking
             if (child.userData && child.userData.c3dId) {
-                // Store the REFERENCE, do not change the parent
+                // Store the REFERENCE
                 this._interactableObjects.push(child);
                 
                 // Optional: Automatically start tracking dynamic transforms if needed
@@ -86,7 +96,6 @@ class C3DThreeAdapter {
 
     /**
      * Initializes the tracking systems (Gaze, Dynamic Objects, FPS).
-     * NOTE: This no longer takes control of the render loop. 
      * You MUST call c3dAdapter.update() in your own render loop.
      */
     public startTracking(
@@ -400,16 +409,17 @@ class C3DThreeAdapter {
     }
 
     public async exportObject(objectToExport: THREE.Object3D, objectName: string, renderer: THREE.WebGLRenderer, camera: THREE.Camera): Promise<void> {
-        const originalScene = renderer.xr.isPresenting ? (renderer.xr as any).getScene?.() : camera.parent; // TODO: Replace 'any' with specific type
+        const originalScene = renderer.xr.isPresenting ? (renderer.xr as any).getScene?.() : camera.parent; 
         const tempScene = new THREE.Scene();
         tempScene.background = new THREE.Color(0xe0e0e0);
         const tempLight = new THREE.AmbientLight(0xffffff, 3.0);
         tempScene.add(tempLight);
 
+        // 1. Screenshot Setup: Attempt to center a clone for the thumbnail
         const objectClone = objectToExport.clone();
         const box = new THREE.Box3().setFromObject(objectClone);
         const center = box.getCenter(new THREE.Vector3());
-        objectClone.position.sub(center);
+        objectClone.position.sub(center); 
         tempScene.add(objectClone);
 
         renderer.render(tempScene, camera);
@@ -420,13 +430,22 @@ class C3DThreeAdapter {
             renderer.render(originalScene, camera);
         }
 
+        // 2. Export Setup: NO PARENT WRAPPER
         const exporter = new GLTFExporter();
-        const exportRoot = new THREE.Group();
-        exportRoot.add(objectToExport.clone());
+        
+        // Clone the object one last time to ensure we aren't modifying the input 
+        // and to serve as the root of the export.
+        const gltfClone = objectToExport.clone();
 
+        // Log the structure to confirm it is just the mesh (e.g., "Basketball")
+        console.log(`[Cognitive3D] Structure being exported for "${objectName}":`);
+        this._logHierarchy(gltfClone);
+
+        // Pass gltfClone DIRECTLY to parse. 
+        // This prevents creating an extra "ExportRoot" node in the GLTF.
         exporter.parse(
-            exportRoot,
-            async (gltf: any) => { // TODO: Replace 'any' with specific type
+            gltfClone,
+            async (gltf: any) => { 
                 const dir = await this._ensureExportDir();
                 const prefix = "data:application/octet-stream;base64,";
                 const uri = gltf.buffers?.[0]?.uri || "";
