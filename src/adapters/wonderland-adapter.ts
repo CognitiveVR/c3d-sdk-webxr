@@ -8,80 +8,6 @@ const COMPONENT_TYPE = { UNSIGNED_SHORT: 5123, UNSIGNED_INT: 5125, FLOAT: 5126 }
 const TARGET = { ARRAY_BUFFER: 34962, ELEMENT_ARRAY_BUFFER: 34963 };
 const SDK_VERSION = __SDK_VERSION__;
 
-// --- Wonderland Engine Interfaces ---
-interface WLEMeshAttributeAccessor {
-    get(index: number, out: vec3 | number[] | Float32Array | any): void;
-}
-
-interface WLEMesh {
-    indexData: number[] | Uint16Array | Uint32Array;
-    vertexCount: number;
-    attribute(attr: string | number): WLEMeshAttributeAccessor | null;
-}
-
-// Minimal interface for a generic component in WLE
-interface WLEComponent {
-    type: string;
-    active: boolean;
-}
-
-// Specific interface for MeshComponent
-interface WLEMeshComponent extends WLEComponent {
-    mesh: WLEMesh | null;
-}
-
-// Interface for c3d-analytics-component
-interface C3DAnalyticsComponent extends WLEComponent {
-    c3dId?: string;
-}
-
-interface WLEObject {
-    name: string;
-    children: WLEObject[];
-    parent: WLEObject | null;
-    getTranslationWorld(out: number[]): number[];
-    getRotationWorld(out: number[]): number[];
-    getPositionLocal(out: number[]): number[];
-    getRotationLocal(out: number[]): number[];
-    getScalingLocal(out: number[]): number[];
-    getComponent(type: string | any): C3DAnalyticsComponent | null;
-    getComponents(type: string | any): WLEMeshComponent[]; 
-    findByName(name: string): WLEObject[];
-}
-
-interface WLEView {
-    object: WLEObject;
-}
-
-interface WLEScene extends WLEObject {
-    activeViews: WLEView[];
-    onPostRender: {
-        add: (callback: () => void) => void;
-        remove: (callback: () => void) => void;
-    };
-}
-
-interface WonderlandEngine {
-    runtimeVersion: { major: number; minor: number; patch: number };
-    scene: WLEScene;
-    canvas: HTMLCanvasElement;
-}
-
-// --- File System Access Types ---
-interface FileSystemFileHandle {
-    createWritable(): Promise<FileSystemWritableFileStream>;
-}
-interface FileSystemWritableFileStream extends WritableStream {
-    write(data: BufferSource | Blob | string): Promise<void>;
-    close(): Promise<void>;
-}
-interface FileSystemDirectoryHandle {
-    name: string;
-    getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<FileSystemDirectoryHandle>;
-    getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>;
-    requestPermission?(descriptor: { mode: 'read' | 'readwrite' }): Promise<'granted' | 'denied' | 'prompt'>;
-}
-
 // --- GLTF Helper Types ---
 interface MeshData {
     positions: number[];
@@ -105,10 +31,12 @@ interface GLTFJson {
 
 class C3DWonderlandAdapter {
     private c3d: C3D;
-    private WL: WonderlandEngine; 
-    private exportDirHandle: FileSystemDirectoryHandle | null = null; 
+    // Avoids maintaining brittle definitions for the engine
+    private WL: any; 
+    // Used to avoid TS errors in environments without FileSystem API types
+    private exportDirHandle: any = null; 
 
-    constructor(c3dInstance: C3D, wonderlandEngineInstance: WonderlandEngine) { 
+    constructor(c3dInstance: C3D, wonderlandEngineInstance: any) { 
         if (!c3dInstance) throw new Error("A C3D instance must be provided.");
         if (!wonderlandEngineInstance) throw new Error("The Wonderland Engine instance (WL) must be provided.");
         this.c3d = c3dInstance;
@@ -163,7 +91,7 @@ class C3DWonderlandAdapter {
         });
     }
 
-    async _ensureExportDir(): Promise<FileSystemDirectoryHandle | null> {
+    async _ensureExportDir(): Promise<any> {
         if (this.exportDirHandle) return this.exportDirHandle;
         // @ts-ignore
         if (!window.showDirectoryPicker) return null;
@@ -180,7 +108,7 @@ class C3DWonderlandAdapter {
         }
     }
 
-    async _writeFile(dirHandle: FileSystemDirectoryHandle, filename: string, content: Blob | ArrayBuffer): Promise<void> { 
+    async _writeFile(dirHandle: any, filename: string, content: Blob | ArrayBuffer): Promise<void> { 
         if (!content) return;
         const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
@@ -199,7 +127,7 @@ class C3DWonderlandAdapter {
         setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
     }
 
-    async _performExport(rootObject: WLEObject, sceneName: string, scale: number, filterDynamic: boolean): Promise<void> { 
+    async _performExport(rootObject: any, sceneName: string, scale: number, filterDynamic: boolean): Promise<void> { 
         console.log("Cognitive3D: Generating geometry...");
         const binFilename = "scene.bin";
         const {json, binaryBuffer} = this._createGltfData(rootObject, scale, binFilename, filterDynamic);
@@ -235,7 +163,7 @@ class C3DWonderlandAdapter {
         }
     }
 
-    _createGltfData(wleObject: WLEObject, scale: number, binFilename: string, filterDynamic: boolean): { json: GLTFJson | null, binaryBuffer: ArrayBuffer } { 
+    _createGltfData(wleObject: any, scale: number, binFilename: string, filterDynamic: boolean): { json: GLTFJson | null, binaryBuffer: ArrayBuffer } { 
         const meshData: MeshData = { positions: [], normals: [], uvs: [], indices: [], hasNormals: false, hasUvs: false }; 
         const minBounds = [Infinity, Infinity, Infinity];
         const maxBounds = [-Infinity, -Infinity, -Infinity];
@@ -308,7 +236,7 @@ class C3DWonderlandAdapter {
         return {json, binaryBuffer};
     }
 
-    _collectAndTransformMeshData(wleObject: WLEObject, parentMatrix: mat4 | any, data: MeshData, indexOffset: number, min: number[], max: number[], filterDynamic: boolean): number { 
+    _collectAndTransformMeshData(wleObject: any, parentMatrix: any, data: MeshData, indexOffset: number, min: number[], max: number[], filterDynamic: boolean): number { 
         if (typeof wleObject.getComponent !== 'function') {
             const children = wleObject.children || [];
             for (let i = 0; i < children.length; i++) {
@@ -391,9 +319,8 @@ class C3DWonderlandAdapter {
         return indexOffset;
     }
 
-    public async exportScene(sceneName: string, scale: number = 1.0, rootObjectOrName: WLEObject | string | null = null): Promise<void> { 
-        // FIX 4: Explicitly type rootObject as the base WLEObject, allowing both WLEScene and child WLEObjects to be assigned.
-        let rootObject: WLEObject = this.WL.scene;
+    public async exportScene(sceneName: string, scale: number = 1.0, rootObjectOrName: any = null): Promise<void> { 
+        let rootObject: any = this.WL.scene;
 
         if (rootObjectOrName) {
             if (typeof rootObjectOrName === 'string') {
@@ -406,7 +333,7 @@ class C3DWonderlandAdapter {
                    rootObject = this.WL.scene.children[0]?.parent || this.WL.scene;
                 }
             } else {
-                rootObject = rootObjectOrName as WLEObject;
+                rootObject = rootObjectOrName;
                 console.log(`Cognitive3D: Using custom export root object: "${rootObject.name}"`);
             }
         } else {

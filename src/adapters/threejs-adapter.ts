@@ -5,29 +5,6 @@ import JSZip from 'jszip';
 import C3D from '../index';
 import { GazeHitData } from '../utils/webxr'; // Assumes GazeHitData is exported from webxr.ts
 
-// Define File System Access API types locally if not available globally
-interface FileSystemFileHandle {
-    createWritable(): Promise<FileSystemWritableFileStream>;
-    getFile(): Promise<File>;
-}
-interface FileSystemWritableFileStream extends WritableStream {
-    write(data: BufferSource | Blob | string): Promise<void>;
-    seek(position: number): Promise<void>;
-    truncate(size: number): Promise<void>;
-    close(): Promise<void>;
-}
-interface FileSystemDirectoryHandle {
-    getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<FileSystemDirectoryHandle>;
-    getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>;
-    requestPermission?(descriptor: { mode: 'read' | 'readwrite' }): Promise<'granted' | 'denied' | 'prompt'>;
-}
-
-// Define minimal GLTF structure for the exporter output
-interface GLTFOutput {
-    buffers?: Array<{ uri?: string }>;
-    [key: string]: unknown;
-}
-
 interface FPSState {
     frameCount: number;
     timeAccumulator: number;
@@ -54,8 +31,9 @@ class C3DThreeAdapter {
         lastTime: performance.now(),
         frameTimes: []
     };
-    private exportDirHandle: FileSystemDirectoryHandle | null = null;
-    private _interactableObjects: THREE.Object3D[] = [];  // Dedicated registry for dynamic objects
+    // Used to avoid TS errors in environments without FileSystem API types
+    private exportDirHandle: any = null; 
+    private _interactableObjects: THREE.Object3D[] = [];  
 
     // Object Pooling for GC optimization
     private _tempVec = new THREE.Vector3();
@@ -77,7 +55,6 @@ class C3DThreeAdapter {
             throw new Error("A C3D instance must be provided to the Three.js adapter.");
         }
         this.c3d = c3dInstance;
-        // _fpsState is already initialized above
 
         this.c3d.setDeviceProperty('AppEngine', 'Three.js');
         this.c3d.setDeviceProperty('AppEngineVersion', THREE.REVISION);
@@ -100,16 +77,13 @@ class C3DThreeAdapter {
 
         this.c3d.gaze.recordGaze(position, rotation, gaze);
     }
-
     //  Helper function for recursively finding dynamic interactable objects in a three.scene or three.group
     private _scanForInteractables(root: THREE.Object3D): void {
         root.traverse((child) => {
-            // Check if this object is marked for tracking
+            
             if (child.userData && child.userData.c3dId) {
-                // Store the REFERENCE, do not change the parent
                 this._interactableObjects.push(child);
                 
-                // Optional: Automatically start tracking dynamic transforms if needed
                 if (child.userData.isDynamic) {
                      const options: DynamicObjectOptions = {
                         positionThreshold: child.userData.positionThreshold,
@@ -125,7 +99,6 @@ class C3DThreeAdapter {
 
     /**
      * Initializes the tracking systems (Gaze, Dynamic Objects, FPS).
-     * NOTE: This no longer takes control of the render loop. 
      * You MUST call c3dAdapter.update() in your own render loop.
      */
     public startTracking(
@@ -139,14 +112,12 @@ class C3DThreeAdapter {
             return;
         }
 
-        // 1. Stop default tracker
         if (this.c3d.fpsTracker) {
             this.c3d.fpsTracker.stop();
             console.log("Cognitive3D: Stopped default FPS tracker in favor of XR-synced tracking.");
         }
 
-        // 2. Setup Dynamic Objects & Gaze
-        // Clear previous list
+        // Setup Dynamic Objects & Gaze, Clear previous list
         this._interactableObjects = [];
 
         if (trackableTarget) {
@@ -160,12 +131,10 @@ class C3DThreeAdapter {
 
             console.log(`Cognitive3D: Tracking ${this._interactableObjects.length} objects.`);
             
-            // Setup Raycaster with the new list (no longer passing a specific group)
             this._setupGazeRaycasting(camera);
             console.log('Cognitive3D: Gaze raycasting enabled.');
         }
 
-        // 3. Initialize FPS State (Reset)
         this._initFPSState();
 
         console.log('Cognitive3D: Adapter initialized. Please ensure you call c3dAdapter.update() within your render loop.');
@@ -195,7 +164,6 @@ class C3DThreeAdapter {
         const now = performance.now();
         let delta = (now - this._fpsState.lastTime) / 1000; // delta in seconds
 
-        // Ignore massive jumps (session paused/resumed)
         if (delta > 1.0) delta = 0;
 
         this._fpsState.lastTime = now;
@@ -203,11 +171,9 @@ class C3DThreeAdapter {
         this._fpsState.frameCount++;
         this._fpsState.frameTimes.push(delta);
 
-        // Report every 1 second
         if (this._fpsState.timeAccumulator >= 1.0) {
             this._sendFPSData();
 
-            // Reset counters for next interval
             this._fpsState.frameCount = 0;
             this._fpsState.timeAccumulator = 0;
             this._fpsState.frameTimes = [];
@@ -241,7 +207,6 @@ class C3DThreeAdapter {
         const raycaster = new THREE.Raycaster();
         raycaster.far = 1000;
         this.c3d.gazeRaycaster = (): GazeHitData | null => {
-            // Use new THREE.Vector2(0, 0) instead of plain object
             raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
             
             // Intersect against the cached array, NOT a specific group
@@ -331,13 +296,13 @@ class C3DThreeAdapter {
         }
     }
 
-    async _ensureExportDir(): Promise<FileSystemDirectoryHandle | null> {
+    async _ensureExportDir(): Promise<any> {
         if (this.exportDirHandle) return this.exportDirHandle;
         // @ts-ignore
         if (!window.showDirectoryPicker) return null;
         try {
             // @ts-ignore
-            const root: FileSystemDirectoryHandle = await window.showDirectoryPicker();
+            const root = await window.showDirectoryPicker();
             const sceneDir = await root.getDirectoryHandle("scene", { create: true });
             const perm = await sceneDir.requestPermission?.({ mode: "readwrite" });
             if (perm && perm !== "granted") throw new Error("Write permission denied");
@@ -349,7 +314,7 @@ class C3DThreeAdapter {
         }
     }
 
-    async _writeFile(dirHandle: FileSystemDirectoryHandle, filename: string, blob: Blob): Promise<void> {
+    async _writeFile(dirHandle: any, filename: string, blob: Blob): Promise<void> {
         const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(blob);
@@ -388,8 +353,8 @@ class C3DThreeAdapter {
 
         exporter.parse(
             exportRoot,
-            async (gltfInput: unknown) => {
-                const gltf = gltfInput as GLTFOutput;
+            async (gltfInput: any) => {
+                const gltf = gltfInput;
                 const dir = await this._ensureExportDir();
 
                 const prefix = "data:application/octet-stream;base64,";
@@ -449,7 +414,6 @@ class C3DThreeAdapter {
         const tempLight = new THREE.AmbientLight(0xffffff, 3.0);
         tempScene.add(tempLight);
 
-        // 1. Screenshot Setup: Center a clone for the thumbnail
         const objectClone = objectToExport.clone();
         const box = new THREE.Box3().setFromObject(objectClone);
         const center = box.getCenter(new THREE.Vector3());
@@ -464,23 +428,17 @@ class C3DThreeAdapter {
             renderer.render(originalScene, camera);
         }
 
-        // 2. Export Setup: NO PARENT WRAPPER
         const exporter = new GLTFExporter();
         
-        // Clone the object one last time to ensure we aren't modifying the input 
-        // and to serve as the root of the export.
         const gltfClone = objectToExport.clone();
 
-        // Log the structure to confirm it is just the mesh (e.g., "Basketball")
         console.log(`[Cognitive3D] Structure being exported for "${objectName}":`);
         this._logHierarchy(gltfClone);
 
-        // Pass gltfClone DIRECTLY to parse. 
-        // This prevents creating an extra "ExportRoot" node in the GLTF.
         exporter.parse(
             gltfClone,
-            async (gltfInput: unknown) => { 
-                const gltf = gltfInput as GLTFOutput;
+            async (gltfInput: any) => { 
+                const gltf = gltfInput;
                 const dir = await this._ensureExportDir();
                 const prefix = "data:application/octet-stream;base64,";
                 const uri = gltf.buffers?.[0]?.uri || "";

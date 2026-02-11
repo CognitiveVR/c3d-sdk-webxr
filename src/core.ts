@@ -5,11 +5,9 @@ export interface DevicePropertyMap {
     [key: string]: string;
 }
 
-// Define specific allowed types for session properties
-export type SessionPropertyValue = string | number | boolean;
-
+// Allows complex objects/metadata without strict type friction
 export interface SessionProperties {
-    [key: string]: SessionPropertyValue;
+    [key: string]: any;
 }
 
 export class CognitiveVRAnalyticsCore {
@@ -145,18 +143,18 @@ export class CognitiveVRAnalyticsCore {
         this.sessionTimestamp = value;
     }
 
-    setUserProperty(key: string, value: SessionPropertyValue): void {
+    setUserProperty(key: string, value: any): void {
         this.sessionProperties = this.sessionProperties || {};
         this.sessionProperties[key] = value;
     }
 
-    setDeviceProperty(key: string, value: SessionPropertyValue): void {
+    setDeviceProperty(key: string, value: any): void {
         this.sessionProperties = this.sessionProperties || {};
         const mappedKey = this.devicePropertyMap[key] || key;
         this.sessionProperties[mappedKey] = value;
     }
 
-    setSessionProperty(key: string, value: SessionPropertyValue): void {
+    setSessionProperty(key: string, value: any): void {
         this.sessionProperties = this.sessionProperties || {};
         this.sessionProperties[key] = value;
     }
@@ -165,7 +163,7 @@ export class CognitiveVRAnalyticsCore {
         return this.config.APIKey;
     }
 
-    devicePropertyString(property: string, value: SessionPropertyValue): string {
+    devicePropertyString(property: string, value: any): string {
         return this.devicePropertyMap[property] ? this.devicePropertyMap[property] : "unknown.property";
     }
 
