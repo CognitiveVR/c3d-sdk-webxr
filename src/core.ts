@@ -5,9 +5,12 @@ export interface DevicePropertyMap {
     [key: string]: string;
 }
 
-// Allows complex objects/metadata without strict type friction
+// RESTORED: Export this type as 'any' to fix build errors in files that import it (e.g. customevent.ts)
+// This maintains the flexibility to pass complex objects (Mattercraft) while satisfying the import requirements.
+export type SessionPropertyValue = any;
+
 export interface SessionProperties {
-    [key: string]: any;
+    [key: string]: SessionPropertyValue;
 }
 
 export class CognitiveVRAnalyticsCore {
@@ -143,18 +146,18 @@ export class CognitiveVRAnalyticsCore {
         this.sessionTimestamp = value;
     }
 
-    setUserProperty(key: string, value: any): void {
+    setUserProperty(key: string, value: SessionPropertyValue): void {
         this.sessionProperties = this.sessionProperties || {};
         this.sessionProperties[key] = value;
     }
 
-    setDeviceProperty(key: string, value: any): void {
+    setDeviceProperty(key: string, value: SessionPropertyValue): void {
         this.sessionProperties = this.sessionProperties || {};
         const mappedKey = this.devicePropertyMap[key] || key;
         this.sessionProperties[mappedKey] = value;
     }
 
-    setSessionProperty(key: string, value: any): void {
+    setSessionProperty(key: string, value: SessionPropertyValue): void {
         this.sessionProperties = this.sessionProperties || {};
         this.sessionProperties[key] = value;
     }
@@ -163,7 +166,7 @@ export class CognitiveVRAnalyticsCore {
         return this.config.APIKey;
     }
 
-    devicePropertyString(property: string, value: any): string {
+    devicePropertyString(property: string, value: SessionPropertyValue): string {
         return this.devicePropertyMap[property] ? this.devicePropertyMap[property] : "unknown.property";
     }
 
