@@ -69,11 +69,11 @@ export class CognitiveVRAnalyticsCore {
         };
     }
 
-    getSessionTimestamp(): number | string {
+    getSessionTimestamp(): number{
         if (!this.sessionTimestamp) {
             this.sessionTimestamp = Math.floor(this.getTimestamp());
         }
-        return this.sessionTimestamp;
+        return this.sessionTimestamp as number;
     }
 
     getCurrentScene(): SceneConfig {

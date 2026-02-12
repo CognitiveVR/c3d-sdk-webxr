@@ -25,7 +25,6 @@ export interface EngagementEvent {
     endTime?: number;
 }
 
-// New Interface for the engagement data sent to server
 interface EngagementPayload {
     engagementtype: string;
     engagementparent: string | null;
@@ -33,7 +32,6 @@ interface EngagementPayload {
     engagement_time: number | undefined;
 }
 
-// New Interface for the full network payload
 interface DynamicsPayload {
     userid: string;
     timestamp: number;
@@ -56,7 +54,7 @@ export interface SnapshotPayload {
     r: number[];
     s?: number[];
     engagements?: EngagementPayload[];
-    properties?: Record<string, unknown>;
+    properties?: any; 
 }
 
 export interface Snapshot {
@@ -65,7 +63,7 @@ export interface Snapshot {
     time: number;
     id: string;
     scale?: number[] | null;
-    properties?: Record<string, unknown>;
+    properties?: any; 
     engagements?: EngagementPayload[];
 }
 
@@ -124,7 +122,7 @@ class DynamicObject {
         let dome = this.dynamicObjectManifestEntry(registerId.id, name, meshname, finalFileType);
         this.manifestEntries.push(dome);
         this.fullManifest.push(dome);
-        let props = { "enabled": true };
+        let props = [{ "enabled": true }]; 
 
         this.addSnapshot(customid, position, rotation, null, props);
 
@@ -143,7 +141,7 @@ class DynamicObject {
         this.manifestEntries.push(dome);
         this.fullManifest.push(dome);
         
-        let props = { "enabled": true };
+        let props = [{ "enabled": true }];
         this.addSnapshot(newObjectId.id, position, rotation, null, props);
 
         if (this.core.isSessionActive && (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit)) {
@@ -165,7 +163,7 @@ class DynamicObject {
         });
     }
 
-    addSnapshot(objectId: string, position: number[], rotation: number[], scale?: number[] | null, properties?: Record<string, unknown>): void {
+    addSnapshot(objectId: string, position: number[], rotation: number[], scale?: number[] | null, properties?: any): void {
         let foundId = this.objectIds.some(element => objectId === element.id);
         if (!foundId) {
             console.warn("DynamicObject::Snapshot cannot find objectId " + objectId + " in full manifest. Did you Register this object?");
@@ -273,7 +271,7 @@ class DynamicObject {
         return data;
     }
 
-    dynamicObjectSnapshot(position: number[], rotation: number[], objectId: string, scale?: number[] | null, properties?: Record<string, unknown>): Snapshot {
+    dynamicObjectSnapshot(position: number[], rotation: number[], objectId: string, scale?: number[] | null, properties?: any): Snapshot {
         let ss: Snapshot = {
             position: position,
             rotation: rotation,
@@ -327,7 +325,7 @@ class DynamicObject {
 
     removeObject(objectid: string, position: number[], rotation: number[]): void {
         this.endActiveEngagements(objectid);
-        let props = { "enabled": false };
+        let props = [{ "enabled": false }];
         this.addSnapshot(objectid, position, rotation, null, props);
 
         for (let i = 0; i < this.objectIds.length; i++) {
