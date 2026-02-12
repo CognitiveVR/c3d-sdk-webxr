@@ -1,12 +1,11 @@
-import Network from './network';
-import { CognitiveVRAnalyticsCore } from './core';
+import Network, { QuestionSet } from './network';
+import { CognitiveVRAnalyticsCore, SessionPropertyValue } from './core';
 import CustomEvents from './customevent';
 
 // Interface for the Answer object structure
 interface Answer {
     type: string;
-    // PR FIX: Updated value type
-    value: string | number | boolean | null;
+    value: SessionPropertyValue | null;
 }
 
 // Interface for the FullResponse object structure
@@ -19,7 +18,7 @@ interface FullResponse {
     questionSetName?: string;
     questionSetVersion?: string;
     answers?: Answer[];
-    [key: string]: any; // TODO: Replace 'any' with a specific type
+    [key: string]: unknown; 
 }
 
 class ExitPoll {
@@ -28,7 +27,7 @@ class ExitPoll {
     private customEvent: CustomEvents;
     private currentQuestionSetString: string;
     public fullResponse: FullResponse;
-    private currentQuestionSet: any; // TODO: Replace 'any' with a specific QuestionSet type
+    private currentQuestionSet: QuestionSet | null; 
     private answerType: { [key: string]: string };
 
     constructor(core: CognitiveVRAnalyticsCore, customEvent: CustomEvents) {
@@ -38,7 +37,7 @@ class ExitPoll {
         this.customEvent = customEvent;
         this.currentQuestionSetString = '';
         this.fullResponse = {};
-        this.currentQuestionSet = {};
+        this.currentQuestionSet = null;
         this.answerType = {
             happySad: 'HAPPYSAD',
             boolean: 'BOOLEAN',
@@ -66,7 +65,7 @@ class ExitPoll {
         });
     }
 
-    receiveQuestionSet(questionset: any, hook: string): void { // TODO: Replace 'any' with a specific QuestionSet type
+    receiveQuestionSet(questionset: QuestionSet, hook: string): void { 
         this.currentQuestionSetString = JSON.stringify(questionset);
         this.fullResponse['hook'] = hook;
         this.fullResponse['userId'] = this.core.userId;
@@ -74,8 +73,8 @@ class ExitPoll {
         this.fullResponse['sessionId'] = this.core.sessionId;
         this.fullResponse['questionSetId'] = questionset.id;
         
-        if (questionset['id']) {
-            let splitquestionid = questionset['id'].split(':');
+        if (questionset.id) {
+            let splitquestionid = questionset.id.split(':');
             this.fullResponse['questionSetName'] = splitquestionid[0];
             this.fullResponse['questionSetVersion'] = splitquestionid[1];
         }
@@ -90,7 +89,7 @@ class ExitPoll {
         return this.currentQuestionSetString;
     }
 
-    getQuestionSet(): any { // TODO: Replace 'any' with a specific type
+    getQuestionSet(): QuestionSet | null {
         if (!this.currentQuestionSet) {
             console.log('ExitPoll.GetQuestionSet no active question set. Returning empty json');
         }
@@ -99,17 +98,17 @@ class ExitPoll {
 
     clearQuestionSet(): void {
         this.currentQuestionSetString = '';
-        this.currentQuestionSet = '';
+        this.currentQuestionSet = null;
         this.fullResponse = {};
     }
 
-    addAnswer(type: string, answer: any): void { // TODO: Replace 'any' with the specific value type (string | number | boolean | null)
-        if (!type || answer === undefined || answer === null) {
-            console.error('ExitPoll.addAnswer: cannot add anser, it takes two arguments, type and answer');
+    addAnswer(type: string, answer: SessionPropertyValue | null): void { 
+        if (!type || answer === undefined) {
+            console.error('ExitPoll.addAnswer: cannot add answer, it takes two arguments, type and answer');
             return;
         }
         let anAnswer: Answer = {
-            type: this.answerType[type] ? this.answerType[type] : 'BOOlEAN', // Typo preserved from original JS
+            type: this.answerType[type] ? this.answerType[type] : 'BOOlEAN', 
             value: answer
         };
         
@@ -129,24 +128,26 @@ class ExitPoll {
                 reject(msg);
                 return;
             }
-            //companyname1234-productname-test/questionSets/:questionset_name/:version#/responses
+            
             if (this.fullResponse.questionSetName && this.fullResponse.questionSetVersion) {
                 this.network.networkExitpollPost(this.fullResponse.questionSetName, this.fullResponse.questionSetVersion, this.fullResponse)
                     .then(res => (res === 200) ? resolve(200) : reject(res));
             }
 
             if (!pos) { pos = [0, 0, 0]; }
-            let properties: { [key: string]: any } = {}; // TODO: Replace 'any' with a specific type
+            let properties: Record<string, SessionPropertyValue> = {}; 
             properties['userId'] = this.core.userId;
-            properties['questionSetId'] = this.fullResponse.questionSetId;
-            properties['hook'] = this.fullResponse.hook;
+            
+            if (this.fullResponse.questionSetId) properties['questionSetId'] = this.fullResponse.questionSetId;
+            if (this.fullResponse.hook) properties['hook'] = this.fullResponse.hook;
             
             if (this.fullResponse.answers) {
                 for (let i = 0; i < this.fullResponse.answers.length; i++) {
+                    const ans = this.fullResponse.answers[i];
                     // strings are only for voice responses. these do not show up in dash
-                    // else bool(0-1), null(-32768), number(0-10)
-                    properties[`Answer${i}`] = (typeof this.fullResponse.answers[i].value === 'string') ? 0 :
-                        this.fullResponse.answers[i].value;
+                    if (ans.value !== null) {
+                         properties[`Answer${i}`] = (typeof ans.value === 'string') ? 0 : ans.value;
+                    }
                 }
             }
             this.customEvent.send('cvr.exitpoll', pos, properties);

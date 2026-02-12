@@ -22,6 +22,7 @@ export interface Settings {
     GazeInterval?: number;
     HMDType?: string; 
     allSceneData?: SceneConfig[];
+    [key: string]: unknown; // Allow flexibility
 }
 
 class Config {
@@ -37,6 +38,7 @@ class Config {
     public GazeInterval: number;
     public allSceneData: SceneConfig[];
     public HMDType?: string; 
+    [key: string]: any; // Index signature for dynamic access in setter
 
     constructor() {
         this.LOG = false;
@@ -68,7 +70,6 @@ class Config {
      * Setter to apply bulk settings
      */
     set settings(settings: Settings) {
-        // Direct assignment for booleans/critical paths if needed, or included in loop
         if (settings.LOG !== undefined) this.LOG = settings.LOG;
 
         // Map Settings keys to Config keys
@@ -80,7 +81,6 @@ class Config {
 
         for (const key of keys) {
             if (settings[key] !== undefined) {
-                // @ts-ignore: TypeScript doesn't like dynamic key assignment without strict typing of the map. TODO: Refactor to avoid @ts-ignore
                 this[key] = settings[key];
             }
         }

@@ -3,22 +3,30 @@
  * such as gaze data, and vr device information 
  */
 
+// Define the structure for gaze hit result
+export interface GazeHitData {
+    objectId: string;
+    point: number[];
+}
+
 // Dependencies interfaces
 interface GazeTracker {
-    recordGaze: (_position: number[], orientation: number[], gazeHitData: any) => void; // TODO: Replace 'any' with specific type
+    recordGaze: (_position: number[], orientation: number[], gazeHitData: GazeHitData | null) => void;
 }
 
 interface DynamicObject {
     // Define properties if needed, currently unused in logic
 }
 
-type GazeRaycaster = () => any; // Returns gaze hit data. TODO: Replace 'any' with specific type
+export type GazeRaycaster = () => GazeHitData | null;
 
 interface SessionStartResult {
     referenceSpace: XRReferenceSpace | null;
     boundedReferenceSpace: XRReferenceSpace | null;
     type: string | null;
 }
+
+// REMOVED: ExtendedXRSession is not needed because XRSession already includes enabledFeatures
 
 export class XRSessionManager {
   private gazeTracker: GazeTracker;
@@ -108,7 +116,7 @@ export class XRSessionManager {
         if (viewerPose) {
           const { position, orientation } = viewerPose.transform;
           
-          let gazeHitData = null;
+          let gazeHitData: GazeHitData | null = null;
           if (this.gazeRaycaster) {
               gazeHitData = this.gazeRaycaster();
           }
@@ -168,8 +176,9 @@ export const getHMDInfo = (inputSources: XRInputSourceArray | XRInputSource[]): 
 };
 
 export const getEnabledFeatures = (xrSession: XRSession): { handTracking: boolean; eyeTracking: boolean } => {
-    const sessionAny = xrSession as any; // TODO: Replace 'any' with correct type once standard libraries update
-    const enabledFeatures = (sessionAny.enabledFeatures as string[]) || [];
+    // The XRSession type in your environment already includes 'enabledFeatures'.
+    // We access it directly.
+    const enabledFeatures = xrSession.enabledFeatures || [];
 
     const handTracking = enabledFeatures.includes('hand-tracking');
     const eyeTracking = enabledFeatures.includes('eye-tracking');

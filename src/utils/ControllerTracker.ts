@@ -1,14 +1,16 @@
 import { isBrowser } from './environment';
+import { SessionPropertyValue } from '../core';
+import { XRSessionManager } from './webxr';
 
 // Interface for the Main C3D instance dependencies used here
 interface C3DInstance {
     customEvent: {
-        send: (_name: string, position: number[], properties?: any) => void; // TODO: Replace 'any'
+        send: (_name: string, position: number[], properties?: Record<string, SessionPropertyValue>) => void;
     };
     sensor: {
-        recordSensor: (_name: string, value: any) => void; // TODO: Replace 'any'
+        recordSensor: (_name: string, value: number) => void;
     };
-    xrSessionManager: any; // TODO: Replace 'any'
+    xrSessionManager: XRSessionManager;
 }
 
 // Tracks controller connection status and height relative to the HMD.
@@ -69,10 +71,9 @@ class ControllerTracker {
         }
     }
 
-    private _onInputSourcesChange(event: any): void { // TODO: Replace 'any' with XRInputSourcesChangeEvent
-        const xrEvent = event as XRInputSourcesChangeEvent;
-        xrEvent.added.forEach((source: XRInputSource) => this._handleControllerRegained(source));
-        xrEvent.removed.forEach((source: XRInputSource) => this._handleControllerLost(source));
+    private _onInputSourcesChange(event: XRInputSourcesChangeEvent): void {
+        event.added.forEach((source: XRInputSource) => this._handleControllerRegained(source));
+        event.removed.forEach((source: XRInputSource) => this._handleControllerLost(source));
     }
 
     private _handleControllerRegained(source: XRInputSource): void {

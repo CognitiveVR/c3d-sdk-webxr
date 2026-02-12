@@ -3,6 +3,7 @@ import { GLTFExporter, GLTFExporterOptions } from 'three/examples/jsm/exporters/
 // @ts-ignore
 import JSZip from 'jszip';
 import C3D from '../index';
+import { GazeHitData } from '../utils/webxr'; // Assumes GazeHitData is exported from webxr.ts
 
 interface FPSState {
     frameCount: number;
@@ -17,6 +18,11 @@ interface DynamicObjectOptions {
     scaleThreshold?: number;
 }
 
+// Helper interface for extended WebXRManager
+interface ExtendedWebXRManager extends THREE.WebXRManager {
+    getScene?: () => THREE.Scene;
+}
+
 class C3DThreeAdapter {
     private c3d: C3D;
     private _fpsState: FPSState = {
@@ -25,20 +31,30 @@ class C3DThreeAdapter {
         lastTime: performance.now(),
         frameTimes: []
     };
-    private exportDirHandle: any = null; // TODO: Replace 'any' with FileSystemDirectoryHandle type
-    private _interactableObjects: THREE.Object3D[] = [];  // Dedicated registry for dynamic objects
+    // Used to avoid TS errors in environments without FileSystem API types
+    private exportDirHandle: any = null; 
+    private _interactableObjects: THREE.Object3D[] = [];  
 
     // Object Pooling for GC optimization
     private _tempVec = new THREE.Vector3();
     private _tempQuat = new THREE.Quaternion();
     private _tempScale = new THREE.Vector3();
 
+    // Helper to log object hierarchy recursively for during object export debugging 
+    private _logHierarchy(obj: THREE.Object3D, depth = 0): void {
+        const indent = "  ".repeat(depth);
+        const info = `Type: ${obj.type}, Name: "${obj.name}"`;
+        console.log(`${indent}- ${info}`);
+        if (obj.children) {
+            obj.children.forEach(child => this._logHierarchy(child, depth + 1));
+        }
+    }
+
     constructor(c3dInstance: C3D) {
         if (!c3dInstance) {
             throw new Error("A C3D instance must be provided to the Three.js adapter.");
         }
         this.c3d = c3dInstance;
-        // _fpsState is already initialized above
 
         this.c3d.setDeviceProperty('AppEngine', 'Three.js');
         this.c3d.setDeviceProperty('AppEngineVersion', THREE.REVISION);
@@ -61,16 +77,13 @@ class C3DThreeAdapter {
 
         this.c3d.gaze.recordGaze(position, rotation, gaze);
     }
-
     //  Helper function for recursively finding dynamic interactable objects in a three.scene or three.group
     private _scanForInteractables(root: THREE.Object3D): void {
         root.traverse((child) => {
-            // Check if this object is marked for tracking
+            
             if (child.userData && child.userData.c3dId) {
-                // Store the REFERENCE, do not change the parent
                 this._interactableObjects.push(child);
                 
-                // Optional: Automatically start tracking dynamic transforms if needed
                 if (child.userData.isDynamic) {
                      const options: DynamicObjectOptions = {
                         positionThreshold: child.userData.positionThreshold,
@@ -86,7 +99,6 @@ class C3DThreeAdapter {
 
     /**
      * Initializes the tracking systems (Gaze, Dynamic Objects, FPS).
-     * NOTE: This no longer takes control of the render loop. 
      * You MUST call c3dAdapter.update() in your own render loop.
      */
     public startTracking(
@@ -100,14 +112,12 @@ class C3DThreeAdapter {
             return;
         }
 
-        // 1. Stop default tracker
         if (this.c3d.fpsTracker) {
             this.c3d.fpsTracker.stop();
             console.log("Cognitive3D: Stopped default FPS tracker in favor of XR-synced tracking.");
         }
 
-        // 2. Setup Dynamic Objects & Gaze
-        // Clear previous list
+        // Setup Dynamic Objects & Gaze, Clear previous list
         this._interactableObjects = [];
 
         if (trackableTarget) {
@@ -121,12 +131,10 @@ class C3DThreeAdapter {
 
             console.log(`Cognitive3D: Tracking ${this._interactableObjects.length} objects.`);
             
-            // Setup Raycaster with the new list (no longer passing a specific group)
             this._setupGazeRaycasting(camera);
             console.log('Cognitive3D: Gaze raycasting enabled.');
         }
 
-        // 3. Initialize FPS State (Reset)
         this._initFPSState();
 
         console.log('Cognitive3D: Adapter initialized. Please ensure you call c3dAdapter.update() within your render loop.');
@@ -138,7 +146,7 @@ class C3DThreeAdapter {
      * @param timestamp Optional timestamp from requestAnimationFrame/WebXR
      * @param frame Optional XRFrame from WebXR
      */
-    public update(timestamp?: number, frame?: any): void {
+    public update(timestamp?: number, frame?: XRFrame): void {
         this._updateFPS();
         this.updateTrackedObjectTransforms();
     }
@@ -156,7 +164,6 @@ class C3DThreeAdapter {
         const now = performance.now();
         let delta = (now - this._fpsState.lastTime) / 1000; // delta in seconds
 
-        // Ignore massive jumps (session paused/resumed)
         if (delta > 1.0) delta = 0;
 
         this._fpsState.lastTime = now;
@@ -164,11 +171,9 @@ class C3DThreeAdapter {
         this._fpsState.frameCount++;
         this._fpsState.frameTimes.push(delta);
 
-        // Report every 1 second
         if (this._fpsState.timeAccumulator >= 1.0) {
             this._sendFPSData();
 
-            // Reset counters for next interval
             this._fpsState.frameCount = 0;
             this._fpsState.timeAccumulator = 0;
             this._fpsState.frameTimes = [];
@@ -201,8 +206,7 @@ class C3DThreeAdapter {
     private _setupGazeRaycasting(camera: THREE.Camera): void {
         const raycaster = new THREE.Raycaster();
         raycaster.far = 1000;
-        this.c3d.gazeRaycaster = () => {
-            // Use new THREE.Vector2(0, 0) instead of plain object
+        this.c3d.gazeRaycaster = (): GazeHitData | null => {
             raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
             
             // Intersect against the cached array, NOT a specific group
@@ -292,7 +296,7 @@ class C3DThreeAdapter {
         }
     }
 
-    async _ensureExportDir(): Promise<any> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
+    async _ensureExportDir(): Promise<any> {
         if (this.exportDirHandle) return this.exportDirHandle;
         // @ts-ignore
         if (!window.showDirectoryPicker) return null;
@@ -310,7 +314,7 @@ class C3DThreeAdapter {
         }
     }
 
-    async _writeFile(dirHandle: any, filename: string, blob: Blob): Promise<void> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
+    async _writeFile(dirHandle: any, filename: string, blob: Blob): Promise<void> {
         const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(blob);
@@ -349,7 +353,8 @@ class C3DThreeAdapter {
 
         exporter.parse(
             exportRoot,
-            async (gltf: any) => { // TODO: Replace 'any' with specific type
+            async (gltfInput: any) => {
+                const gltf = gltfInput;
                 const dir = await this._ensureExportDir();
 
                 const prefix = "data:application/octet-stream;base64,";
@@ -361,7 +366,9 @@ class C3DThreeAdapter {
                     const bytes = new Uint8Array(raw.length);
                     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
                     binBlob = new Blob([bytes.buffer], { type: "application/octet-stream" });
-                    gltf.buffers[0].uri = "scene.bin";
+                    if (gltf.buffers && gltf.buffers[0]) {
+                        gltf.buffers[0].uri = "scene.bin";
+                    }
                 }
 
                 const gltfBlob = new Blob([JSON.stringify(gltf, null, 2)], { type: "model/gltf+json" });
@@ -400,7 +407,8 @@ class C3DThreeAdapter {
     }
 
     public async exportObject(objectToExport: THREE.Object3D, objectName: string, renderer: THREE.WebGLRenderer, camera: THREE.Camera): Promise<void> {
-        const originalScene = renderer.xr.isPresenting ? (renderer.xr as any).getScene?.() : camera.parent; // TODO: Replace 'any' with specific type
+        const xrManager = renderer.xr as ExtendedWebXRManager;
+        const originalScene = xrManager.isPresenting ? xrManager.getScene?.() : camera.parent; 
         const tempScene = new THREE.Scene();
         tempScene.background = new THREE.Color(0xe0e0e0);
         const tempLight = new THREE.AmbientLight(0xffffff, 3.0);
@@ -409,7 +417,7 @@ class C3DThreeAdapter {
         const objectClone = objectToExport.clone();
         const box = new THREE.Box3().setFromObject(objectClone);
         const center = box.getCenter(new THREE.Vector3());
-        objectClone.position.sub(center);
+        objectClone.position.sub(center); 
         tempScene.add(objectClone);
 
         renderer.render(tempScene, camera);
@@ -421,12 +429,16 @@ class C3DThreeAdapter {
         }
 
         const exporter = new GLTFExporter();
-        const exportRoot = new THREE.Group();
-        exportRoot.add(objectToExport.clone());
+        
+        const gltfClone = objectToExport.clone();
+
+        console.log(`[Cognitive3D] Structure being exported for "${objectName}":`);
+        this._logHierarchy(gltfClone);
 
         exporter.parse(
-            exportRoot,
-            async (gltf: any) => { // TODO: Replace 'any' with specific type
+            gltfClone,
+            async (gltfInput: any) => { 
+                const gltf = gltfInput;
                 const dir = await this._ensureExportDir();
                 const prefix = "data:application/octet-stream;base64,";
                 const uri = gltf.buffers?.[0]?.uri || "";
@@ -438,7 +450,9 @@ class C3DThreeAdapter {
                     const bytes = new Uint8Array(raw.length);
                     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
                     binBlob = new Blob([bytes.buffer], { type: "application/octet-stream" });
-                    gltf.buffers[0].uri = `${objectName}.bin`;
+                    if (gltf.buffers && gltf.buffers[0]) {
+                        gltf.buffers[0].uri = `${objectName}.bin`;
+                    }
                 }
 
                 const gltfBlob = new Blob([JSON.stringify(gltf, null, 2)], { type: "model/gltf+json" });

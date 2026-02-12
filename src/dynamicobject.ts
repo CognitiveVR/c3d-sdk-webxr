@@ -49,14 +49,14 @@ interface ManifestPayloadEntry {
     fileType: string;
 }
 
-interface SnapshotPayload {
+export interface SnapshotPayload {
     id: string;
     time: number;
     p: number[];
     r: number[];
     s?: number[];
     engagements?: EngagementPayload[];
-    properties?: any; // TODO: Replace 'any' with a specific type for properties
+    properties?: Record<string, unknown>;
 }
 
 export interface Snapshot {
@@ -65,16 +65,16 @@ export interface Snapshot {
     time: number;
     id: string;
     scale?: number[] | null;
-    properties?: any; // TODO: Replace 'any' with a specific type for properties
+    properties?: Record<string, unknown>;
     engagements?: EngagementPayload[];
 }
 
 export interface TrackedObjectEntry {
-    object: any; // TODO: Replace 'any' with a specific type (e.g., generic Object3D type)
+    object: object; 
     positionThreshold: number;
     rotationThreshold: number;
     scaleThreshold: number;
-    [key: string]: any; // TODO: Replace 'any' with a specific type
+    [key: string]: unknown;
 }
 
 class DynamicObject {
@@ -124,7 +124,7 @@ class DynamicObject {
         let dome = this.dynamicObjectManifestEntry(registerId.id, name, meshname, finalFileType);
         this.manifestEntries.push(dome);
         this.fullManifest.push(dome);
-        let props = [{ "enabled": true }];
+        let props = { "enabled": true };
 
         this.addSnapshot(customid, position, rotation, null, props);
 
@@ -143,7 +143,7 @@ class DynamicObject {
         this.manifestEntries.push(dome);
         this.fullManifest.push(dome);
         
-        let props = [{ "enabled": true }];
+        let props = { "enabled": true };
         this.addSnapshot(newObjectId.id, position, rotation, null, props);
 
         if (this.core.isSessionActive && (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit)) {
@@ -152,7 +152,7 @@ class DynamicObject {
         return newObjectId.id;
     }
 
-    trackObject(id: string, object: any, options: { positionThreshold?: number, rotationThreshold?: number, scaleThreshold?: number } = {}): void { // TODO: Replace 'any' with a specific type for object
+    trackObject(id: string, object: object, options: { positionThreshold?: number, rotationThreshold?: number, scaleThreshold?: number } = {}): void { 
         if (!id || !object) {
             console.error("DynamicObject.trackObject: id and object must be provided.");
             return;
@@ -165,7 +165,7 @@ class DynamicObject {
         });
     }
 
-    addSnapshot(objectId: string, position: number[], rotation: number[], scale?: number[] | null, properties?: any): void { // TODO: Replace 'any' with a specific type for properties
+    addSnapshot(objectId: string, position: number[], rotation: number[], scale?: number[] | null, properties?: Record<string, unknown>): void {
         let foundId = this.objectIds.some(element => objectId === element.id);
         if (!foundId) {
             console.warn("DynamicObject::Snapshot cannot find objectId " + objectId + " in full manifest. Did you Register this object?");
@@ -188,7 +188,6 @@ class DynamicObject {
             snapshot.engagements = [];
         }
         for (let e of this.allEngagements[objectId]) {
-            // PR FIX: Typed engagementEvent
             let engagementEvent: EngagementPayload = {
                 engagementtype: e.name,
                 engagementparent: e.id,
@@ -225,7 +224,6 @@ class DynamicObject {
                 return;
             }
 
-            // PR FIX: Typed sendJson
             let sendJson: DynamicsPayload = {
                 userid: this.core.userId,
                 timestamp: this.core.getTimestamp(),
@@ -244,7 +242,6 @@ class DynamicObject {
         });
     }
 
-    // PR FIX: Typed return
     private _buildManifest(): Record<string, ManifestPayloadEntry> {
         let manifest: Record<string, ManifestPayloadEntry> = {};
         for (let element of this.manifestEntries) {
@@ -276,7 +273,7 @@ class DynamicObject {
         return data;
     }
 
-    dynamicObjectSnapshot(position: number[], rotation: number[], objectId: string, scale?: number[] | null, properties?: any): Snapshot { // TODO: Replace 'any' with a specific type for properties
+    dynamicObjectSnapshot(position: number[], rotation: number[], objectId: string, scale?: number[] | null, properties?: Record<string, unknown>): Snapshot {
         let ss: Snapshot = {
             position: position,
             rotation: rotation,
@@ -330,7 +327,7 @@ class DynamicObject {
 
     removeObject(objectid: string, position: number[], rotation: number[]): void {
         this.endActiveEngagements(objectid);
-        let props = [{ "enabled": false }];
+        let props = { "enabled": false };
         this.addSnapshot(objectid, position, rotation, null, props);
 
         for (let i = 0; i < this.objectIds.length; i++) {

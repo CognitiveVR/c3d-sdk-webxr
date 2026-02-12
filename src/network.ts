@@ -4,7 +4,7 @@ import Core from './core';
 // Define the shape of the QuestionSet response
 export interface QuestionSet {
     id: string;
-    [key: string]: any; // TODO: Replace 'any' with specific QuestionSet property types
+    [key: string]: unknown;
 }
 
 class Network {
@@ -42,6 +42,20 @@ class Network {
             }
 
             const path = `https://${this.core.config.networkHost}/v${this.core.config.networkVersion}/${suburl}/${this.core.sceneData.sceneId}?version=${this.core.sceneData.versionNumber}`;
+
+            // --- LOGGER IMPLEMENTATION ---
+            if (this.core.config.LOG) {
+                // Determine item count if the payload has a 'data' array
+                const items = (content as any).data;
+                const count = Array.isArray(items) ? `${items.length} items` : 'Object';
+                
+                // Use groupCollapsed to keep the console clean but accessible
+                console.groupCollapsed(`[C3D] Sending Batch: ${suburl} (${count})`);
+                console.log("URL:", path);
+                console.log("Payload:", JSON.parse(JSON.stringify(content))); // Clone to ensure we log the state at send time
+                console.groupEnd();
+            }
+            // -----------------------------
 
             const options = {
                 method: 'post',

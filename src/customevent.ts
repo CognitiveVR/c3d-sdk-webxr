@@ -1,5 +1,5 @@
 import Network from './network';
-import { CognitiveVRAnalyticsCore } from './core';
+import { CognitiveVRAnalyticsCore, SessionPropertyValue } from './core';
 
 // Shape of a single event payload
 interface CustomEventData {
@@ -7,13 +7,21 @@ interface CustomEventData {
     time: number;
     point: number[];
     lobbyId: string;
-    properties?: object;
+    properties?: Record<string, SessionPropertyValue>;
+}
+
+// Interface for the payload sent to the network
+interface CustomEventPayload {
+    userid: string;
+    timestamp: number;
+    sessionid: string;
+    part: number;
+    data: CustomEventData[];
 }
 
 class CustomEvents {
     private core: CognitiveVRAnalyticsCore;
     private network: Network;
-    // Public to allow access from tests if needed, or stick to private if strictly internal
     public batchedCustomEvents: CustomEventData[]; 
     private jsonPart: number;
 
@@ -25,7 +33,7 @@ class CustomEvents {
         this.jsonPart = 1;
     }
 
-    send(category: string, position: number[], properties?: object): void {
+    send(category: string, position: number[], properties?: Record<string, SessionPropertyValue>): void {
         let data: CustomEventData = {
             name: category,
             time: this.core.getTimestamp(),
@@ -52,13 +60,15 @@ class CustomEvents {
                 resolve(msg);
                 return;
             } else {
-                let payload: any = {}; // TODO: Replace 'any' with a specific type (e.g. CustomEventPayload interface)
-                payload['userid'] = this.core.userId;
-                payload['timestamp'] = parseInt(this.core.getTimestamp() as unknown as string, 10); // getTimestamp returns number, but existing logic parsed it
-                payload['sessionid'] = this.core.getSessionId();
-                payload['part'] = this.jsonPart;
+                let payload: CustomEventPayload = {
+                    userid: this.core.userId,
+                    timestamp: parseInt(this.core.getTimestamp() as unknown as string, 10),
+                    sessionid: this.core.getSessionId(),
+                    part: this.jsonPart,
+                    data: this.batchedCustomEvents
+                };
+                
                 this.jsonPart++;
-                payload['data'] = this.batchedCustomEvents;
                 
                 this.network.networkCall('events', payload)
                     .then(res => (res === 200) ? resolve(res as number) : reject(res));

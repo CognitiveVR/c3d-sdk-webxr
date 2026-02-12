@@ -1,4 +1,5 @@
 import { isBrowser } from './environment';
+import { SensorValue } from '../sensors';
 
 // Extend Performance interface for non-standard/experimental memory APIs
 interface PerformanceMemory {
@@ -15,7 +16,7 @@ interface ExtendedPerformance extends Performance {
 // Interface for the C3D instance dependencies
 interface C3DInstance {
     sensor: {
-        recordSensor: (_name: string, value: any) => void; // TODO: Replace 'any' with specific type
+        recordSensor: (_name: string, value: SensorValue) => void;
     };
     fpsTracker?: {
         lastDeltaTime: number;

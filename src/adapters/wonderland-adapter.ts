@@ -8,12 +8,35 @@ const COMPONENT_TYPE = { UNSIGNED_SHORT: 5123, UNSIGNED_INT: 5125, FLOAT: 5126 }
 const TARGET = { ARRAY_BUFFER: 34962, ELEMENT_ARRAY_BUFFER: 34963 };
 const SDK_VERSION = __SDK_VERSION__;
 
+// --- GLTF Helper Types ---
+interface MeshData {
+    positions: number[];
+    normals: number[];
+    uvs: number[];
+    indices: number[];
+    hasNormals: boolean;
+    hasUvs: boolean;
+}
+
+interface GLTFJson {
+    asset: { version: string; generator: string };
+    scene: number;
+    scenes: { nodes: number[] }[];
+    nodes: { mesh?: number; name: string }[];
+    meshes: { primitives: { attributes: { [key: string]: number }; indices: number }[] }[];
+    accessors: any[];
+    bufferViews: any[];
+    buffers: { uri: string; byteLength: number }[];
+}
+
 class C3DWonderlandAdapter {
     private c3d: C3D;
-    private WL: any; // TODO: Replace 'any' with specific Wonderland Engine type
-    private exportDirHandle: any = null; // TODO: Replace 'any' with FileSystemDirectoryHandle type
+    // Avoids maintaining brittle definitions for the engine
+    private WL: any; 
+    // Used to avoid TS errors in environments without FileSystem API types
+    private exportDirHandle: any = null; 
 
-    constructor(c3dInstance: C3D, wonderlandEngineInstance: any) { // TODO: Replace 'any' with specific type
+    constructor(c3dInstance: C3D, wonderlandEngineInstance: any) { 
         if (!c3dInstance) throw new Error("A C3D instance must be provided.");
         if (!wonderlandEngineInstance) throw new Error("The Wonderland Engine instance (WL) must be provided.");
         this.c3d = c3dInstance;
@@ -35,7 +58,7 @@ class C3DWonderlandAdapter {
         
         const forwardVector = [0, 0, -1]; 
         const gaze = vec3.create(); 
-        // @ts-ignore: gl-matrix types can be strict about number[] vs ReadonlyVec3
+        // @ts-ignore
         vec3.transformQuat(gaze, forwardVector, rotation);
         
         this.c3d.gaze.recordGaze(this.fromVector3(position), this.fromQuaternion(rotation), this.fromVector3(gaze));
@@ -68,7 +91,7 @@ class C3DWonderlandAdapter {
         });
     }
 
-    async _ensureExportDir(): Promise<any> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
+    async _ensureExportDir(): Promise<any> {
         if (this.exportDirHandle) return this.exportDirHandle;
         // @ts-ignore
         if (!window.showDirectoryPicker) return null;
@@ -85,7 +108,7 @@ class C3DWonderlandAdapter {
         }
     }
 
-    async _writeFile(dirHandle: any, filename: string, content: Blob | ArrayBuffer): Promise<void> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
+    async _writeFile(dirHandle: any, filename: string, content: Blob | ArrayBuffer): Promise<void> { 
         if (!content) return;
         const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
@@ -104,7 +127,7 @@ class C3DWonderlandAdapter {
         setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
     }
 
-    async _performExport(rootObject: any, sceneName: string, scale: number, filterDynamic: boolean): Promise<void> { // TODO: Replace 'any' with specific Object type
+    async _performExport(rootObject: any, sceneName: string, scale: number, filterDynamic: boolean): Promise<void> { 
         console.log("Cognitive3D: Generating geometry...");
         const binFilename = "scene.bin";
         const {json, binaryBuffer} = this._createGltfData(rootObject, scale, binFilename, filterDynamic);
@@ -140,8 +163,8 @@ class C3DWonderlandAdapter {
         }
     }
 
-    _createGltfData(wleObject: any, scale: number, binFilename: string, filterDynamic: boolean): { json: any, binaryBuffer: ArrayBuffer } { // TODO: Replace 'any' with specific types
-        const meshData: any = { positions: [], normals: [], uvs: [], indices: [], hasNormals: false, hasUvs: false }; // TODO: Replace 'any' with specific type
+    _createGltfData(wleObject: any, scale: number, binFilename: string, filterDynamic: boolean): { json: GLTFJson | null, binaryBuffer: ArrayBuffer } { 
+        const meshData: MeshData = { positions: [], normals: [], uvs: [], indices: [], hasNormals: false, hasUvs: false }; 
         const minBounds = [Infinity, Infinity, Infinity];
         const maxBounds = [-Infinity, -Infinity, -Infinity];
 
@@ -170,7 +193,7 @@ class C3DWonderlandAdapter {
         if (uvBuffer) { binaryView.set(new Uint8Array(uvBuffer.buffer), byteOffset); byteOffset += uvBuffer.byteLength; }
         binaryView.set(new Uint8Array(indicesBuffer.buffer), byteOffset);
 
-        const json: any = { // TODO: Replace 'any' with specific GLTF JSON type
+        const json: GLTFJson = { 
             asset: {version: "2.0", generator: "Cognitive3D WLE Adapter"},
             scene: 0, scenes: [{nodes: [0]}], nodes: [{mesh: 0, name: "MergedExport"}],
             meshes: [{primitives: [{attributes: {POSITION: 0}, indices: 0}]}],
@@ -213,7 +236,7 @@ class C3DWonderlandAdapter {
         return {json, binaryBuffer};
     }
 
-    _collectAndTransformMeshData(wleObject: any, parentMatrix: any, data: any, indexOffset: number, min: number[], max: number[], filterDynamic: boolean): number { // TODO: Replace 'any' with specific types
+    _collectAndTransformMeshData(wleObject: any, parentMatrix: any, data: MeshData, indexOffset: number, min: number[], max: number[], filterDynamic: boolean): number { 
         if (typeof wleObject.getComponent !== 'function') {
             const children = wleObject.children || [];
             for (let i = 0; i < children.length; i++) {
@@ -242,7 +265,6 @@ class C3DWonderlandAdapter {
              const normalMatrix4 = mat4.transpose(mat4.create(), inverseWorld);
              normalMatrix3 = mat3.fromMat4(mat3.create(), normalMatrix4);
         } else {
-             // Fallback if matrix is not invertible (e.g. scale 0)
              normalMatrix3 = mat3.create(); 
         }
 
@@ -264,7 +286,7 @@ class C3DWonderlandAdapter {
 
             const tempV3 = vec3.create();
             for (let i = 0; i < mesh.vertexCount; ++i) {
-                positions.get(i, tempV3);
+                if (positions) positions.get(i, tempV3);
                 vec3.transformMat4(tempV3, tempV3, worldMatrix);
                 data.positions.push(tempV3[0], tempV3[1], tempV3[2]);
 
@@ -297,20 +319,20 @@ class C3DWonderlandAdapter {
         return indexOffset;
     }
 
-    public async exportScene(sceneName: string, scale: number = 1.0, rootObjectOrName: any = null): Promise<void> { // TODO: Replace 'any' with specific type
-        let rootObject = this.WL.scene;
+    public async exportScene(sceneName: string, scale: number = 1.0, rootObjectOrName: any = null): Promise<void> { 
+        let rootObject: any = this.WL.scene;
 
         if (rootObjectOrName) {
             if (typeof rootObjectOrName === 'string') {
                 const found = this.WL.scene.findByName(rootObjectOrName); 
                 if (found.length > 0) {
-                   rootObject = found[0] || found;
+                   rootObject = found[0];
                    console.log(`Cognitive3D: Found export root by name: "${rootObjectOrName}"`);
                 } else {
                    console.warn(`Cognitive3D: Object "${rootObjectOrName}" not found. Exporting full scene.`);
                    rootObject = this.WL.scene.children[0]?.parent || this.WL.scene;
                 }
-            } else if (typeof rootObjectOrName === 'object') {
+            } else {
                 rootObject = rootObjectOrName;
                 console.log(`Cognitive3D: Using custom export root object: "${rootObject.name}"`);
             }

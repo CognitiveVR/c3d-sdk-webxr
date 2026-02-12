@@ -6,6 +6,10 @@ import * as BABYLON from 'babylonjs';
 import { GLTF2Export } from 'babylonjs-serializers';
 import C3D from '../index';
 
+interface GLTFExportResult {
+    downloadFiles: () => void;
+}
+
 class C3DBabylonAdapter {
   private c3d: C3D;
 
@@ -34,13 +38,15 @@ class C3DBabylonAdapter {
     // We try to use quaternion if available.
     let rotation = [0, 0, 0, 1];
     
-    // Some Babylon cameras (ArcRotate) use rotation by default, others (WebXR) use rotationQuaternion.
-    if ((camera as any).rotationQuaternion) { // TODO: Replace 'any' with specific type
-        rotation = this.fromQuaternion((camera as any).rotationQuaternion); // TODO: Replace 'any' with specific type
+    // Cast to TargetCamera, which contains the rotation properties
+    const targetCamera = camera as BABYLON.TargetCamera;
+
+    if (targetCamera.rotationQuaternion) {
+        rotation = this.fromQuaternion(targetCamera.rotationQuaternion);
     } else {
         // Fallback: Convert Euler to Quaternion if needed, or identity.
-        if ((camera as any).rotation) { // TODO: Replace 'any' with specific type
-             const euler = (camera as any).rotation; // TODO: Replace 'any' with specific type
+        if (targetCamera.rotation) {
+             const euler = targetCamera.rotation;
              const quat = BABYLON.Quaternion.RotationYawPitchRoll(euler.y, euler.x, euler.z);
              rotation = this.fromQuaternion(quat);
         }
@@ -55,7 +61,7 @@ class C3DBabylonAdapter {
 
   public exportGLTF(scene: BABYLON.Scene, sceneName: string, engine: BABYLON.Engine): void {
     // Export GLTF and BIN
-    GLTF2Export.GLTFAsync(scene, "scene").then((gltf: any) => { // TODO: Replace 'any' with specific type
+    GLTF2Export.GLTFAsync(scene, "scene").then((gltf: GLTFExportResult) => {
         gltf.downloadFiles();
     });
 
@@ -63,7 +69,7 @@ class C3DBabylonAdapter {
     const settings = {
         scale: 1,
         sceneName: sceneName,
-        sdkVersion: __SDK_VERSION__ 
+        sdkVersion: typeof __SDK_VERSION__ !== 'undefined' ? __SDK_VERSION__ : 'dev'
     };
     const settingsString = JSON.stringify(settings, null, 2);
     const settingsBlob = new Blob([settingsString], { type: 'application/json' });
