@@ -52,6 +52,7 @@ class C3D {
   public fpsTracker: FPSTracker;
   public renderer: any;    // Supports multiple engines (Three, Babylon, WLE) without shared interfaces
   public boundaryTracker: BoundaryTracker;
+  private deviceIdPromise: Promise<void> | null = null;
 
   constructor(settings?: C3DConstructorSettings, renderer: any = null) { 
     this.core = coreInstance;
@@ -82,6 +83,11 @@ class C3D {
     this.fpsTracker = new FPSTracker(); 
     this.renderer = renderer; 
     this.boundaryTracker = new BoundaryTracker(self);
+
+    // Initialize FingerprintJS in the background
+    if (isBrowser) {
+        this.deviceIdPromise = this.initializeDeviceId();
+    }
 
     const deviceMemory = getDeviceMemory();
     if (deviceMemory) {
@@ -116,21 +122,24 @@ class C3D {
     }
   }
 
+  private async initializeDeviceId(): Promise<void> {
+    try {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        
+        this.core.setDeviceId = result.visitorId;
+        this.setSessionProperty("c3d.deviceid", result.visitorId); 
+        this.setSessionProperty("c3d.deviceid.confidence", result.confidence.score);
+    } catch (error) {
+        console.warn('FingerprintJS failed:', error);
+    }
+  }
+
   async startSession(xrSession: XRSession | null = null): Promise<boolean> { 
     if (this.core.isSessionActive) { return false; }
 
-    if (isBrowser) {
-        try {
-            const fp = await FingerprintJS.load();
-            const result = await fp.get();
-            
-            this.core.setDeviceId = result.visitorId;
-            this.setSessionProperty("c3d.deviceid", result.visitorId); 
-            this.setSessionProperty("c3d.deviceid.confidence", result.confidence.score);
-            // console.log('Device ID:', result.visitorId);
-        } catch (error) {
-            console.warn('FingerprintJS failed:', error);
-        }
+    if (this.deviceIdPromise) {
+        await this.deviceIdPromise;
     }
   
     if (this.renderer) { 
