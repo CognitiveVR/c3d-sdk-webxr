@@ -141,12 +141,15 @@ class C3DThreeAdapter {
     }
 
     /**
-     * MUST be called once per frame in your developers render loop.
-     * Handles FPS recording and Dynamic Object updates.
-     * @param timestamp Optional timestamp from requestAnimationFrame/WebXR
-     * @param frame Optional XRFrame from WebXR
+     * MUST be called once per frame in your developer render loop.
+     * * @param timestamp - The high-precision timestamp passed by requestAnimationFrame or the WebXR loop.
+     * CURRENTLY UNUSED: Internal timing uses performance.now(). 
+     * FUTURE: Will be used for precise frame-to-frame delta calculations synced to the display refresh rate.
+     * * @param frame - The XRFrame object provided by the WebXR session.
+     * CURRENTLY UNUSED: Adapter relies on Three.js wrappers for pose data.
+     * FUTURE: Required for accessing raw WebXR features like AR Hit Testing, Anchors, and Light Estimation.
      */
-    public update(timestamp?: number, frame?: XRFrame): void {
+    public update(timestamp?: number, frame?: XRFrame): void { // TODO - use these parameters for more precise timing and WebXR features
         this._updateFPS();
         this.updateTrackedObjectTransforms();
     }
