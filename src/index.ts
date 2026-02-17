@@ -265,7 +265,7 @@ class C3D {
 
       this.sendData()
         .then(res => {
-          this.core.setSessionTimestamp = '';
+          this.core.setSessionTimestamp = 0;
           this.core.setSessionId = '';
           this.core.setSessionStatus = false;
           this.core.resetNewUserDeviceProperties();

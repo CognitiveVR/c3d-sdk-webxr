@@ -5,8 +5,6 @@ export interface DevicePropertyMap {
     [key: string]: string;
 }
 
-// RESTORED: Export this type as 'any' to fix build errors in files that import it (e.g. customevent.ts)
-// This maintains the flexibility to pass complex objects (Mattercraft) while satisfying the import requirements.
 export type SessionPropertyValue = any;
 
 export interface SessionProperties {
@@ -20,7 +18,7 @@ export class CognitiveVRAnalyticsCore {
     public userId: string;
     public deviceId: string;
     public sessionId: string;
-    public sessionTimestamp: number | string;
+    public sessionTimestamp: number;
     public sessionProperties: SessionProperties;
     public sentSessionProperties: SessionProperties;
     public lobbyId: string;
@@ -33,7 +31,7 @@ export class CognitiveVRAnalyticsCore {
         this.userId = '';
         this.deviceId = '';
         this.sessionId = '';
-        this.sessionTimestamp = '';
+        this.sessionTimestamp = 0;
         this.sessionProperties = {}; 
         this.sentSessionProperties = {}; 
         this.lobbyId = '';
@@ -73,7 +71,7 @@ export class CognitiveVRAnalyticsCore {
         if (!this.sessionTimestamp) {
             this.sessionTimestamp = Math.floor(this.getTimestamp());
         }
-        return this.sessionTimestamp as number;
+        return this.sessionTimestamp;
     }
 
     getCurrentScene(): SceneConfig {
@@ -142,7 +140,7 @@ export class CognitiveVRAnalyticsCore {
         this.isSessionActive = active;
     }
 
-    set setSessionTimestamp(value: number | string) {
+    set setSessionTimestamp(value: number) {
         this.sessionTimestamp = value;
     }
 

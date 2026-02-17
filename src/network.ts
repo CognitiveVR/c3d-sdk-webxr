@@ -45,14 +45,21 @@ class Network {
 
             // --- LOGGER IMPLEMENTATION ---
             if (this.core.config.LOG) {
-                // Determine item count if the payload has a 'data' array
                 const items = (content as any).data;
                 const count = Array.isArray(items) ? `${items.length} items` : 'Object';
                 
-                // Use groupCollapsed to keep the console clean but accessible
                 console.groupCollapsed(`[C3D] Sending Batch: ${suburl} (${count})`);
                 console.log("URL:", path);
-                console.log("Payload:", JSON.parse(JSON.stringify(content))); // Clone to ensure we log the state at send time
+                
+                let payloadForLog = content;
+                if (typeof structuredClone === 'function') {
+                    try {
+                        payloadForLog = structuredClone(content);
+                    } catch (e) {
+                        // If structuredClone fails (e.g. complex objects), fallback to original ref
+                    }
+                }
+                console.log("Payload:", payloadForLog);
                 console.groupEnd();
             }
             // -----------------------------
@@ -66,7 +73,6 @@ class Network {
                 body: JSON.stringify(content)
             };
 
-            // Check network connectivity
             if (this.isOnline()) {
                 fetch(path, options)
                     .then(res => resolve(res.status))

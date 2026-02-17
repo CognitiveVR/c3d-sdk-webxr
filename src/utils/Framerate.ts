@@ -111,10 +111,10 @@ class FPSTracker {
   }
 
   public stop(): void {
-    if (this.animationFrameId) {
+    if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
-      this._currentCallback = null; // Clean up reference
+      this._currentCallback = null; 
     }
   }
 }
