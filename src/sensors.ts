@@ -1,7 +1,7 @@
 import Network from './network';
 import { CognitiveVRAnalyticsCore } from './core';
 
-export type SensorValue = number | string | boolean;
+export type SensorValue = number;
 
 interface SensorDataPoint {
     name: string;
@@ -32,8 +32,15 @@ class Sensors {
         this.jsonPart = 1;
     }
 
-    recordSensor(name: string, value: SensorValue): void {
-        let point: [number, SensorValue] = [this.core.getTimestamp(), value];
+    recordSensor(name: string, value: number | boolean): void {
+        let finalValue: number;
+        if (typeof value === 'boolean') {
+            finalValue = value ? 1 : 0;
+        } else {
+            finalValue = value;
+        }
+
+        let point: [number, SensorValue] = [this.core.getTimestamp(), finalValue];
         let sensor = this.allSensors.find(sensor => sensor.name === name);
         
         // Append value to sensor in list if it exists, otherwise create new entry

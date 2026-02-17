@@ -164,6 +164,11 @@ class DynamicObject {
     }
 
     addSnapshot(objectId: string, position: number[], rotation: number[], scale?: number[] | null, properties?: any): void {
+
+        // if (!this.core.isSessionActive && !properties) {
+        //     return;
+        // }
+
         let foundId = this.objectIds.some(element => objectId === element.id);
         if (!foundId) {
             console.warn("DynamicObject::Snapshot cannot find objectId " + objectId + " in full manifest. Did you Register this object?");
