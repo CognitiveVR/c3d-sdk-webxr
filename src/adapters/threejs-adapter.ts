@@ -3,7 +3,7 @@ import { GLTFExporter, GLTFExporterOptions } from 'three/examples/jsm/exporters/
 // @ts-ignore
 import JSZip from 'jszip';
 import C3D from '../index';
-import { GazeHitData } from '../utils/webxr'; // Assumes GazeHitData is exported from webxr.ts
+import { GazeHitData } from '../utils/webxr'; 
 
 interface FPSState {
     frameCount: number;
@@ -141,7 +141,7 @@ class C3DThreeAdapter {
     }
 
     /**
-     * MUST be called once per frame in your application's render loop.
+     * MUST be called once per frame in your developers render loop.
      * Handles FPS recording and Dynamic Object updates.
      * @param timestamp Optional timestamp from requestAnimationFrame/WebXR
      * @param frame Optional XRFrame from WebXR
@@ -206,8 +206,11 @@ class C3DThreeAdapter {
     private _setupGazeRaycasting(camera: THREE.Camera): void {
         const raycaster = new THREE.Raycaster();
         raycaster.far = 1000;
+        
+        const gazeOriginNDC = new THREE.Vector2(0, 0);
+
         this.c3d.gazeRaycaster = (): GazeHitData | null => {
-            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            raycaster.setFromCamera(gazeOriginNDC, camera);
             
             // Intersect against the cached array, NOT a specific group
             const intersects = raycaster.intersectObjects(this._interactableObjects, true);
@@ -233,6 +236,7 @@ class C3DThreeAdapter {
                 if (targetObject && targetObject.userData.c3dId) {
                     const worldPoint = intersection.point.clone();
                     targetObject.worldToLocal(worldPoint);
+                    // Standardize coordinate system if necessary (often needed for analytics backends)
                     worldPoint.x *= 1;
                     worldPoint.z *= -1;
 

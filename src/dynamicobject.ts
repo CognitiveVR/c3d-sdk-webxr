@@ -90,6 +90,7 @@ class DynamicObject {
     public allEngagements: { [objectId: string]: EngagementEvent[] };
     private engagementCounts: { [objectId: string]: { [name: string]: number } };
     public trackedObjects: Map<string, TrackedObjectEntry>;
+    private snapshotIndexMap: Map<string, number>; // Track indices of snapshots while session is inactive
 
     constructor(core: CognitiveVRAnalyticsCore, customEvent: CustomEvents) {
         this.core = core;
@@ -106,6 +107,7 @@ class DynamicObject {
         this.allEngagements = {};
         this.engagementCounts = {};
         this.trackedObjects = new Map();
+        this.snapshotIndexMap = new Map();
     }
 
     registerObjectCustomId(name: string, meshname: string, customid: string, position: number[], rotation: number[], fileType?: string): string {
@@ -164,11 +166,6 @@ class DynamicObject {
     }
 
     addSnapshot(objectId: string, position: number[], rotation: number[], scale?: number[] | null, properties?: any): void {
-
-        // if (!this.core.isSessionActive && !properties) {
-        //     return;
-        // }
-
         let foundId = this.objectIds.some(element => objectId === element.id);
         if (!foundId) {
             console.warn("DynamicObject::Snapshot cannot find objectId " + objectId + " in full manifest. Did you Register this object?");
@@ -178,6 +175,22 @@ class DynamicObject {
 
         if (this.allEngagements[objectId] && Object.keys(this.allEngagements[objectId]).length > 0) {
             this._processSnapshotEngagements(snapshot, objectId);
+        }
+
+        // If session is inactive and this is a standard transform update (no properties),
+        // overwrite previous snapshot for this object to prevent data flooding 
+        // while ensuring the *latest* start position is preserved.
+        if (!this.core.isSessionActive && !properties) {
+            if (this.snapshotIndexMap.has(objectId)) {
+                const index = this.snapshotIndexMap.get(objectId) as number;
+                // Safety check: ensure the snapshot at this index actually belongs to this ID
+                if (this.snapshots[index] && this.snapshots[index].id === objectId) {
+                    this.snapshots[index] = snapshot;
+                    return; // Successfully updated in place, exit early
+                }
+            }
+            // If not found in map, or map was stale, store the new index for future overwrites
+            this.snapshotIndexMap.set(objectId, this.snapshots.length);
         }
         this.snapshots.push(snapshot);
 
@@ -242,6 +255,7 @@ class DynamicObject {
             
             this.manifestEntries = [];
             this.snapshots = [];
+            this.snapshotIndexMap.clear();
         });
     }
 
@@ -315,6 +329,7 @@ class DynamicObject {
         this.manifestEntries = [];
         this.objectIds = [];
         this.snapshots = [];
+        this.snapshotIndexMap.clear();
         this.engagementCounts = {};
         this.allEngagements = {};
         this.activeEngagements = {};

@@ -176,9 +176,10 @@ export const getHMDInfo = (inputSources: XRInputSourceArray | XRInputSource[]): 
 };
 
 export const getEnabledFeatures = (xrSession: XRSession): { handTracking: boolean; eyeTracking: boolean } => {
-    // The XRSession type in your environment already includes 'enabledFeatures'.
-    // We access it directly.
-    const enabledFeatures = xrSession.enabledFeatures || [];
+    // Safely access 'enabledFeatures' by casting to unknown first.
+    // Prevents build errors if the standard XRSession type definition is missing this property.
+    const sessionWithFeatures = xrSession as unknown as { enabledFeatures?: string[] };
+    const enabledFeatures = sessionWithFeatures.enabledFeatures || [];
 
     const handTracking = enabledFeatures.includes('hand-tracking');
     const eyeTracking = enabledFeatures.includes('eye-tracking');
