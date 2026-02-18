@@ -3,6 +3,7 @@ import { GLTFExporter, GLTFExporterOptions } from 'three/examples/jsm/exporters/
 // @ts-ignore
 import JSZip from 'jszip';
 import C3D from '../index';
+import { GazeHitData } from '../utils/webxr'; 
 
 interface FPSState {
     frameCount: number;
@@ -17,6 +18,11 @@ interface DynamicObjectOptions {
     scaleThreshold?: number;
 }
 
+// Helper interface for extended WebXRManager
+interface ExtendedWebXRManager extends THREE.WebXRManager {
+    getScene?: () => THREE.Scene;
+}
+
 class C3DThreeAdapter {
     private c3d: C3D;
     private _fpsState: FPSState = {
@@ -25,14 +31,30 @@ class C3DThreeAdapter {
         lastTime: performance.now(),
         frameTimes: []
     };
-    private exportDirHandle: any = null; // TODO: Replace 'any' with FileSystemDirectoryHandle type
+    // Used to avoid TS errors in environments without FileSystem API types
+    private exportDirHandle: any = null; 
+    private _interactableObjects: THREE.Object3D[] = [];  
+
+    // Object Pooling for GC optimization
+    private _tempVec = new THREE.Vector3();
+    private _tempQuat = new THREE.Quaternion();
+    private _tempScale = new THREE.Vector3();
+
+    // Helper to log object hierarchy recursively for during object export debugging 
+    private _logHierarchy(obj: THREE.Object3D, depth = 0): void {
+        const indent = "  ".repeat(depth);
+        const info = `Type: ${obj.type}, Name: "${obj.name}"`;
+        console.log(`${indent}- ${info}`);
+        if (obj.children) {
+            obj.children.forEach(child => this._logHierarchy(child, depth + 1));
+        }
+    }
 
     constructor(c3dInstance: C3D) {
         if (!c3dInstance) {
             throw new Error("A C3D instance must be provided to the Three.js adapter.");
         }
         this.c3d = c3dInstance;
-        // _fpsState is already initialized above
 
         this.c3d.setDeviceProperty('AppEngine', 'Three.js');
         this.c3d.setDeviceProperty('AppEngineVersion', THREE.REVISION);
@@ -55,32 +77,15 @@ class C3DThreeAdapter {
 
         this.c3d.gaze.recordGaze(position, rotation, gaze);
     }
-
-    public startTracking(
-        renderer: THREE.WebGLRenderer, 
-        camera: THREE.Camera, 
-        interactableGroup: THREE.Group | null = null, 
-        userRenderFn: ((timestamp: number, frame: XRFrame) => void) | null = null
-    ): void {
-        if (!renderer || !camera) {
-            console.error("Cognitive3D: renderer and camera must be provided to startTracking.");
-            return;
-        }
-
-        // 1. Stop default tracker
-        if (this.c3d.fpsTracker) {
-            this.c3d.fpsTracker.stop();
-            console.log("Cognitive3D: Stopped default FPS tracker in favor of XR-synced tracking.");
-        }
-
-        // 2. Setup Dynamic Objects & Gaze
-        if (interactableGroup) {
-            this._setupGazeRaycasting(camera, interactableGroup);
-            console.log('Cognitive3D: Gaze raycasting enabled.');
-
-            interactableGroup.children.forEach(child => {
-                if (child.userData.isDynamic && child.userData.c3dId) {
-                    const options: DynamicObjectOptions = {
+    //  Helper function for recursively finding dynamic interactable objects in a three.scene or three.group
+    private _scanForInteractables(root: THREE.Object3D): void {
+        root.traverse((child) => {
+            
+            if (child.userData && child.userData.c3dId) {
+                this._interactableObjects.push(child);
+                
+                if (child.userData.isDynamic) {
+                     const options: DynamicObjectOptions = {
                         positionThreshold: child.userData.positionThreshold,
                         rotationThreshold: child.userData.rotationThreshold,
                         scaleThreshold: child.userData.scaleThreshold
@@ -88,27 +93,65 @@ class C3DThreeAdapter {
                     this.trackDynamicObject(child, child.userData.c3dId, options);
                     console.log(`Cognitive3D: Automatically started tracking dynamic object: ${child.name}`);
                 }
-            });
+            }
+        });
+    }
+
+    /**
+     * Initializes the tracking systems (Gaze, Dynamic Objects, FPS).
+     * You MUST call c3dAdapter.update() in your own render loop.
+     */
+    public startTracking(
+        renderer: THREE.WebGLRenderer, 
+        camera: THREE.Camera, 
+        // Accept a Scene, a specific Group, or a manual list of objects
+        trackableTarget: THREE.Object3D | THREE.Object3D[] | null = null
+    ): void {
+        if (!renderer || !camera) {
+            console.error("Cognitive3D: renderer and camera must be provided to startTracking.");
+            return;
         }
 
-        // 3. Initialize FPS State (Reset)
-        this._initFPSState();
+        if (this.c3d.fpsTracker) {
+            this.c3d.fpsTracker.stop();
+            console.log("Cognitive3D: Stopped default FPS tracker in favor of XR-synced tracking.");
+        }
 
-        // 4. Hook into the Render Loop
-        const renderLoop = (timestamp: number, frame: any) => { // TODO: Replace 'any' with XRFrame (if available)
-            // Update FPS logic
-            this._updateFPS();
+        // Setup Dynamic Objects & Gaze, Clear previous list
+        this._interactableObjects = [];
 
-            // Run user's original render function
-            if (userRenderFn) {
-                userRenderFn(timestamp, frame);
+        if (trackableTarget) {
+            if (Array.isArray(trackableTarget)) {
+                // User manually provided a list of objects
+                this._interactableObjects = trackableTarget;
+            } else {
+                // User provided the Scene or a Group -> Scan it
+                this._scanForInteractables(trackableTarget);
             }
 
-            this.updateTrackedObjectTransforms();
-        };
+            console.log(`Cognitive3D: Tracking ${this._interactableObjects.length} objects.`);
+            
+            this._setupGazeRaycasting(camera);
+            console.log('Cognitive3D: Gaze raycasting enabled.');
+        }
 
-        renderer.setAnimationLoop(renderLoop);
-        console.log('Cognitive3D: Hooked into the render loop for analytics.');
+        this._initFPSState();
+
+        console.log('Cognitive3D: Adapter initialized. Please ensure you call c3dAdapter.update() within your render loop.');
+    }
+
+    /**
+     * MUST be called once per frame in your developer render loop.
+     * * @param timestamp - The high-precision timestamp passed by requestAnimationFrame or the WebXR loop.
+     * CURRENTLY UNUSED: Internal timing uses performance.now(). 
+     * FUTURE: Will be used for precise frame-to-frame delta calculations synced to the display refresh rate.
+     * * @param frame - The XRFrame object provided by the WebXR session.
+     * CURRENTLY UNUSED: Adapter relies on Three.js wrappers for pose data.
+     * FUTURE: Required for accessing raw WebXR features like AR Hit Testing, Anchors, and Light Estimation.
+     */
+    public update(timestamp?: number, frame?: XRFrame): void { // TODO - use these parameters for more precise timing and WebXR features
+        this._updateFPS();
+        this.updateTrackedObjectTransforms();
     }
 
     private _initFPSState(): void {
@@ -124,7 +167,6 @@ class C3DThreeAdapter {
         const now = performance.now();
         let delta = (now - this._fpsState.lastTime) / 1000; // delta in seconds
 
-        // Ignore massive jumps (session paused/resumed)
         if (delta > 1.0) delta = 0;
 
         this._fpsState.lastTime = now;
@@ -132,11 +174,9 @@ class C3DThreeAdapter {
         this._fpsState.frameCount++;
         this._fpsState.frameTimes.push(delta);
 
-        // Report every 1 second
         if (this._fpsState.timeAccumulator >= 1.0) {
             this._sendFPSData();
 
-            // Reset counters for next interval
             this._fpsState.frameCount = 0;
             this._fpsState.timeAccumulator = 0;
             this._fpsState.frameTimes = [];
@@ -166,45 +206,45 @@ class C3DThreeAdapter {
         }
     }
 
-    private _setupGazeRaycasting(camera: THREE.Camera, interactableGroup: THREE.Group): void {
+    private _setupGazeRaycasting(camera: THREE.Camera): void {
         const raycaster = new THREE.Raycaster();
         raycaster.far = 1000;
-        this.c3d.gazeRaycaster = () => {
-            // FIX: Use new THREE.Vector2(0, 0) instead of plain object
-            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-            const intersects = raycaster.intersectObjects(interactableGroup.children, true);
+        
+        const gazeOriginNDC = new THREE.Vector2(0, 0);
+
+        this.c3d.gazeRaycaster = (): GazeHitData | null => {
+            raycaster.setFromCamera(gazeOriginNDC, camera);
+            
+            // Intersect against the cached array, NOT a specific group
+            const intersects = raycaster.intersectObjects(this._interactableObjects, true);
 
             if (intersects.length > 0) {
                 const intersection = intersects[0];
-                const intersectedObject = intersection.object;
-                let targetObject: THREE.Object3D | null = intersectedObject;
-                let isDynamic = false;
+                let targetObject: THREE.Object3D | null = intersection.object;
 
+                // Traverse up from the hit mesh to find the actual 'tracked' parent (if applicable)
+                // This handles cases where we track a "Car" (Group) but hit the "Tire" (Mesh)
                 while (targetObject) {
-                    if (targetObject.userData.c3dId) {
-                        isDynamic = true;
+                    if (targetObject.userData && targetObject.userData.c3dId) {
                         break;
                     }
-                    if (!targetObject.parent || targetObject.parent === interactableGroup) {
+                    // Stop if we hit the scene root or run out of parents
+                    if (!targetObject.parent) {
+                        targetObject = null;
                         break;
                     }
                     targetObject = targetObject.parent;
                 }
 
-                if (isDynamic && targetObject) {
+                if (targetObject && targetObject.userData.c3dId) {
                     const worldPoint = intersection.point.clone();
                     targetObject.worldToLocal(worldPoint);
+                    // Standardize coordinate system if necessary (often needed for analytics backends)
                     worldPoint.x *= 1;
                     worldPoint.z *= -1;
 
                     return {
                         objectId: targetObject.userData.c3dId,
-                        point: [worldPoint.x, worldPoint.y, worldPoint.z]
-                    };
-                } else {
-                    const worldPoint = intersection.point;
-                    return {
-                        objectId: null,
                         point: [worldPoint.x, worldPoint.y, worldPoint.z]
                     };
                 }
@@ -237,35 +277,33 @@ class C3DThreeAdapter {
             const threeLastScale = lastScale as THREE.Vector3;
 
             threeObject.updateWorldMatrix(true, false);
+            threeObject.matrixWorld.decompose(this._tempVec, this._tempQuat, this._tempScale);
 
-            const worldPosition = new THREE.Vector3();
-            const worldQuaternion = new THREE.Quaternion();
-            const worldScale = new THREE.Vector3();
-
-            threeObject.matrixWorld.decompose(worldPosition, worldQuaternion, worldScale);
-
-            const positionChanged = worldPosition.distanceTo(threeLastPos) > (positionThreshold || 0.01);
-            const rotationChanged = worldQuaternion.angleTo(threeLastRot) * (180 / Math.PI) > (rotationThreshold || 1);
-            const scaleChanged = worldScale.distanceTo(threeLastScale) > (scaleThreshold || 0.01);
+            const positionChanged = this._tempVec.distanceTo(threeLastPos) > (positionThreshold || 0.01);
+            const rotationChanged = this._tempQuat.angleTo(threeLastRot) * (180 / Math.PI) > (rotationThreshold || 1);
+            const scaleChanged = this._tempScale.distanceTo(threeLastScale) > (scaleThreshold || 0.01);
 
             if (positionChanged || rotationChanged || scaleChanged) {
-                const correctedPosition = worldPosition.clone();
-                correctedPosition.z *= -1;
+                // OPTIMIZATION: Manually construct arrays to avoid .clone() and .toArray() allocations
+                const posArray = [this._tempVec.x, this._tempVec.y, this._tempVec.z * -1];
+                const quatArray = [this._tempQuat.x, this._tempQuat.y, this._tempQuat.z * -1, this._tempQuat.w * -1];
+                const scaleArray = [this._tempScale.x, this._tempScale.y, this._tempScale.z];
 
-                const correctedQuaternion = worldQuaternion.clone();
-                correctedQuaternion.z *= -1;
-                correctedQuaternion.w *= -1;
+                dynamicObjectManager.addSnapshot(id, posArray, quatArray, scaleArray);
 
-                dynamicObjectManager.addSnapshot(id, correctedPosition.toArray(), correctedQuaternion.toArray(), worldScale.toArray());
-
-                threeLastPos.copy(worldPosition);
-                threeLastRot.copy(worldQuaternion);
-                threeLastScale.copy(worldScale);
+                threeLastPos.copy(this._tempVec);
+                threeLastRot.copy(this._tempQuat);
+                threeLastScale.copy(this._tempScale);
             }
         });
     }
+    public addInteractable(object: THREE.Object3D): void {
+        if (!this._interactableObjects.includes(object)) {
+            this._interactableObjects.push(object);
+        }
+    }
 
-    async _ensureExportDir(): Promise<any> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
+    async _ensureExportDir(): Promise<any> {
         if (this.exportDirHandle) return this.exportDirHandle;
         // @ts-ignore
         if (!window.showDirectoryPicker) return null;
@@ -283,7 +321,7 @@ class C3DThreeAdapter {
         }
     }
 
-    async _writeFile(dirHandle: any, filename: string, blob: Blob): Promise<void> { // TODO: Replace 'any' with FileSystemDirectoryHandle type
+    async _writeFile(dirHandle: any, filename: string, blob: Blob): Promise<void> {
         const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(blob);
@@ -307,7 +345,7 @@ class C3DThreeAdapter {
         const staticScene = scene.clone(true);
 
         staticScene.traverse((obj) => {
-            if (obj.userData && obj.userData.c3dId) {
+            if (obj.userData && (obj.userData.c3dId || obj.userData.isDynamic)) {
                 if (obj.parent) {
                     obj.parent.remove(obj);
                 }
@@ -322,7 +360,8 @@ class C3DThreeAdapter {
 
         exporter.parse(
             exportRoot,
-            async (gltf: any) => { // TODO: Replace 'any' with specific type
+            async (gltfInput: any) => {
+                const gltf = gltfInput;
                 const dir = await this._ensureExportDir();
 
                 const prefix = "data:application/octet-stream;base64,";
@@ -334,7 +373,9 @@ class C3DThreeAdapter {
                     const bytes = new Uint8Array(raw.length);
                     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
                     binBlob = new Blob([bytes.buffer], { type: "application/octet-stream" });
-                    gltf.buffers[0].uri = "scene.bin";
+                    if (gltf.buffers && gltf.buffers[0]) {
+                        gltf.buffers[0].uri = "scene.bin";
+                    }
                 }
 
                 const gltfBlob = new Blob([JSON.stringify(gltf, null, 2)], { type: "model/gltf+json" });
@@ -373,7 +414,8 @@ class C3DThreeAdapter {
     }
 
     public async exportObject(objectToExport: THREE.Object3D, objectName: string, renderer: THREE.WebGLRenderer, camera: THREE.Camera): Promise<void> {
-        const originalScene = renderer.xr.isPresenting ? (renderer.xr as any).getScene?.() : camera.parent; // TODO: Replace 'any' with specific type
+        const xrManager = renderer.xr as ExtendedWebXRManager;
+        const originalScene = xrManager.isPresenting ? xrManager.getScene?.() : camera.parent; 
         const tempScene = new THREE.Scene();
         tempScene.background = new THREE.Color(0xe0e0e0);
         const tempLight = new THREE.AmbientLight(0xffffff, 3.0);
@@ -382,7 +424,7 @@ class C3DThreeAdapter {
         const objectClone = objectToExport.clone();
         const box = new THREE.Box3().setFromObject(objectClone);
         const center = box.getCenter(new THREE.Vector3());
-        objectClone.position.sub(center);
+        objectClone.position.sub(center); 
         tempScene.add(objectClone);
 
         renderer.render(tempScene, camera);
@@ -394,12 +436,16 @@ class C3DThreeAdapter {
         }
 
         const exporter = new GLTFExporter();
-        const exportRoot = new THREE.Group();
-        exportRoot.add(objectToExport.clone());
+        
+        const gltfClone = objectToExport.clone();
+
+        console.log(`[Cognitive3D] Structure being exported for "${objectName}":`);
+        this._logHierarchy(gltfClone);
 
         exporter.parse(
-            exportRoot,
-            async (gltf: any) => { // TODO: Replace 'any' with specific type
+            gltfClone,
+            async (gltfInput: any) => { 
+                const gltf = gltfInput;
                 const dir = await this._ensureExportDir();
                 const prefix = "data:application/octet-stream;base64,";
                 const uri = gltf.buffers?.[0]?.uri || "";
@@ -411,7 +457,9 @@ class C3DThreeAdapter {
                     const bytes = new Uint8Array(raw.length);
                     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
                     binBlob = new Blob([bytes.buffer], { type: "application/octet-stream" });
-                    gltf.buffers[0].uri = `${objectName}.bin`;
+                    if (gltf.buffers && gltf.buffers[0]) {
+                        gltf.buffers[0].uri = `${objectName}.bin`;
+                    }
                 }
 
                 const gltfBlob = new Blob([JSON.stringify(gltf, null, 2)], { type: "model/gltf+json" });
@@ -419,14 +467,14 @@ class C3DThreeAdapter {
                 if (dir) {
                     if (binBlob) await this._writeFile(dir, `${objectName}.bin`, binBlob);
                     await this._writeFile(dir, `${objectName}.gltf`, gltfBlob);
-                    await this._writeFile(dir, `${objectName}.png`, screenshotBlob);
+                    await this._writeFile(dir, "cvr_object_thumbnail.png", screenshotBlob);
                     console.log(`Exported object files for '${objectName}' to the 'scene' directory.`);
                 } else {
                     console.warn("File System Access API not available; falling back to zip download.");
                     const zip = new JSZip();
                     if (binBlob) zip.file(`${objectName}.bin`, binBlob);
                     zip.file(`${objectName}.gltf`, gltfBlob);
-                    zip.file(`${objectName}.png`, screenshotBlob);
+                    zip.file("cvr_object_thumbnail.png", screenshotBlob);
                     const zipBlob = await zip.generateAsync({ type: "blob" });
                     this._downloadBlob(zipBlob, `${objectName}-export.zip`);
                 }

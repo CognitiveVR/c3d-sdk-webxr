@@ -1,9 +1,19 @@
 import Network from './network';
 import { CognitiveVRAnalyticsCore } from './core';
 
+export type SensorValue = number;
+
 interface SensorDataPoint {
     name: string;
-    data: Array<[number, any]>; // TODO: Replace 'any' with a specific type for sensor values
+    data: Array<[number, SensorValue]>;
+}
+
+interface SensorPayload {
+    name: string;
+    sessionid: string;
+    timestamp: number;
+    part: number;
+    data: SensorDataPoint[];
 }
 
 class Sensors {
@@ -22,8 +32,15 @@ class Sensors {
         this.jsonPart = 1;
     }
 
-    recordSensor(name: string, value: any): void { // TODO: Replace 'any' with a specific type
-        let point: [number, any] = [this.core.getTimestamp(), value]; // TODO: Replace 'any' with a specific type
+    recordSensor(name: string, value: number | boolean): void {
+        let finalValue: number;
+        if (typeof value === 'boolean') {
+            finalValue = value ? 1 : 0;
+        } else {
+            finalValue = value;
+        }
+
+        let point: [number, SensorValue] = [this.core.getTimestamp(), finalValue];
         let sensor = this.allSensors.find(sensor => sensor.name === name);
         
         // Append value to sensor in list if it exists, otherwise create new entry
@@ -53,13 +70,14 @@ class Sensors {
                 return;
             }
 
-            let payload: any = {}; // TODO: Replace 'any' with a specific type (e.g. SensorPayload interface)
-            payload['name'] = this.core.userId;
-            payload['sessionid'] = this.core.getSessionId();
-            payload['timestamp'] = parseInt(this.core.getTimestamp() as unknown as string, 10);
-            payload['part'] = this.jsonPart;
+            let payload: SensorPayload = {
+                name: this.core.userId,
+                sessionid: this.core.getSessionId(),
+                timestamp: parseInt(this.core.getTimestamp() as unknown as string, 10),
+                part: this.jsonPart,
+                data: this.allSensors
+            };
             this.jsonPart++;
-            payload['data'] = this.allSensors;
 
             this.network.networkCall('sensors', payload)
                 .then(res => (res === 200) ? resolve(res as number) : reject(res));

@@ -1,5 +1,5 @@
 import Network from './network';
-import { CognitiveVRAnalyticsCore } from './core';
+import { CognitiveVRAnalyticsCore, SessionPropertyValue } from './core';
 
 // Define the structure of a single gaze data point
 interface GazeData {
@@ -11,9 +11,22 @@ interface GazeData {
 }
 
 // Define the hit result structure
-interface GazeHit {
+export interface GazeHit {
     objectId?: string | null;
     point: number[];
+}
+
+// Interface for the payload sent to the network
+interface GazePayload {
+    userid: string;
+    timestamp: number;
+    sessionid: string;
+    lobbyId?: string;
+    part: number;
+    hmdtype?: string;
+    interval?: number;
+    data: GazeData[];
+    properties?: Record<string, SessionPropertyValue>;
 }
 
 class GazeTracker {
@@ -104,10 +117,10 @@ class GazeTracker {
         });
     }
 
-    private _getChangedProperties(): { [key: string]: any } { // TODO: Replace 'any' with a specific type
+    private _getChangedProperties(): Record<string, SessionPropertyValue> {
         const allSessionProperties = this.core.sessionProperties || {};
         const sentSessionProperties = this.core.sentSessionProperties || {};
-        const newOrChangedProperties: { [key: string]: any } = {}; // TODO: Replace 'any' with a specific type
+        const newOrChangedProperties: Record<string, SessionPropertyValue> = {}; 
 
         for (const key in allSessionProperties) {
             if (allSessionProperties[key] !== sentSessionProperties[key]) {
@@ -117,21 +130,26 @@ class GazeTracker {
         return newOrChangedProperties;
     }
 
-    private _createPayload(properties: any): any { // TODO: Replace 'any' with specific types
-        let payload: any = {}; // TODO: Replace 'any' with a specific type (e.g. GazePayload interface)
-        payload['userid'] = this.core.userId;
-        payload['timestamp'] = parseInt(this.core.getTimestamp() as unknown as string, 10);
-        payload['sessionid'] = this.core.getSessionId();
-        if (this.core.lobbyId) { payload['lobbyId'] = this.core.lobbyId; }
-        payload['part'] = this.jsonPart;
+    private _createPayload(properties: Record<string, SessionPropertyValue>): GazePayload {
+        let payload: GazePayload = {
+            userid: this.core.userId,
+            timestamp: parseInt(this.core.getTimestamp() as unknown as string, 10),
+            sessionid: this.core.getSessionId(),
+            part: this.jsonPart,
+            hmdtype: this.HMDType,
+            interval: this.playerSnapshotInterval,
+            data: this.batchedGaze,
+            properties: {}
+        };
+
+        if (this.core.lobbyId) { 
+            payload.lobbyId = this.core.lobbyId; 
+        }
+        
         this.jsonPart++;
-        payload['hmdtype'] = this.HMDType;
-        payload['interval'] = this.playerSnapshotInterval;
-        payload['data'] = this.batchedGaze;
-        payload['properties'] = {};
                     
         if (Object.keys(properties).length > 0) { 
-            payload['properties'] = properties; 
+            payload.properties = properties; 
         }
         return payload;
     }

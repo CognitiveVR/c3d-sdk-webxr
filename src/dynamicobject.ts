@@ -25,7 +25,6 @@ export interface EngagementEvent {
     endTime?: number;
 }
 
-// New Interface for the engagement data sent to server
 interface EngagementPayload {
     engagementtype: string;
     engagementparent: string | null;
@@ -33,7 +32,6 @@ interface EngagementPayload {
     engagement_time: number | undefined;
 }
 
-// New Interface for the full network payload
 interface DynamicsPayload {
     userid: string;
     timestamp: number;
@@ -49,14 +47,14 @@ interface ManifestPayloadEntry {
     fileType: string;
 }
 
-interface SnapshotPayload {
+export interface SnapshotPayload {
     id: string;
     time: number;
     p: number[];
     r: number[];
     s?: number[];
     engagements?: EngagementPayload[];
-    properties?: any; // TODO: Replace 'any' with a specific type for properties
+    properties?: any; 
 }
 
 export interface Snapshot {
@@ -65,16 +63,16 @@ export interface Snapshot {
     time: number;
     id: string;
     scale?: number[] | null;
-    properties?: any; // TODO: Replace 'any' with a specific type for properties
+    properties?: any; 
     engagements?: EngagementPayload[];
 }
 
 export interface TrackedObjectEntry {
-    object: any; // TODO: Replace 'any' with a specific type (e.g., generic Object3D type)
+    object: object; 
     positionThreshold: number;
     rotationThreshold: number;
     scaleThreshold: number;
-    [key: string]: any; // TODO: Replace 'any' with a specific type
+    [key: string]: unknown;
 }
 
 class DynamicObject {
@@ -92,6 +90,7 @@ class DynamicObject {
     public allEngagements: { [objectId: string]: EngagementEvent[] };
     private engagementCounts: { [objectId: string]: { [name: string]: number } };
     public trackedObjects: Map<string, TrackedObjectEntry>;
+    private snapshotIndexMap: Map<string, number>; // Track indices of snapshots while session is inactive
 
     constructor(core: CognitiveVRAnalyticsCore, customEvent: CustomEvents) {
         this.core = core;
@@ -108,6 +107,7 @@ class DynamicObject {
         this.allEngagements = {};
         this.engagementCounts = {};
         this.trackedObjects = new Map();
+        this.snapshotIndexMap = new Map();
     }
 
     registerObjectCustomId(name: string, meshname: string, customid: string, position: number[], rotation: number[], fileType?: string): string {
@@ -124,7 +124,7 @@ class DynamicObject {
         let dome = this.dynamicObjectManifestEntry(registerId.id, name, meshname, finalFileType);
         this.manifestEntries.push(dome);
         this.fullManifest.push(dome);
-        let props = [{ "enabled": true }];
+        let props = [{ "enabled": true }]; 
 
         this.addSnapshot(customid, position, rotation, null, props);
 
@@ -152,7 +152,7 @@ class DynamicObject {
         return newObjectId.id;
     }
 
-    trackObject(id: string, object: any, options: { positionThreshold?: number, rotationThreshold?: number, scaleThreshold?: number } = {}): void { // TODO: Replace 'any' with a specific type for object
+    trackObject(id: string, object: object, options: { positionThreshold?: number, rotationThreshold?: number, scaleThreshold?: number } = {}): void { 
         if (!id || !object) {
             console.error("DynamicObject.trackObject: id and object must be provided.");
             return;
@@ -165,7 +165,7 @@ class DynamicObject {
         });
     }
 
-    addSnapshot(objectId: string, position: number[], rotation: number[], scale?: number[] | null, properties?: any): void { // TODO: Replace 'any' with a specific type for properties
+    addSnapshot(objectId: string, position: number[], rotation: number[], scale?: number[] | null, properties?: any): void {
         let foundId = this.objectIds.some(element => objectId === element.id);
         if (!foundId) {
             console.warn("DynamicObject::Snapshot cannot find objectId " + objectId + " in full manifest. Did you Register this object?");
@@ -175,6 +175,22 @@ class DynamicObject {
 
         if (this.allEngagements[objectId] && Object.keys(this.allEngagements[objectId]).length > 0) {
             this._processSnapshotEngagements(snapshot, objectId);
+        }
+
+        // If session is inactive and this is a standard transform update (no properties),
+        // overwrite previous snapshot for this object to prevent data flooding 
+        // while ensuring the *latest* start position is preserved.
+        if (!this.core.isSessionActive && !properties) {
+            if (this.snapshotIndexMap.has(objectId)) {
+                const index = this.snapshotIndexMap.get(objectId) as number;
+                // Safety check: ensure the snapshot at this index actually belongs to this ID
+                if (this.snapshots[index] && this.snapshots[index].id === objectId) {
+                    this.snapshots[index] = snapshot;
+                    return; // Successfully updated in place, exit early
+                }
+            }
+            // If not found in map, or map was stale, store the new index for future overwrites
+            this.snapshotIndexMap.set(objectId, this.snapshots.length);
         }
         this.snapshots.push(snapshot);
 
@@ -188,7 +204,6 @@ class DynamicObject {
             snapshot.engagements = [];
         }
         for (let e of this.allEngagements[objectId]) {
-            // PR FIX: Typed engagementEvent
             let engagementEvent: EngagementPayload = {
                 engagementtype: e.name,
                 engagementparent: e.id,
@@ -225,7 +240,6 @@ class DynamicObject {
                 return;
             }
 
-            // PR FIX: Typed sendJson
             let sendJson: DynamicsPayload = {
                 userid: this.core.userId,
                 timestamp: this.core.getTimestamp(),
@@ -241,10 +255,10 @@ class DynamicObject {
             
             this.manifestEntries = [];
             this.snapshots = [];
+            this.snapshotIndexMap.clear();
         });
     }
 
-    // PR FIX: Typed return
     private _buildManifest(): Record<string, ManifestPayloadEntry> {
         let manifest: Record<string, ManifestPayloadEntry> = {};
         for (let element of this.manifestEntries) {
@@ -276,7 +290,7 @@ class DynamicObject {
         return data;
     }
 
-    dynamicObjectSnapshot(position: number[], rotation: number[], objectId: string, scale?: number[] | null, properties?: any): Snapshot { // TODO: Replace 'any' with a specific type for properties
+    dynamicObjectSnapshot(position: number[], rotation: number[], objectId: string, scale?: number[] | null, properties?: any): Snapshot {
         let ss: Snapshot = {
             position: position,
             rotation: rotation,
@@ -315,6 +329,7 @@ class DynamicObject {
         this.manifestEntries = [];
         this.objectIds = [];
         this.snapshots = [];
+        this.snapshotIndexMap.clear();
         this.engagementCounts = {};
         this.allEngagements = {};
         this.activeEngagements = {};

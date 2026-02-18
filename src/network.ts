@@ -4,7 +4,7 @@ import Core from './core';
 // Define the shape of the QuestionSet response
 export interface QuestionSet {
     id: string;
-    [key: string]: any; // TODO: Replace 'any' with specific QuestionSet property types
+    [key: string]: unknown;
 }
 
 class Network {
@@ -43,6 +43,27 @@ class Network {
 
             const path = `https://${this.core.config.networkHost}/v${this.core.config.networkVersion}/${suburl}/${this.core.sceneData.sceneId}?version=${this.core.sceneData.versionNumber}`;
 
+            // --- LOGGER IMPLEMENTATION ---
+            if (this.core.config.LOG) {
+                const items = (content as any).data;
+                const count = Array.isArray(items) ? `${items.length} items` : 'Object';
+                
+                console.groupCollapsed(`[C3D] Sending Batch: ${suburl} (${count})`);
+                console.log("URL:", path);
+                
+                let payloadForLog = content;
+                if (typeof structuredClone === 'function') {
+                    try {
+                        payloadForLog = structuredClone(content);
+                    } catch (e) {
+                        // If structuredClone fails (e.g. complex objects), fallback to original ref
+                    }
+                }
+                console.log("Payload:", payloadForLog);
+                console.groupEnd();
+            }
+            // -----------------------------
+
             const options = {
                 method: 'post',
                 headers: {
@@ -52,7 +73,6 @@ class Network {
                 body: JSON.stringify(content)
             };
 
-            // Check network connectivity
             if (this.isOnline()) {
                 fetch(path, options)
                     .then(res => resolve(res.status))
