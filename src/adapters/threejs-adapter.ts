@@ -35,6 +35,9 @@ class C3DThreeAdapter {
     private exportDirHandle: any = null; 
     private _interactableObjects: THREE.Object3D[] = [];  
 
+    // Local tracking map to safely hold MatterCraft/ThreeJS objects
+    private _localTrackedObjects = new Map<string, any>();
+
     // Object Pooling for GC optimization
     private _tempVec = new THREE.Vector3();
     private _tempQuat = new THREE.Quaternion();
@@ -254,46 +257,58 @@ class C3DThreeAdapter {
     }
 
     public trackDynamicObject(object: THREE.Object3D, id: string, options: DynamicObjectOptions): void {
+        // Register the ID with the core SDK
         this.c3d.dynamicObject.trackObject(id, object, options);
 
-        const tracked = this.c3d.dynamicObject.trackedObjects.get(id);
-        if (tracked) {
-            tracked.lastPosition = new THREE.Vector3(Infinity, Infinity, Infinity);
-            tracked.lastRotation = new THREE.Quaternion(Infinity, Infinity, Infinity, Infinity);
-            tracked.lastScale = new THREE.Vector3(Infinity, Infinity, Infinity);
-        }
+        // 2. Keep local record of the Three.js object and its last known state
+        this._localTrackedObjects.set(id, {
+            object: object,
+            lastPosition: new THREE.Vector3(0, 0, 0),
+            lastRotation: new THREE.Quaternion(),
+            lastScale: new THREE.Vector3(1, 1, 1),
+            positionThreshold: options.positionThreshold ?? 0.01,
+            rotationThreshold: options.rotationThreshold ?? 1.0,
+            scaleThreshold: options.scaleThreshold ?? 0.01,
+            isFirstFrame: true // Forces an immediate snapshot on the first tick
+        });
     }
 
     public updateTrackedObjectTransforms(): void {
         const dynamicObjectManager = this.c3d.dynamicObject;
+        if (!dynamicObjectManager) return;
 
-        dynamicObjectManager.trackedObjects.forEach((tracked, id) => {
-            if (!tracked.lastPosition) return;
+        // Loop through our LOCAL map, NOT the core SDK's map
+        this._localTrackedObjects.forEach((tracked, id) => {
+            const { 
+                object, lastPosition, lastRotation, lastScale, 
+                positionThreshold, rotationThreshold, scaleThreshold, isFirstFrame 
+            } = tracked;
 
-            const { object, lastPosition, lastRotation, lastScale, positionThreshold, rotationThreshold, scaleThreshold } = tracked;
-            const threeObject = object as THREE.Object3D;
-            const threeLastPos = lastPosition as THREE.Vector3;
-            const threeLastRot = lastRotation as THREE.Quaternion;
-            const threeLastScale = lastScale as THREE.Vector3;
+            // Ensure the transform matrix is up to date safely
+            object.updateWorldMatrix(true, false);
+            object.matrixWorld.decompose(this._tempVec, this._tempQuat, this._tempScale);
 
-            threeObject.updateWorldMatrix(true, false);
-            threeObject.matrixWorld.decompose(this._tempVec, this._tempQuat, this._tempScale);
+            // Calculate how much the object has moved since the last snapshot
+            const positionChanged = this._tempVec.distanceTo(lastPosition) > positionThreshold;
+            
+            // Calculate rotation safely (avoiding NaN if quaternion is perfectly zeroed out)
+            const angleChangedRad = this._tempQuat.angleTo(lastRotation);
+            const rotationChanged = !isNaN(angleChangedRad) && (angleChangedRad * (180 / Math.PI)) > rotationThreshold;
+            
+            const scaleChanged = this._tempScale.distanceTo(lastScale) > scaleThreshold;
 
-            const positionChanged = this._tempVec.distanceTo(threeLastPos) > (positionThreshold || 0.01);
-            const rotationChanged = this._tempQuat.angleTo(threeLastRot) * (180 / Math.PI) > (rotationThreshold || 1);
-            const scaleChanged = this._tempScale.distanceTo(threeLastScale) > (scaleThreshold || 0.01);
-
-            if (positionChanged || rotationChanged || scaleChanged) {
-                // OPTIMIZATION: Manually construct arrays to avoid .clone() and .toArray() allocations
+            if (isFirstFrame || positionChanged || rotationChanged || scaleChanged) {
+                // Manually construct arrays to avoid allocations (inverting Z for Left-Handed Coordinate match if necessary)
                 const posArray = [this._tempVec.x, this._tempVec.y, this._tempVec.z * -1];
                 const quatArray = [this._tempQuat.x, this._tempQuat.y, this._tempQuat.z * -1, this._tempQuat.w * -1];
                 const scaleArray = [this._tempScale.x, this._tempScale.y, this._tempScale.z];
 
                 dynamicObjectManager.addSnapshot(id, posArray, quatArray, scaleArray);
 
-                threeLastPos.copy(this._tempVec);
-                threeLastRot.copy(this._tempQuat);
-                threeLastScale.copy(this._tempScale);
+                lastPosition.copy(this._tempVec);
+                lastRotation.copy(this._tempQuat);
+                lastScale.copy(this._tempScale);
+                tracked.isFirstFrame = false;
             }
         });
     }
