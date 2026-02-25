@@ -56,7 +56,7 @@ class Sensors {
         }
     }
 
-    sendData(): Promise<number | string> {
+    sendData(isFinalRequest: boolean = false): Promise<number | string> {
         return new Promise((resolve, reject) => {
             if (!this.core.isSessionActive) {
                 const msg = 'Sensor.sendData failed: no session active';
@@ -79,7 +79,8 @@ class Sensors {
             };
             this.jsonPart++;
 
-            this.network.networkCall('sensors', payload)
+            // Pass isFinalRequest down to the network call
+            this.network.networkCall('sensors', payload, isFinalRequest)
                 .then(res => (res === 200) ? resolve(res as number) : reject(res));
             
             this.sensorCount = 0;

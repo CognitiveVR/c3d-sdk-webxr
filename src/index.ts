@@ -72,6 +72,12 @@ class C3D {
     
     // @ts-ignore
     this.network = new Network(this.core);
+    // Give the app a second to initialize, then check IndexedDB for leftover data
+    if (isBrowser) {
+        setTimeout(() => {
+            this.network.flushQueue();
+        }, 1500);
+    }
     this.gaze = new GazeTracker(this.core);
     this.customEvent = new CustomEvent(this.core);
     this.hmdOrientation = new HMDOrientationTracker();
@@ -272,7 +278,7 @@ class C3D {
 
       this.customEvent.send('c3d.sessionEnd', endPos, props);
 
-      this.sendData()
+      this.sendData(true)
         .then(res => {
           this.core.setSessionTimestamp = 0;
           this.core.setSessionId = '';
@@ -325,22 +331,23 @@ class C3D {
     this.core.config.allSceneData = allSceneData;
   }
 
-   sendData(): Promise<number | string> {
+  sendData(isFinalRequest: boolean = false): Promise<number | string> {
     return new Promise((resolve, reject) => {
       if (!this.core.isSessionActive) {
         resolve("Cognitive3DAnalyticsCore::SendData failed: no session active");
         return;
       }
-      
       if (!this.core.sceneData.sceneId) { 
         reject('no scene selected'); 
         return;
       }
 
-      const custom = this.customEvent.sendData();
-      const gaze = this.gaze.sendData();
-      const sensor = this.sensor.sendData();
-      const dynamicObject = this.dynamicObject.sendData();
+      // You will need to update the individual tracker sendData methods
+      // to accept and pass the isFinalRequest boolean down to this.network.networkCall
+      const custom = this.customEvent.sendData(isFinalRequest);
+      const gaze = this.gaze.sendData(isFinalRequest);
+      const sensor = this.sensor.sendData(isFinalRequest);
+      const dynamicObject = this.dynamicObject.sendData(isFinalRequest);
 
       Promise.all([custom, gaze, sensor, dynamicObject])
         .then(() => resolve(200))

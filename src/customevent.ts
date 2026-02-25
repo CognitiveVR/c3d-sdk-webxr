@@ -52,7 +52,7 @@ class CustomEvents {
         }
     }
 
-    sendData(): Promise<number | string> {
+    sendData(isFinalRequest: boolean = false): Promise<number | string> {
         return new Promise((resolve, reject) => {
             if (!this.core.isSessionActive) {
                 const msg = 'CustomEvent.sendData failed: no session active';
@@ -70,7 +70,8 @@ class CustomEvents {
                 
                 this.jsonPart++;
                 
-                this.network.networkCall('events', payload)
+                // Pass isFinalRequest down to the network call
+                this.network.networkCall('events', payload, isFinalRequest)
                     .then(res => (res === 200) ? resolve(res as number) : reject(res));
                 
                 this.batchedCustomEvents = [];

@@ -227,7 +227,7 @@ class DynamicObject {
         }
     }
 
-    sendData(): Promise<number | string> {
+    sendData(isFinalRequest: boolean = false): Promise<number | string> {
         return new Promise((resolve, reject) => {
             if (!this.core.isSessionActive) {
                 console.log('DynamicObject.sendData failed: no session active');
@@ -250,7 +250,8 @@ class DynamicObject {
             };
             this.jsonPart++;
 
-            this.network.networkCall('dynamics', sendJson)
+            // Pass isFinalRequest down to the network call
+            this.network.networkCall('dynamics', sendJson, isFinalRequest)
                 .then(res => (res === 200) ? resolve(200) : reject(res));
             
             this.manifestEntries = [];

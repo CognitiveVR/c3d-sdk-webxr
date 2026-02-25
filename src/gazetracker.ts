@@ -86,7 +86,7 @@ class GazeTracker {
         this.HMDType = hmdtype;
     }
 
-    sendData(): Promise<number | string> {
+    sendData(isFinalRequest: boolean = false): Promise<number | string> {
         return new Promise((resolve, reject) => {
             if (!this.core.isSessionActive) {
                 const msg = 'GazeTracker.sendData failed: no session active';
@@ -104,7 +104,7 @@ class GazeTracker {
 
             const payload = this._createPayload(newOrChangedProperties);
 
-            this.network.networkCall('gaze', payload)
+            this.network.networkCall('gaze', payload, isFinalRequest)
                 .then(res => {
                     if (res === 200) {
                         this.core.sentSessionProperties = { ...this.core.sentSessionProperties, ...newOrChangedProperties };

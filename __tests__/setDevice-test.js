@@ -1,16 +1,9 @@
 import C3DAnalytics from '../lib/cjs/index.cjs.js'; 
 import settings from '../settings';
 
-
-// global.console = {
-//   warn: jest.fn(),
-//   log: jest.fn()
-// }
-
 /**
 * @jest-environment jsdom
 */
-
 
 const c3d = new C3DAnalytics(settings);
 const scene1 = settings.config.allSceneData[0].sceneName;
@@ -18,82 +11,82 @@ const scene1 = settings.config.allSceneData[0].sceneName;
 c3d.setScene(scene1);
 
 beforeEach(async () => {
-	c3d.core.resetNewUserDeviceProperties();
-	if (c3d.isSessionActive()) {
-		await c3d.endSession();
-	}
+    c3d.core.resetNewUserDeviceProperties();
+    if (c3d.isSessionActive()) {
+        await c3d.endSession();
+    }
 });
 
 test('Apply device properties, set pre-session and end session successfully', async () => {
-	c3d.setDeviceName('7741345684915735');
-	c3d.setDeviceProperty('DeviceMemory', 128);
-	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
-	c3d.setDeviceProperty('DevicePlatform', "Desktop");
-	let deviceProperties = c3d.getDeviceProperties();
-	expect(Object.keys(deviceProperties).length).toEqual(4);
+    c3d.setDeviceName('7741345684915735');
+    c3d.setDeviceProperty('DeviceMemory', 128);
+    c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
+    c3d.setDeviceProperty('DevicePlatform', "Desktop");
+    let deviceProperties = c3d.getDeviceProperties();
+    expect(Object.keys(deviceProperties).length).toEqual(7); 
 
-	expect(deviceProperties['c3d.device.name']).toEqual('7741345684915735');
-	expect(await c3d.startSession()).toEqual(true);
-	let endSession = await c3d.endSession();
-	expect(endSession).toEqual(200);;
+    expect(deviceProperties['c3d.device.name']).toEqual('7741345684915735');
+    expect(await c3d.startSession()).toEqual(true);
+    let endSession = await c3d.endSession();
+    expect(endSession).toEqual(200);
 });
 
 test('Apply device properties, set post-session and send data successfully', async () => {
-	expect(await c3d.startSession()).toEqual(true)
-	c3d.setDeviceName('7741345684915735');
-	c3d.setDeviceProperty('DeviceCPU', "i7-4770 CPU @ 3.40GHz");
-	c3d.setDeviceProperty('DeviceGPU', "GeForce GTX 970");
-	c3d.setDeviceProperty('DeviceMemory', 128);
-	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
-	c3d.setDeviceProperty('DevicePlatform', "Desktop");
-	let deviceProperties = c3d.getDeviceProperties();
-	expect(Object.keys(deviceProperties).length).toEqual(6);
-	await expect(c3d.sendData()).resolves.toEqual(200);
+    expect(await c3d.startSession()).toEqual(true)
+    c3d.setDeviceName('7741345684915735');
+    c3d.setDeviceProperty('DeviceCPU', "i7-4770 CPU @ 3.40GHz");
+    c3d.setDeviceProperty('DeviceGPU', "GeForce GTX 970");
+    c3d.setDeviceProperty('DeviceMemory', 128);
+    c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
+    c3d.setDeviceProperty('DevicePlatform', "Desktop");
+    let deviceProperties = c3d.getDeviceProperties();
+    expect(Object.keys(deviceProperties).length).toEqual(9);
+    await expect(c3d.sendData()).resolves.toEqual(200);
     await c3d.endSession();
 });
 
 test('Updating device properties post-session', async () => {
-	await c3d.startSession();
-	c3d.setDeviceName('7741345684915735');
-	c3d.setDeviceName('7741345684915736');
-	c3d.setDeviceProperty('DeviceCPU', "i5");
-	c3d.setDeviceProperty('DeviceGPU', "GeForce GTX 170");
-	c3d.setDeviceProperty('DeviceMemory', 16);
-	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
+    await c3d.startSession();
+    c3d.setDeviceName('7741345684915735');
+    c3d.setDeviceName('7741345684915736');
+    c3d.setDeviceProperty('DeviceCPU', "i5");
+    c3d.setDeviceProperty('DeviceGPU', "GeForce GTX 170");
+    c3d.setDeviceProperty('DeviceMemory', 16);
+    c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
 
-	c3d.setDeviceProperty('DeviceCPU', "i7-4770 CPU @ 3.40GHz");
-	c3d.setDeviceProperty('DeviceGPU', "GeForce GTX 970");
-	c3d.setDeviceProperty('DeviceMemory', 128);
-	c3d.setDeviceProperty('DevicePlatform', "Desktop");
-	let deviceProperties = c3d.getDeviceProperties();
-	expect(Object.keys(deviceProperties).length).toEqual(6);
-	expect(deviceProperties).toEqual({
-		"c3d.device.name": "7741345684915736",
-		'c3d.device.cpu': "i7-4770 CPU @ 3.40GHz",
-		'c3d.device.gpu': "GeForce GTX 970",
-		'c3d.device.memory': 128,
-		'c3d.device.platform': 'Desktop',
-		'c3d.device.os': "chrome os 16.9f"
-	});
-	let endSession = await c3d.endSession();
-	expect(endSession).toEqual(200);;
+    c3d.setDeviceProperty('DeviceCPU', "i7-4770 CPU @ 3.40GHz");
+    c3d.setDeviceProperty('DeviceGPU', "GeForce GTX 970");
+    c3d.setDeviceProperty('DeviceMemory', 128);
+    c3d.setDeviceProperty('DevicePlatform', "Desktop");
+    let deviceProperties = c3d.getDeviceProperties();
+    expect(Object.keys(deviceProperties).length).toEqual(9);
+    expect(deviceProperties).toEqual(expect.objectContaining({
+        "c3d.device.name": "7741345684915736",
+        'c3d.device.cpu': "i7-4770 CPU @ 3.40GHz",
+        'c3d.device.gpu': "GeForce GTX 970",
+        'c3d.device.memory': 128,
+        'c3d.device.platform': 'Desktop',
+        'c3d.device.os': "chrome os 16.9f"
+    }));
+    let endSession = await c3d.endSession();
+    expect(endSession).toEqual(200);
 });
 
 test('Setting device name to empty string post-session', async () => {
-	expect(await c3d.startSession()).toEqual(true);
-	c3d.setDeviceName("");
-	let deviceProperties = c3d.getDeviceProperties();
-	expect(deviceProperties['c3d.device.name']).toEqual("");
-	let endSession = await c3d.endSession();
-	expect(endSession).toEqual(200);;
+    expect(await c3d.startSession()).toEqual(true);
+    c3d.setDeviceName("");
+    let deviceProperties = c3d.getDeviceProperties();
+    expect(deviceProperties['c3d.device.name']).toEqual("");
+    let endSession = await c3d.endSession();
+    expect(endSession).toEqual(200);
 });
 
 test('Reject ending session if device properties set pre-session without active session', async () => {
-	c3d.setDeviceName('7741345684915735');
-	c3d.setDeviceName('7741345684915736');
-	c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
-	c3d.setDeviceProperty('DeviceMemory', 128);
-	expect(c3d.endSession()).rejects.toEqual('session is not active');
+    c3d.setDeviceName('7741345684915735');
+    c3d.setDeviceName('7741345684915736');
+    c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
+    c3d.setDeviceProperty('DeviceMemory', 128);
+    expect(c3d.endSession()).rejects.toEqual('session is not active');
 });
 
 test('Setting user and device properties post-session', async () => {
@@ -104,7 +97,7 @@ test('Setting user and device properties post-session', async () => {
     await expect(c3d.sendData()).resolves.toEqual(200);
 
     let deviceProperties = c3d.getDeviceProperties();
-    expect(Object.keys(deviceProperties).length).toEqual(3);
+    expect(Object.keys(deviceProperties).length).toEqual(6);
     c3d.setParticipantFullName("john");  
     c3d.setUserProperty("location", "vancouver");
     c3d.setUserProperty("location", "seattle");
@@ -125,7 +118,7 @@ test('Apply user and device properties set pre-session and end session successfu
     c3d.setDeviceProperty('DeviceOS', "chrome os 16.9f");
 
     let deviceProperties = c3d.getDeviceProperties();
-    expect(Object.keys(deviceProperties).length).toEqual(3);
+    expect(Object.keys(deviceProperties).length).toEqual(6);
     let userProperties = c3d.getUserProperties();
     expect(Object.keys(userProperties).length).toEqual(2);
     expect(await c3d.startSession()).toEqual(true);

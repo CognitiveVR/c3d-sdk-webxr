@@ -65,6 +65,14 @@ export class CognitiveVRAnalyticsCore {
             VRModel: 'c3d.device.hmd.type',
             VRVendor: 'c3d.device.vendor',
         };
+        this.setDefaultDeviceProperties();
+    }
+
+    // Set the required default session props so session appears on dashboard (if developer forgets to set them)
+    setDefaultDeviceProperties(): void {
+        this.setDeviceProperty("AppVersion", "1.0");
+        this.setDeviceProperty("AppEngine", "UnknownEngine");
+        this.setDeviceProperty("AppEngineVersion", "1.0");
     }
 
     getSessionTimestamp(): number{
@@ -171,6 +179,7 @@ export class CognitiveVRAnalyticsCore {
     resetNewUserDeviceProperties(): void {
         this.sessionProperties = {};
         this.sentSessionProperties = {};
+        this.setDefaultDeviceProperties();
     }
 
     setLobbyId(id: string): void {
