@@ -4,6 +4,7 @@ import { GLTFExporter, GLTFExporterOptions } from 'three/examples/jsm/exporters/
 import JSZip from 'jszip';
 import C3D from '../index';
 import { GazeHitData } from '../utils/webxr'; 
+import Config from '../config';
 
 interface FPSState {
     frameCount: number;
@@ -34,6 +35,10 @@ class C3DThreeAdapter {
     // Used to avoid TS errors in environments without FileSystem API types
     private exportDirHandle: any = null; 
     private _interactableObjects: THREE.Object3D[] = [];  
+
+    // Properties for engine-camera driven gaze tracking
+    private _camera: THREE.Camera | null = null;
+    private _lastGazeTime: number = 0;
 
     // Object Pooling for GC optimization
     private _tempVec = new THREE.Vector3();
@@ -69,13 +74,22 @@ class C3DThreeAdapter {
     }
 
     public recordGazeFromCamera(camera: THREE.Camera): void {
-        const position = this.fromVector3(camera.position);
-        const rotation = this.fromQuaternion(camera.quaternion);
-        const forward = new THREE.Vector3(0, 0, -1);
-        forward.applyQuaternion(camera.quaternion);
-        const gaze = this.fromVector3(forward);
+        const worldPos = new THREE.Vector3();
+        const worldQuat = new THREE.Quaternion();
+        camera.getWorldPosition(worldPos);
+        camera.getWorldQuaternion(worldQuat);
 
-        this.c3d.gaze.recordGaze(position, rotation, gaze);
+        // Apply C3D Coordinate Corrections
+        const correctedPosition = [worldPos.x, worldPos.y, -worldPos.z];
+        const correctedOrientation = [worldQuat.x, worldQuat.y, -worldQuat.z, -worldQuat.w];
+
+        // Calculate gaze vector natively (assuming camera looks down -Z in local space)
+        const forward = new THREE.Vector3(0, 0, -1);
+        forward.applyQuaternion(worldQuat);
+        // Gaze direction also needs the Z flipped
+        const correctedGaze = [forward.x, forward.y, -forward.z];
+
+        this.c3d.gaze.recordGaze(correctedPosition, correctedOrientation, correctedGaze);
     }
     //  Helper function for recursively finding dynamic interactable objects in a three.scene or three.group
     private _scanForInteractables(root: THREE.Object3D): void {
@@ -117,6 +131,8 @@ class C3DThreeAdapter {
             console.log("Cognitive3D: Stopped default FPS tracker in favor of XR-synced tracking.");
         }
 
+        this._camera = camera; 
+
         // Setup Dynamic Objects & Gaze, Clear previous list
         this._interactableObjects = [];
 
@@ -152,6 +168,11 @@ class C3DThreeAdapter {
     public update(timestamp?: number, frame?: XRFrame): void { // TODO - use these parameters for more precise timing and WebXR features
         this._updateFPS();
         this.updateTrackedObjectTransforms();
+
+        // Check if we need to poll gaze from the engine
+        if (Config.gazeTrackingSource === 'engine') {
+            this._recordEngineGaze();
+        }
     }
 
     private _initFPSState(): void {
@@ -252,6 +273,34 @@ class C3DThreeAdapter {
             return null;
         };
     }
+
+    // Handle Gaze tracking natively through Three.js camera
+    private _recordEngineGaze(): void {
+    if (!this._camera) return;
+
+    const now = performance.now();
+    const intervalMs = Config.GazeInterval ? Config.GazeInterval * 1000 : 100;
+
+    if (now - this._lastGazeTime >= intervalMs) {
+        this._lastGazeTime = now;
+
+        const worldPos = new THREE.Vector3();
+        const worldQuat = new THREE.Quaternion();
+        this._camera.getWorldPosition(worldPos);
+        this._camera.getWorldQuaternion(worldQuat);
+
+        // PERFECTLY MATCHES webxr.ts
+        const correctedPosition = [worldPos.x, worldPos.y, -worldPos.z];
+        const correctedOrientation = [worldQuat.x, worldQuat.y, -worldQuat.z, -worldQuat.w];
+
+        let gazeHitData: GazeHitData | null = null;
+        if (this.c3d.gazeRaycaster) {
+            gazeHitData = this.c3d.gazeRaycaster();
+        }
+
+        this.c3d.gaze.recordGaze(correctedPosition, correctedOrientation, gazeHitData);
+    }
+}
 
     public trackDynamicObject(object: THREE.Object3D, id: string, options: DynamicObjectOptions): void {
         this.c3d.dynamicObject.trackObject(id, object, options);
