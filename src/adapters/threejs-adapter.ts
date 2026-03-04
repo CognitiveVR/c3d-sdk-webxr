@@ -531,7 +531,7 @@ class C3DThreeAdapter {
             (err) => {
                 console.error(`GLTF export for ${objectName} failed:`, err);
             },
-            { binary: false } as GLTFExporterOptions
+            { binary: false, embedImages: true, onlyVisible: true, truncateDrawRange: true, maxTextureSize: 4096 } as GLTFExporterOptions
         );
     }
 }
