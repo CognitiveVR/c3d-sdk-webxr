@@ -2,11 +2,11 @@
 import { vec3, mat4, mat3 } from 'gl-matrix';
 // @ts-ignore
 import { MeshAttribute, MeshComponent } from '@wonderlandengine/api';
-import C3D from '../index';
+
+import type C3D from '../index';
 
 const COMPONENT_TYPE = { UNSIGNED_SHORT: 5123, UNSIGNED_INT: 5125, FLOAT: 5126 };
 const TARGET = { ARRAY_BUFFER: 34962, ELEMENT_ARRAY_BUFFER: 34963 };
-const SDK_VERSION = __SDK_VERSION__;
 
 // --- GLTF Helper Types ---
 interface MeshData {
@@ -139,7 +139,10 @@ class C3DWonderlandAdapter {
 
         const gltfBlob = new Blob([JSON.stringify(json, null, 2)], { type: "model/gltf+json" });
         const binBlob = new Blob([binaryBuffer], { type: "application/octet-stream" });
-        const settings = { scale: scale, sceneName: sceneName, sdkVersion: SDK_VERSION };
+        
+        // 3. CHANGED: Pull SDK version from instance configuration
+        const settings = { scale: scale, sceneName: sceneName, sdkVersion: this.c3d.core.config.SDKVersion };
+        
         const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
 
         console.log("Cognitive3D: Capturing screenshot...");
