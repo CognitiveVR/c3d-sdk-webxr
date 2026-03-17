@@ -2,9 +2,8 @@ import * as THREE from 'three';
 import { GLTFExporter, GLTFExporterOptions } from 'three/examples/jsm/exporters/GLTFExporter.js';
 // @ts-ignore
 import JSZip from 'jszip';
-import C3D from '../index';
-import { GazeHitData } from '../utils/webxr'; 
-import Config from '../config';
+import type C3D from '../index';
+import type { GazeHitData } from '../utils/webxr'; 
 
 interface FPSState {
     frameCount: number;
@@ -91,6 +90,7 @@ class C3DThreeAdapter {
 
         this.c3d.gaze.recordGaze(correctedPosition, correctedOrientation, correctedGaze);
     }
+    
     //  Helper function for recursively finding dynamic interactable objects in a three.scene or three.group
     private _scanForInteractables(root: THREE.Object3D): void {
         root.traverse((child) => {
@@ -158,19 +158,13 @@ class C3DThreeAdapter {
 
     /**
      * MUST be called once per frame in your developer render loop.
-     * * @param timestamp - The high-precision timestamp passed by requestAnimationFrame or the WebXR loop.
-     * CURRENTLY UNUSED: Internal timing uses performance.now(). 
-     * FUTURE: Will be used for precise frame-to-frame delta calculations synced to the display refresh rate.
-     * * @param frame - The XRFrame object provided by the WebXR session.
-     * CURRENTLY UNUSED: Adapter relies on Three.js wrappers for pose data.
-     * FUTURE: Required for accessing raw WebXR features like AR Hit Testing, Anchors, and Light Estimation.
      */
-    public update(timestamp?: number, frame?: XRFrame): void { // TODO - use these parameters for more precise timing and WebXR features
+    public update(timestamp?: number, frame?: XRFrame): void { 
         this._updateFPS();
         this.updateTrackedObjectTransforms();
 
-        // Check if we need to poll gaze from the engine
-        if (Config.gazeTrackingSource === 'engine') {
+        // Read directly from the instantiated core config
+        if (this.c3d.core.config.gazeTrackingSource === 'engine') {
             this._recordEngineGaze();
         }
     }
@@ -276,31 +270,32 @@ class C3DThreeAdapter {
 
     // Handle Gaze tracking natively through Three.js camera
     private _recordEngineGaze(): void {
-    if (!this._camera) return;
+        if (!this._camera) return;
 
-    const now = performance.now();
-    const intervalMs = Config.GazeInterval ? Config.GazeInterval * 1000 : 100;
+        const now = performance.now();
+        // Read directly from the instantiated core config
+        const intervalMs = this.c3d.core.config.GazeInterval ? this.c3d.core.config.GazeInterval * 1000 : 100;
 
-    if (now - this._lastGazeTime >= intervalMs) {
-        this._lastGazeTime = now;
+        if (now - this._lastGazeTime >= intervalMs) {
+            this._lastGazeTime = now;
 
-        const worldPos = new THREE.Vector3();
-        const worldQuat = new THREE.Quaternion();
-        this._camera.getWorldPosition(worldPos);
-        this._camera.getWorldQuaternion(worldQuat);
+            const worldPos = new THREE.Vector3();
+            const worldQuat = new THREE.Quaternion();
+            this._camera.getWorldPosition(worldPos);
+            this._camera.getWorldQuaternion(worldQuat);
 
-        // PERFECTLY MATCHES webxr.ts
-        const correctedPosition = [worldPos.x, worldPos.y, -worldPos.z];
-        const correctedOrientation = [worldQuat.x, worldQuat.y, -worldQuat.z, -worldQuat.w];
+            // PERFECTLY MATCHES webxr.ts
+            const correctedPosition = [worldPos.x, worldPos.y, -worldPos.z];
+            const correctedOrientation = [worldQuat.x, worldQuat.y, -worldQuat.z, -worldQuat.w];
 
-        let gazeHitData: GazeHitData | null = null;
-        if (this.c3d.gazeRaycaster) {
-            gazeHitData = this.c3d.gazeRaycaster();
+            let gazeHitData: GazeHitData | null = null;
+            if (this.c3d.gazeRaycaster) {
+                gazeHitData = this.c3d.gazeRaycaster();
+            }
+
+            this.c3d.gaze.recordGaze(correctedPosition, correctedOrientation, gazeHitData);
         }
-
-        this.c3d.gaze.recordGaze(correctedPosition, correctedOrientation, gazeHitData);
     }
-}
 
     public trackDynamicObject(object: THREE.Object3D, id: string, options: DynamicObjectOptions): void {
         this.c3d.dynamicObject.trackObject(id, object, options);
@@ -346,6 +341,7 @@ class C3DThreeAdapter {
             }
         });
     }
+
     public addInteractable(object: THREE.Object3D): void {
         if (!this._interactableObjects.includes(object)) {
             this._interactableObjects.push(object);
@@ -431,7 +427,7 @@ class C3DThreeAdapter {
                 const settings = {
                     scale: 1,
                     sceneName: sceneName,
-                    sdkVersion: __SDK_VERSION__
+                    sdkVersion: typeof __SDK_VERSION__ !== 'undefined' ? __SDK_VERSION__ : 'dev'
                 };
                 const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
                 const screenshotDataUrl = renderer.domElement.toDataURL('image/png');

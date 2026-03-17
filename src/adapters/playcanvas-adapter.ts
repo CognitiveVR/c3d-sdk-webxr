@@ -1,7 +1,7 @@
 // Scene export, dynamic objects, object exports, heatmaps are currently not supported
 
 import * as pc from 'playcanvas';
-import C3D from '../index';
+import type C3D from '../index';
 
 class C3DPlayCanvasAdapter {
   private c3d: C3D;
