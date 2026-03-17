@@ -140,7 +140,6 @@ class C3DWonderlandAdapter {
         const gltfBlob = new Blob([JSON.stringify(json, null, 2)], { type: "model/gltf+json" });
         const binBlob = new Blob([binaryBuffer], { type: "application/octet-stream" });
         
-        // 3. CHANGED: Pull SDK version from instance configuration
         const settings = { scale: scale, sceneName: sceneName, sdkVersion: this.c3d.core.config.SDKVersion };
         
         const settingsBlob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
