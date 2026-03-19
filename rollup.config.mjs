@@ -61,6 +61,54 @@ const external = [
   'gl-matrix'
 ];
 
+// Define the unified bundles to generate
+const unifiedBundles = [
+  {
+    engine: 'threejs',
+    input: 'src/bundles/threejs.ts',
+    external: [/^three/],
+    // Handle Three.js wildcard imports for globals
+    globals: (id) => {
+      if (/^three/.test(id)) return 'THREE';
+      if (id === 'uuid') return 'uuid';
+      if (id === 'cross-fetch') return 'fetch';
+      return id;
+    }
+  },
+  {
+    engine: 'babylon',
+    input: 'src/bundles/babylon.ts',
+    external: ['babylonjs', 'babylonjs-serializers'],
+    globals: { 'babylonjs': 'BABYLON', 'babylonjs-serializers': 'BABYLON', 'uuid': 'uuid', 'cross-fetch': 'fetch' }
+  },
+  {
+    engine: 'playcanvas',
+    input: 'src/bundles/playcanvas.ts',
+    external: ['playcanvas'],
+    globals: { 'playcanvas': 'pc', 'uuid': 'uuid', 'cross-fetch': 'fetch' }
+  },
+  {
+    engine: 'wonderland',
+    input: 'src/bundles/wonderland.ts',
+    external: ['@wonderlandengine/api', 'gl-matrix'],
+    globals: { '@wonderlandengine/api': 'WL', 'gl-matrix': 'glMatrix', 'uuid': 'uuid', 'cross-fetch': 'fetch' }
+  }
+].map(bundle => ({
+  input: bundle.input,
+  output: {
+    name: 'C3D',
+    file: `lib/c3d-bundle-${bundle.engine}.umd.js`,
+    format: 'umd',
+    sourcemap: true,
+    globals: bundle.globals
+  },
+  external: bundle.external,
+  plugins: [
+    ...commonPlugins,
+    terser()
+  ]
+}));
+
 export default [
   // ESM build
   {
@@ -89,7 +137,7 @@ export default [
     external
   },
 
-  // UMD build for Main SDK
+  // UMD build for Main SDK (Kept for Core-only users)
   {
     input: 'src/index.ts',
     output: {
@@ -107,81 +155,7 @@ export default [
       terser()
     ]
   },
-     // UMD build for PlayCanvas Adapter
-  {
-    input: 'src/adapters/playcanvas-adapter.ts', 
-    output: {
-      name: 'C3DPlayCanvasAdapter',
-      file: 'lib/c3d-playcanvas-adapter.umd.js',
-      format: 'umd',
-      sourcemap: true,
-      globals: {
-        'playcanvas': 'pc'
-      }
-    },
-    external: ['playcanvas'],
-    plugins: [
-      ...commonPlugins,
-      terser()
-    ]
-  },
-  // UMD build for Three.js Adapter
-  {
-    input: 'src/adapters/threejs-adapter.ts', 
-    output: {
-        name: 'C3DThreeAdapter',
-        file: 'lib/c3d-threejs-adapter.umd.js',
-        format: 'umd',
-        sourcemap: true,
-        globals: (id) => {
-          if (/^three/.test(id)) {
-            return 'THREE';
-          }
-          return id;
-        }
-    },
-    external: [/^three/],
-    plugins: [
-        ...commonPlugins,
-        terser()
-    ]
-  },
-  // UMD build for Babylon.js Adapter
-  {
-      input: 'src/adapters/babylon-adapter.ts', 
-      output: {
-          name: 'C3DBabylonAdapter',
-          file: 'lib/c3d-babylon-adapter.umd.js',
-          format: 'umd',
-          sourcemap: true,
-          globals: {
-              'babylonjs': 'BABYLON',
-              'babylonjs-serializers': 'BABYLON'
-          }
-      },
-      external: ['babylonjs', 'babylonjs-serializers'],
-      plugins: [
-          ...commonPlugins,
-          terser()
-      ]
-  },
-  // UMD build for Wonderland Engine Adapter
-  {
-      input: 'src/adapters/wonderland-adapter.ts', 
-      output: {
-          name: 'C3DWonderlandAdapter',
-          file: 'lib/c3d-wonderland-adapter.umd.js',
-          format: 'umd',
-          sourcemap: true,
-          globals: {
-              '@wonderlandengine/api': 'WL',
-              'gl-matrix': 'glMatrix'
-          }
-      },
-      external: ['@wonderlandengine/api', 'gl-matrix'],
-      plugins: [
-          ...commonPlugins,
-          terser()
-      ]
-  }
+
+  // Inject the newly generated Unified UMD bundles
+  ...unifiedBundles
 ];
