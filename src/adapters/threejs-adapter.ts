@@ -127,6 +127,7 @@ class C3DThreeAdapter {
         }
 
         if (this.c3d.fpsTracker) {
+            this.c3d.adapterManagesFPS = true;
             this.c3d.fpsTracker.stop();
             console.log("Cognitive3D: Stopped default FPS tracker in favor of XR-synced tracking.");
         }

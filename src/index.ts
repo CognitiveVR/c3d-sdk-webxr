@@ -50,6 +50,7 @@ class C3D {
   public exitpoll: ExitPoll;
   public dynamicObject: DynamicObject;
   public fpsTracker: FPSTracker;
+  public adapterManagesFPS: boolean = false;
   public renderer: any;    // Supports multiple engines (Three, Babylon, WLE) without shared interfaces
   public boundaryTracker: BoundaryTracker;
   private deviceIdPromise: Promise<void> | null = null;
@@ -145,10 +146,12 @@ class C3D {
     if (this.renderer) { 
       this.profiler.start(this.renderer);
     }
-    this.fpsTracker.start((metrics: FPSMetrics) => {
-      this.sensor.recordSensor('c3d.fps.avg', metrics.avg);
-      this.sensor.recordSensor('c3d.fps.1pl', metrics['1pl']);
-    });
+    if (!this.adapterManagesFPS) {
+      this.fpsTracker.start((metrics: FPSMetrics) => {
+        this.sensor.recordSensor('c3d.fps.avg', metrics.avg);
+        this.sensor.recordSensor('c3d.fps.1pl', metrics['1pl']);
+      });
+    }
 
     if (xrSession) {  
       this.xrSessionManager = new XRSessionManager(this.gaze, xrSession, this.dynamicObject, this.gazeRaycaster);
