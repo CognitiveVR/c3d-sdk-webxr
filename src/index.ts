@@ -251,6 +251,7 @@ class C3D {
         return;
       }
       this.fpsTracker.stop();  
+      this.adapterManagesFPS = false;
       this.profiler.stop();
       if (this.hmdOrientation) {
           this.hmdOrientation.stop();

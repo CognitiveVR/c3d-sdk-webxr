@@ -73,8 +73,8 @@ class C3DThreeAdapter {
     }
 
     public recordGazeFromCamera(camera: THREE.Camera): void {
-        const worldPos = new THREE.Vector3();
-        const worldQuat = new THREE.Quaternion();
+        const worldPos = this._tempVec;
+        const worldQuat = this._tempQuat;
         camera.getWorldPosition(worldPos);
         camera.getWorldQuaternion(worldQuat);
 

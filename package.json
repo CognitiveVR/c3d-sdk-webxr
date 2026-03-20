@@ -31,10 +31,22 @@
       "import": "./lib/esm/adapters/wonderland-adapter.esm.js",
       "require": "./lib/cjs/adapters/wonderland-adapter.cjs.js"
     },
-    "./bundles/threejs": "./lib/c3d-bundle-threejs.umd.js",
-    "./bundles/babylon": "./lib/c3d-bundle-babylon.umd.js",
-    "./bundles/playcanvas": "./lib/c3d-bundle-playcanvas.umd.js",
-    "./bundles/wonderland": "./lib/c3d-bundle-wonderland.umd.js",
+    "./bundles/threejs": {
+      "types": "./types/bundles/threejs.d.ts",
+      "default": "./lib/c3d-bundle-threejs.umd.js"
+    },
+    "./bundles/babylon": {
+      "types": "./types/bundles/babylon.d.ts",
+      "default": "./lib/c3d-bundle-babylon.umd.js"
+    },
+    "./bundles/playcanvas": {
+      "types": "./types/bundles/playcanvas.d.ts",
+      "default": "./lib/c3d-bundle-playcanvas.umd.js"
+    },
+    "./bundles/wonderland": {
+      "types": "./types/bundles/wonderland.d.ts",
+      "default": "./lib/c3d-bundle-wonderland.umd.js"
+    },
     "./lib/*": "./lib/*"
   },
   "files": [
@@ -55,6 +67,18 @@
       ],
       "adapters/wonderland": [
         "types/adapters/wonderland-adapter.d.ts"
+      ],
+      "bundles/threejs": [
+        "types/bundles/threejs.d.ts"
+      ],
+      "bundles/babylon": [
+        "types/bundles/babylon.d.ts"
+      ],
+      "bundles/playcanvas": [
+        "types/bundles/playcanvas.d.ts"
+      ],
+      "bundles/wonderland": [
+        "types/bundles/wonderland.d.ts"
       ]
     }
   },

@@ -28,7 +28,6 @@ interface SessionStartResult {
     type: string | null;
 }
 
-// REMOVED: ExtendedXRSession is not needed because XRSession already includes enabledFeatures
 
 export class XRSessionManager {
   private gazeTracker: GazeTracker;
@@ -110,9 +109,10 @@ export class XRSessionManager {
 
     // ONLY process hardware gaze if configured to use WebXR directly
     if (Config.gazeTrackingSource === 'webxr') {
-        if (timestamp - this.lastUpdateTime >= this.interval) {
+        const configIntervalMs = Config.GazeInterval ? Config.GazeInterval * 1000 : this.interval;
+        if (timestamp - this.lastUpdateTime >= configIntervalMs) {
             this.lastUpdateTime = timestamp;
-            if(!this.referenceSpace) return; 
+            if(!this.referenceSpace) return;
 
             const viewerPose = frame.getViewerPose(this.referenceSpace); 
 
