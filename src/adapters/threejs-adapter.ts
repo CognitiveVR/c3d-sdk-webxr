@@ -43,6 +43,7 @@ class C3DThreeAdapter {
     private _tempVec = new THREE.Vector3();
     private _tempQuat = new THREE.Quaternion();
     private _tempScale = new THREE.Vector3();
+    private _tempForward = new THREE.Vector3(0, 0, -1); // Forward vector 
 
     // Helper to log object hierarchy recursively for during object export debugging 
     private _logHierarchy(obj: THREE.Object3D, depth = 0): void {
@@ -82,9 +83,8 @@ class C3DThreeAdapter {
         const correctedPosition = [worldPos.x, worldPos.y, -worldPos.z];
         const correctedOrientation = [worldQuat.x, worldQuat.y, -worldQuat.z, -worldQuat.w];
 
-        // Calculate gaze vector natively (assuming camera looks down -Z in local space)
-        const forward = new THREE.Vector3(0, 0, -1);
-        forward.applyQuaternion(worldQuat);
+        // Calculate gaze vector natively using pooled forward vector
+        const forward = this._tempForward.set(0, 0, -1).applyQuaternion(worldQuat);
         // Gaze direction also needs the Z flipped
         const correctedGaze = [forward.x, forward.y, -forward.z];
 
@@ -280,8 +280,8 @@ class C3DThreeAdapter {
         if (now - this._lastGazeTime >= intervalMs) {
             this._lastGazeTime = now;
 
-            const worldPos = new THREE.Vector3();
-            const worldQuat = new THREE.Quaternion();
+            const worldPos = this._tempVec;
+            const worldQuat = this._tempQuat;
             this._camera.getWorldPosition(worldPos);
             this._camera.getWorldQuaternion(worldQuat);
 
