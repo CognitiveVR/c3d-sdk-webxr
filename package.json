@@ -126,7 +126,7 @@
     "babylonjs": ">=5.0.0",
     "gl-matrix": "^3.4.3",
     "playcanvas": ">=1.50.0",
-    "three": ">=0.180.0"
+    "three": ">=0.150.1"
   },
   "peerDependenciesMeta": {
     "three": {
