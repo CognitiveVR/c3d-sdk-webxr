@@ -13,7 +13,7 @@ export interface GazeHitData {
 
 // Dependencies interfaces
 interface GazeTracker {
-    recordGaze: (_position: number[], orientation: number[], gazeHitData: GazeHitData | null) => void;
+    recordGaze: (_position: number[], orientation: number[], gazeHitData: GazeHitData | number[] | null) => void;
 }
 
 interface DynamicObject {
