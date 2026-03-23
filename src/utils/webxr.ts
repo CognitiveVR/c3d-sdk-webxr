@@ -1,3 +1,5 @@
+import Config from '../config';
+
 /**
  * For data that can only be retrieved from an active webxr session, 
  * such as gaze data, and vr device information 
@@ -11,7 +13,7 @@ export interface GazeHitData {
 
 // Dependencies interfaces
 interface GazeTracker {
-    recordGaze: (_position: number[], orientation: number[], gazeHitData: GazeHitData | null) => void;
+    recordGaze: (_position: number[], orientation: number[], gazeHitData: GazeHitData | number[] | null) => void;
 }
 
 interface DynamicObject {
@@ -26,7 +28,6 @@ interface SessionStartResult {
     type: string | null;
 }
 
-// REMOVED: ExtendedXRSession is not needed because XRSession already includes enabledFeatures
 
 export class XRSessionManager {
   private gazeTracker: GazeTracker;
@@ -106,29 +107,32 @@ export class XRSessionManager {
   onXRFrame(timestamp: number, frame: XRFrame): void { 
     if (!this.isTracking) return;
 
-    if (timestamp - this.lastUpdateTime >= this.interval) {
-        this.lastUpdateTime = timestamp;
-        // @ts-ignore: referenceSpace check handled by logic flow, but strictly nullable in TS
-        if(!this.referenceSpace) return; 
+    // ONLY process hardware gaze if configured to use WebXR directly
+    if (Config.gazeTrackingSource === 'webxr') {
+        const configIntervalMs = Config.GazeInterval ? Config.GazeInterval * 1000 : this.interval;
+        if (timestamp - this.lastUpdateTime >= configIntervalMs) {
+            this.lastUpdateTime = timestamp;
+            if(!this.referenceSpace) return;
 
-        const viewerPose = frame.getViewerPose(this.referenceSpace); // Uses local-floor
+            const viewerPose = frame.getViewerPose(this.referenceSpace); 
 
-        if (viewerPose) {
-          const { position, orientation } = viewerPose.transform;
-          
-          let gazeHitData: GazeHitData | null = null;
-          if (this.gazeRaycaster) {
-              gazeHitData = this.gazeRaycaster();
-          }
+            if (viewerPose) {
+                const { position, orientation } = viewerPose.transform;
+                
+                let gazeHitData: GazeHitData | null = null;
+                if (this.gazeRaycaster) {
+                    gazeHitData = this.gazeRaycaster();
+                }
 
-        const correctedPosition = [position.x, position.y, -position.z];
-        const correctedOrientation = [orientation.x, orientation.y, -orientation.z, -orientation.w];
+                const correctedPosition = [position.x, position.y, -position.z];
+                const correctedOrientation = [orientation.x, orientation.y, -orientation.z, -orientation.w];
 
-        this.gazeTracker.recordGaze(
-            correctedPosition,
-            correctedOrientation,
-            gazeHitData
-            );
+                this.gazeTracker.recordGaze(
+                    correctedPosition,
+                    correctedOrientation,
+                    gazeHitData
+                );
+            }
         }
     }
     

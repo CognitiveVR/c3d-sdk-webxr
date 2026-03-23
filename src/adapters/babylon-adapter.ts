@@ -4,7 +4,7 @@
 import * as BABYLON from 'babylonjs';
 // @ts-ignore
 import { GLTF2Export } from 'babylonjs-serializers';
-import C3D from '../index';
+import type C3D from '../index';
 
 interface GLTFExportResult {
     downloadFiles: () => void;
@@ -69,12 +69,11 @@ class C3DBabylonAdapter {
     const settings = {
         scale: 1,
         sceneName: sceneName,
-        sdkVersion: typeof __SDK_VERSION__ !== 'undefined' ? __SDK_VERSION__ : 'dev'
+        sdkVersion: this.c3d.core.config.SDKVersion
     };
     const settingsString = JSON.stringify(settings, null, 2);
     const settingsBlob = new Blob([settingsString], { type: 'application/json' });
     this.downloadBlob(settingsBlob, 'settings.json');
-
 
     // Create and download screenshot.png
      BABYLON.Tools.CreateScreenshot(engine, scene.activeCamera!, { precision: 1.0 }, (data: string) => {

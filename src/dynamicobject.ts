@@ -109,8 +109,19 @@ class DynamicObject {
         this.trackedObjects = new Map();
         this.snapshotIndexMap = new Map();
     }
-
-    registerObjectCustomId(name: string, meshname: string, customid: string, position: number[], rotation: number[], fileType?: string): string {
+    // 1. Explicit Overloads for backwards compatibility
+    registerObjectCustomId(name: string, meshname: string, customid: string, position: number[], rotation: number[], fileType?: string): string;
+    registerObjectCustomId(name: string, meshname: string, customid: string, position: number[], rotation: number[], scale: number[] | null, fileType?: string): string;
+    // Implementation
+    registerObjectCustomId(name: string, meshname: string, customid: string, position: number[], rotation: number[], scaleOrFileType?: number[] | string | null, maybeFileType?: string): string {
+        let scale: number[] | null = null;
+        let fileType: string | undefined;
+        if (Array.isArray(scaleOrFileType) || scaleOrFileType === null) {
+            scale = scaleOrFileType;
+            fileType = maybeFileType;
+        } else if (typeof scaleOrFileType === 'string') {
+            fileType = scaleOrFileType;
+        }
         for (let i = 0; i < this.objectIds.length; i++) {
             if (this.objectIds[i].id === customid) {
                 console.log("DynamicObject.registerObjectCustomId object id " + customid + " already registered");
@@ -126,7 +137,7 @@ class DynamicObject {
         this.fullManifest.push(dome);
         let props = [{ "enabled": true }]; 
 
-        this.addSnapshot(customid, position, rotation, null, props);
+        this.addSnapshot(customid, position, rotation, scale, props);
 
         if (this.core.isSessionActive && (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit)) {
             this.sendData();
@@ -134,9 +145,21 @@ class DynamicObject {
         return customid;
     }
 
-    registerObject(name: string, meshname: string, position: number[], rotation: number[], fileType?: string): string {
+    // Explicit Overloads for registerObject
+    registerObject(name: string, meshname: string, position: number[], rotation: number[], fileType?: string): string;
+    registerObject(name: string, meshname: string, position: number[], rotation: number[], scale: number[] | null, fileType?: string): string;
+    // Implementation
+    registerObject(name: string, meshname: string, position: number[], rotation: number[], scaleOrFileType?: number[] | string | null, maybeFileType?: string): string {
+        let scale: number[] | null = null;
+        let fileType: string | undefined;
+        if (Array.isArray(scaleOrFileType) || scaleOrFileType === null) {
+            scale = scaleOrFileType;
+            fileType = maybeFileType;
+        } else if (typeof scaleOrFileType === 'string') {
+            fileType = scaleOrFileType;
+        }
+        
         let newObjectId = this.dynamicObjectId(uuidv4(), meshname);
-
         this.objectIds.push(newObjectId);
         const finalFileType = fileType || "gltf";
         let dome = this.dynamicObjectManifestEntry(newObjectId.id, name, meshname, finalFileType);
@@ -144,7 +167,7 @@ class DynamicObject {
         this.fullManifest.push(dome);
         
         let props = [{ "enabled": true }];
-        this.addSnapshot(newObjectId.id, position, rotation, null, props);
+        this.addSnapshot(newObjectId.id, position, rotation, scale, props);
 
         if (this.core.isSessionActive && (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit)) {
             this.sendData();
