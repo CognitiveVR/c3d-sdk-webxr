@@ -484,11 +484,6 @@ class C3DThreeAdapter {
         const exporter = new GLTFExporter();
         
         const gltfClone = objectToExport.clone();
-        // Center the mesh at origin independently so it aligns with its registered position in the dashboard.
-        // The GLB geometry may not be centered at origin, so we compute its bounding box and shift the root position.
-        const gltfBox = new THREE.Box3().setFromObject(gltfClone);
-        const gltfCenter = gltfBox.getCenter(new THREE.Vector3());
-        gltfClone.position.sub(gltfCenter);
 
         console.log(`[Cognitive3D] Structure being exported for "${objectName}":`);
         this._logHierarchy(gltfClone);
