@@ -1,7 +1,12 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v5 as uuidv5 } from 'uuid';
 import Network from './network';
 import { CognitiveVRAnalyticsCore } from './core';
 import CustomEvents from './customevent';
+
+// Fixed namespace so that uuidv5 output is stable across SDK consumers and
+// sessions. Do not change this — changing it would invalidate every
+// previously-generated dynamic object ID.
+const C3D_DYNAMIC_OBJECT_NAMESPACE = 'c3d7ef2b-8a1d-4e5c-9b3f-7a6e2d8c4f10';
 
 export interface DynamicObjectId {
     id: string;
@@ -159,13 +164,23 @@ class DynamicObject {
             fileType = scaleOrFileType;
         }
         
-        let newObjectId = this.dynamicObjectId(uuidv4(), meshname);
+        const sceneId = this.core.sceneData.sceneId || '';
+        const seed = `${sceneId}::${name}::${meshname}`;
+        const deterministicId = uuidv5(seed, C3D_DYNAMIC_OBJECT_NAMESPACE);
+
+        const existing = this.objectIds.find(o => o.id === deterministicId);
+        if (existing) {
+            console.warn(`DynamicObject.registerObject: "${name}" + "${meshname}" already registered in this scene; returning existing id.`);
+            return existing.id;
+        }
+
+        let newObjectId = this.dynamicObjectId(deterministicId, meshname);
         this.objectIds.push(newObjectId);
         const finalFileType = fileType || "gltf";
         let dome = this.dynamicObjectManifestEntry(newObjectId.id, name, meshname, finalFileType);
         this.manifestEntries.push(dome);
         this.fullManifest.push(dome);
-        
+
         let props = [{ "enabled": true }];
         this.addSnapshot(newObjectId.id, position, rotation, scale, props);
 
