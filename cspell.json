@@ -35,6 +35,7 @@
         "questionset",
         "cooldown",
         "engagementtype",
-        "controllerinputs"
+        "controllerinputs",
+        "Mattercraft"
     ]
 }
