@@ -20,8 +20,9 @@ export interface Settings {
     customEventBatchSize?: number;
     gazeBatchSize?: number;
     GazeInterval?: number;
-    HMDType?: string; 
+    HMDType?: string;
     gazeTrackingSource?: 'webxr' | 'engine';
+    fallbackController?: string;
     allSceneData?: SceneConfig[];
     [key: string]: unknown; // Allow flexibility
 }
@@ -38,8 +39,9 @@ class Config {
     public gazeBatchSize: number;
     public GazeInterval: number;
     public allSceneData: SceneConfig[];
-    public HMDType?: string; 
+    public HMDType?: string;
     public gazeTrackingSource: 'webxr' | 'engine';
+    public fallbackController?: string;
     [key: string]: any; // Index signature for dynamic access in setter
 
     constructor() {
@@ -79,7 +81,8 @@ class Config {
         const keys: (keyof Settings)[] = [
             'SDKVersion', 'networkHost', 'APIKey', 'networkVersion',
             'sensorDataLimit', 'dynamicDataLimit', 'customEventBatchSize',
-            'gazeBatchSize', 'GazeInterval', 'HMDType', 'allSceneData', 'gazeTrackingSource'
+            'gazeBatchSize', 'GazeInterval', 'HMDType', 'allSceneData', 'gazeTrackingSource',
+            'fallbackController'
         ];
 
         for (const key of keys) {

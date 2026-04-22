@@ -80,7 +80,7 @@ class C3D {
     this.hmdOrientation = new HMDOrientationTracker();
     this.profiler = new Profiler(self);
     this.controllerTracker = new ControllerTracker(self);
-    this.controllerInputTracker = new ControllerInputTracker(self);
+    this.controllerInputTracker = new ControllerInputTracker(self, this.core.config.fallbackController);
     this.sensor = new Sensor(this.core);
     this.exitpoll = new ExitPoll(this.core, this.customEvent);
     this.dynamicObject = new DynamicObject(this.core, this.customEvent);

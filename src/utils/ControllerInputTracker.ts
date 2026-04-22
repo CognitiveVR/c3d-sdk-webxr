@@ -79,14 +79,27 @@ const CONTROLLER_PROFILE_MAP: Record<string, ControllerProfile> = {
     },
 };
 
-function resolveControllerProfile(profiles: readonly string[]): ControllerProfile | null {
+const UNKNOWN_PROFILE: ControllerProfile = {
+    mesh: _ => 'GenericController',
+    controllerType: h => h === 'left' ? 'unknown_controller_left' : 'unknown_controller_right',
+};
+
+function resolveControllerProfile(profiles: readonly string[], fallback?: string): ControllerProfile {
     for (const profile of profiles) {
         const lower = profile.toLowerCase();
         for (const key of Object.keys(CONTROLLER_PROFILE_MAP)) {
             if (lower.includes(key)) return CONTROLLER_PROFILE_MAP[key];
         }
     }
-    return null;
+    if (fallback) {
+        const fallbackProfile = CONTROLLER_PROFILE_MAP[fallback];
+        if (fallbackProfile) {
+            console.warn(`C3D: Unrecognized controller profiles [${profiles.join(', ')}]. Using configured fallback '${fallback}'.`);
+            return fallbackProfile;
+        }
+    }
+    console.warn(`C3D: Unrecognized controller profiles [${profiles.join(', ')}]. Using generic unknown controller.`);
+    return UNKNOWN_PROFILE;
 }
 
 const ANALOG_THROTTLE_MS = 100;
@@ -94,6 +107,7 @@ const JOYSTICK_MIN_MAGNITUDE = 0.05;
 
 class ControllerInputTracker {
     private c3d: C3DInstance;
+    private fallbackController?: string;
     private xrSession: XRSession | null = null;
     private isTracking = false;
     private animationFrameHandle: number | null = null;
@@ -103,8 +117,9 @@ class ControllerInputTracker {
     private lastAnalogTime = new Map<string, number>();
     private lastPoses = new Map<string, { pos: number[]; rot: number[] }>();
 
-    constructor(c3dInstance: C3DInstance) {
+    constructor(c3dInstance: C3DInstance, fallbackController?: string) {
         this.c3d = c3dInstance;
+        this.fallbackController = fallbackController;
         this._onFrame = this._onFrame.bind(this);
     }
 
@@ -191,8 +206,7 @@ class ControllerInputTracker {
             const id = handedness === 'left' ? 'c3d_controller_left' : 'c3d_controller_right';
 
             if (!this.registeredIds.has(id)) {
-                const profile = resolveControllerProfile(src.profiles);
-                if (!profile) continue;
+                const profile = resolveControllerProfile(src.profiles, this.fallbackController);
                 const pose = frame.getPose(src.gripSpace, refSpace);
                 const pos = pose ? this._extractPos(pose) : [0, 0, 0];
                 const rot = pose ? this._extractRot(pose) : [0, 0, 0, 1];
