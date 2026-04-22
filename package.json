@@ -131,6 +131,7 @@
     "babylonjs": ">=5.0.0",
     "babylonjs-serializers": ">=5.0.0",
     "cross-env": "^7.0.3",
+    "dotenv": "^17.4.2",
     "gl-matrix": "^3.4.3",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
