@@ -34,6 +34,8 @@ class CustomEvents {
     }
 
     send(category: string, position: number[], properties?: Record<string, SessionPropertyValue>): void {
+        if (!this.core.isSessionActive) return;
+
         let data: CustomEventData = {
             name: category,
             time: this.core.getTimestamp(),

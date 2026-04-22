@@ -48,6 +48,8 @@ class GazeTracker {
     }
 
     recordGaze(position: number[], rotation: number[], gazeHit?: GazeHit | number[] | null, objectId?: string): void {
+        if (!this.core.isSessionActive) return;
+
         let ts = this.core.getTimestamp();
         let data: GazeData = {
             time: ts,
