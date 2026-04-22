@@ -326,12 +326,12 @@ class ControllerInputTracker {
 
     private _extractPos(pose: XRPose): number[] {
         const p = pose.transform.position;
-        return [p.x, p.y, p.z];
+        return [p.x, p.y, -p.z];
     }
 
     private _extractRot(pose: XRPose): number[] {
         const o = pose.transform.orientation;
-        return [o.x, o.y, o.z, o.w];
+        return [o.x, o.y, -o.z, -o.w];
     }
 }
 
