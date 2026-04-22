@@ -179,16 +179,31 @@ class DynamicObject {
         const sceneId = this.core.sceneData.sceneId || '';
         const seed = `${sceneId}::${name}::${meshname}`;
         const deterministicId = uuidv5(seed, C3D_DYNAMIC_OBJECT_NAMESPACE);
+        const finalFileType = fileType || "gltf";
 
         const existing = this.objectIds.find(o => o.id === deterministicId);
         if (existing) {
+            if (!existing.used) {
+                existing.used = true;
+                let manifestEntry = this.fullManifest.find(entry => entry.id === existing.id);
+                if (!manifestEntry) {
+                    manifestEntry = this.dynamicObjectManifestEntry(existing.id, name, meshname, finalFileType);
+                    this.fullManifest.push(manifestEntry);
+                }
+                if (!this.manifestEntries.some(entry => entry.id === existing.id)) {
+                    this.manifestEntries.push(manifestEntry);
+                }
+                this.addSnapshot(existing.id, position, rotation, scale, [{ "enabled": true }]);
+                if (this.core.isSessionActive && (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit)) {
+                    this.sendData();
+                }
+            }
             console.warn(`DynamicObject.registerObject: "${name}" + "${meshname}" already registered in this scene; returning existing id.`);
             return existing.id;
         }
 
         let newObjectId = this.dynamicObjectId(deterministicId, meshname);
         this.objectIds.push(newObjectId);
-        const finalFileType = fileType || "gltf";
         let dome = this.dynamicObjectManifestEntry(newObjectId.id, name, meshname, finalFileType);
         this.manifestEntries.push(dome);
         this.fullManifest.push(dome);
