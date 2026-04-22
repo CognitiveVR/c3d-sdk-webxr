@@ -23,15 +23,15 @@ Welcome!  This SDK allows you to integrate your JavaScript/ TypeScript/ WebXR Ap
 </div>
 
 ## ✅ Requirement(s)
-Node.js version 20 or higher. To check your current version: 
+Node.js version 20 or higher. To check your current version:
 ```
 node --version
 ```
 
 ## 🔧 Installation 
-You can add Cognitive3D to your project in two ways. 
+You can add Cognitive3D to your project in two ways.
 ### Option 1. Install from NPM
-Inside your project's terminal, run the following command 
+Inside your project's terminal, run the following command
 ```
 npm install @cognitive3d/analytics
 ```
@@ -80,11 +80,8 @@ It supports a wide range of development environments by providing multiple modul
 * **ES Module**: Modern module standard, used by most bundlers and modern Node.js.
 * **CommonJS**: Compatible with older Node.js environments.
 
-
 ## 📚 Documentation 
 The **[Cognitive3D WebXR SDK documentation](http://docs.cognitive3d.com/webxr/get-started/)** explains how to integrate the SDK, track user experiences, export scenes, track dynamic objects, and more.
 
-
 ## 🎮 Sample Projects
-For more detailed examples and complete project integrations (Playcanvas, ThreeJS, Wonderland Engine), please see our **[sample applications repository](https://github.com/CognitiveVR/c3d-webxr-sample-apps)** 
-
+For more detailed examples and complete project integrations (Mattercraft, ThreeJS, Wonderland Engine, etc..), please see our **[sample applications repository](https://github.com/CognitiveVR/c3d-webxr-sample-apps)** 

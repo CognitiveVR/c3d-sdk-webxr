@@ -8,7 +8,8 @@ import DynamicObject from './dynamicobject';
 import FPSTracker, { FPSMetrics } from './utils/Framerate';
 import HMDOrientationTracker, { OrientationData } from './utils/HMDOrientation';
 import Profiler from './utils/Profiler';
-import ControllerTracker from './utils/ControllerTracker'; 
+import ControllerTracker from './utils/ControllerTracker';
+import ControllerInputTracker from './utils/ControllerInputTracker';
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
 import BoundaryTracker from './utils/BoundaryTracker';
 import { Settings, SceneConfig } from './config';
@@ -46,6 +47,7 @@ class C3D {
   public hmdOrientation: HMDOrientationTracker;
   public profiler: Profiler;
   public controllerTracker: ControllerTracker;
+  public controllerInputTracker: ControllerInputTracker;
   public sensor: Sensor;
   public exitpoll: ExitPoll;
   public dynamicObject: DynamicObject;
@@ -78,6 +80,7 @@ class C3D {
     this.hmdOrientation = new HMDOrientationTracker();
     this.profiler = new Profiler(self);
     this.controllerTracker = new ControllerTracker(self);
+    this.controllerInputTracker = new ControllerInputTracker(self, this.core.config.fallbackController);
     this.sensor = new Sensor(this.core);
     this.exitpoll = new ExitPoll(this.core, this.customEvent);
     this.dynamicObject = new DynamicObject(this.core, this.customEvent);
@@ -164,6 +167,7 @@ class C3D {
       }
 
       this.controllerTracker.start(xrSession);
+      this.controllerInputTracker.start(xrSession);
 
       if (sessionInfo && sessionInfo.boundedReferenceSpace) {
           this.boundaryTracker.start(xrSession, sessionInfo.boundedReferenceSpace);
@@ -190,52 +194,32 @@ class C3D {
       const features = getEnabledFeatures(xrSession);
       this.setDeviceProperty("HandTracking", features.handTracking);
       this.setDeviceProperty("EyeTracking", features.eyeTracking);
+      this.setSessionProperty("c3d.device.controllerinputs.enabled", true);
+      if (features.handTracking) {
+          this.setSessionProperty("c3d.app.handtracking.enabled", true);
+      }
     }
     else{
         console.warn("C3D: No XR session was provided. Gaze data will not be tracked.");
     }
 
-    if (xrSession && xrSession.inputSources) { 
+    if (xrSession && xrSession.inputSources) {
         const hmdInfo = getHMDInfo(xrSession.inputSources);
         if (hmdInfo) {
             this.setDeviceProperty('VRModel', hmdInfo.VRModel);
             this.setDeviceProperty('VRVendor', hmdInfo.VRVendor);
-        } 
+        }
 
-        const checkInputType = (sources: XRInputSourceArray) => {
-            const hasHand = Array.from(sources).some(source => source.hand);
-            const hasController = Array.from(sources).some(source => !source.hand && source.targetRayMode === 'tracked-pointer');
-            
-            let currentInputType: 'none' | 'hand' | 'controller' = 'none';
-            if (hasHand) {
-                currentInputType = 'hand';
-            } else if (hasController) {
-                currentInputType = 'controller';
-            }
-
-            if (currentInputType !== this.lastInputType) {
-                this.customEvent.send('c3d.input.tracking.changed', [0,0,0], {
-                    "Previously Tracking": this.lastInputType,
-                    "Now Tracking": currentInputType
-                });
-                this.lastInputType = currentInputType;
-            }
-        };
-
-        checkInputType(xrSession.inputSources);
-
-        xrSession.addEventListener('inputsourceschange', (event: XRInputSourcesChangeEvent) => {            
+        xrSession.addEventListener('inputsourceschange', (event: XRInputSourcesChangeEvent) => {
             // @ts-ignore
             const xrEvent = event as XRInputSourcesChangeEvent;
-            checkInputType(xrEvent.session.inputSources);
-            
             const newHmdInfo = getHMDInfo(xrEvent.session.inputSources);
             if (newHmdInfo) {
                 this.setDeviceProperty('VRModel', newHmdInfo.VRModel);
                 this.setDeviceProperty('VRVendor', newHmdInfo.VRVendor);
             }
         });
-    }      
+    }
 
     this.core.setSessionStatus = true;
     this.core.getSessionTimestamp();
@@ -258,7 +242,10 @@ class C3D {
       }
       
       if (this.controllerTracker) {
-          this.controllerTracker.stop(); 
+          this.controllerTracker.stop();
+      }
+      if (this.controllerInputTracker) {
+          this.controllerInputTracker.stop();
       }
       if (this.boundaryTracker) {
           this.boundaryTracker.stop(); 

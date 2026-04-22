@@ -34,6 +34,8 @@
         "handtracking",
         "questionset",
         "cooldown",
-        "engagementtype"
+        "engagementtype",
+        "controllerinputs",
+        "Mattercraft"
     ]
 }
