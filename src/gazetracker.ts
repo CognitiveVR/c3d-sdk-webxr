@@ -48,8 +48,6 @@ class GazeTracker {
     }
 
     recordGaze(position: number[], rotation: number[], gazeHit?: GazeHit | number[] | null, objectId?: string): void {
-        if (!this.core.isSessionActive) return;
-
         let ts = this.core.getTimestamp();
         let data: GazeData = {
             time: ts,
@@ -75,7 +73,7 @@ class GazeTracker {
 
         this.batchedGaze = this.batchedGaze.concat([data]);
 
-        if (this.batchedGaze.length >= this.core.config.gazeBatchSize) {
+        if (this.core.isSessionActive && this.batchedGaze.length >= this.core.config.gazeBatchSize) {
             this.sendData();
         }
     }
