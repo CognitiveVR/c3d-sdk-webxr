@@ -34,8 +34,6 @@ class CustomEvents {
     }
 
     send(category: string, position: number[], properties?: Record<string, SessionPropertyValue>): void {
-        if (!this.core.isSessionActive) return;
-
         let data: CustomEventData = {
             name: category,
             time: this.core.getTimestamp(),
@@ -48,8 +46,8 @@ class CustomEvents {
         }
 
         this.batchedCustomEvents = this.batchedCustomEvents.concat([data]);
-        
-        if (this.batchedCustomEvents.length >= this.core.config.customEventBatchSize) {
+
+        if (this.core.isSessionActive && this.batchedCustomEvents.length >= this.core.config.customEventBatchSize) {
             this.sendData();
         }
     }
