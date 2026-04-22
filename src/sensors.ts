@@ -33,6 +33,8 @@ class Sensors {
     }
 
     recordSensor(name: string, value: number | boolean): void {
+        if (!this.core.isSessionActive) return;
+
         let finalValue: number;
         if (typeof value === 'boolean') {
             finalValue = value ? 1 : 0;
