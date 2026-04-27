@@ -413,3 +413,95 @@ test('End Engagements When an Object is Removed from the Scene', async () => {
 });
 
 
+const UUID_V5_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+test('registerObject produces the same deterministic UUID across fresh C3D instances', async () => {
+	const pos = [0, 0, 0];
+	const rot = [0, 0, 0, 1];
+
+	const c3dA = new C3DAnalytics(settings);
+	c3dA.setScene(scene1);
+	c3dA.startSession();
+	const idA = c3dA.dynamicObject.registerObject("object1", "lamp", pos, rot);
+	await expect(c3dA.endSession()).resolves.toEqual(200);
+
+	const c3dB = new C3DAnalytics(settings);
+	c3dB.setScene(scene1);
+	c3dB.startSession();
+	const idB = c3dB.dynamicObject.registerObject("object1", "lamp", pos, rot);
+	await expect(c3dB.endSession()).resolves.toEqual(200);
+
+	expect(idA).toBe(idB);
+	expect(idA).toMatch(UUID_V5_REGEX);
+});
+
+test('registerObject returns distinct UUIDs for different names in the same scene', async () => {
+	const c3d = new C3DAnalytics(settings);
+	c3d.setScene(scene1);
+	c3d.startSession();
+	const pos = [0, 0, 0];
+	const rot = [0, 0, 0, 1];
+
+	const id1 = c3d.dynamicObject.registerObject("object1", "lamp", pos, rot);
+	const id2 = c3d.dynamicObject.registerObject("object2", "lamp", pos, rot);
+
+	expect(id1).not.toBe(id2);
+	expect(id1).toMatch(UUID_V5_REGEX);
+	expect(id2).toMatch(UUID_V5_REGEX);
+	await expect(c3d.endSession()).resolves.toEqual(200);
+});
+
+(scene2 ? test : test.skip)('registerObject returns distinct UUIDs for the same name in different scenes', async () => {
+	const pos = [0, 0, 0];
+	const rot = [0, 0, 0, 1];
+
+	const c3dA = new C3DAnalytics(settings);
+	c3dA.setScene(scene1);
+	c3dA.startSession();
+	const idSceneA = c3dA.dynamicObject.registerObject("object1", "lamp", pos, rot);
+	await expect(c3dA.endSession()).resolves.toEqual(200);
+
+	const c3dB = new C3DAnalytics(settings);
+	c3dB.setScene(scene2);
+	c3dB.startSession();
+	const idSceneB = c3dB.dynamicObject.registerObject("object1", "lamp", pos, rot);
+	await expect(c3dB.endSession()).resolves.toEqual(200);
+
+	expect(idSceneA).not.toBe(idSceneB);
+});
+
+test('registerObject returns distinct UUIDs when meshname differs', async () => {
+	const c3d = new C3DAnalytics(settings);
+	c3d.setScene(scene1);
+	c3d.startSession();
+	const pos = [0, 0, 0];
+	const rot = [0, 0, 0, 1];
+
+	const idLamp = c3d.dynamicObject.registerObject("object1", "lamp", pos, rot);
+	const idChair = c3d.dynamicObject.registerObject("object1", "chair", pos, rot);
+
+	expect(idLamp).not.toBe(idChair);
+	await expect(c3d.endSession()).resolves.toEqual(200);
+});
+
+test('registerObject with duplicate (name, meshname) returns the existing id without adding a duplicate entry', async () => {
+	const c3d = new C3DAnalytics(settings);
+	c3d.setScene(scene1);
+	c3d.startSession();
+	const pos = [0, 0, 0];
+	const rot = [0, 0, 0, 1];
+
+	const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+	const first = c3d.dynamicObject.registerObject("object1", "lamp", pos, rot);
+	const second = c3d.dynamicObject.registerObject("object1", "lamp", pos, rot);
+
+	expect(second).toBe(first);
+	expect(c3d.dynamicObject.objectIds.length).toBe(1);
+	expect(c3d.dynamicObject.manifestEntries.length).toBe(1);
+	expect(warnSpy).toHaveBeenCalled();
+
+	warnSpy.mockRestore();
+	await expect(c3d.endSession()).resolves.toEqual(200);
+});
+

@@ -1,6 +1,6 @@
 {
   "name": "@cognitive3d/analytics",
-  "version": "2.6.4",
+  "version": "2.7.0",
   "description": "This SDK allows you to integrate your Javascript Applications with Cognitive3D, which provides analytics and insights about your VR/AR/MR project.",
   "main": "lib/cjs/index.cjs.js",
   "module": "lib/esm/index.esm.js",
@@ -131,6 +131,7 @@
     "babylonjs": ">=5.0.0",
     "babylonjs-serializers": ">=5.0.0",
     "cross-env": "^7.0.3",
+    "dotenv": "^17.4.2",
     "gl-matrix": "^3.4.3",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",

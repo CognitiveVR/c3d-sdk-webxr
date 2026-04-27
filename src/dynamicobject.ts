@@ -1,7 +1,12 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v5 as uuidv5 } from 'uuid';
 import Network from './network';
 import { CognitiveVRAnalyticsCore } from './core';
 import CustomEvents from './customevent';
+
+// Fixed namespace so that uuidv5 output is stable across SDK consumers and
+// sessions. Do not change this — changing it would invalidate every
+// previously-generated dynamic object ID.
+const C3D_DYNAMIC_OBJECT_NAMESPACE = 'c3d7ef2b-8a1d-4e5c-9b3f-7a6e2d8c4f10';
 
 export interface DynamicObjectId {
     id: string;
@@ -14,6 +19,8 @@ export interface ManifestEntry {
     name: string;
     mesh: string;
     fileType: string;
+    controllerType?: string;
+    properties?: Array<Record<string, any>>;
 }
 
 export interface EngagementEvent {
@@ -45,6 +52,14 @@ interface ManifestPayloadEntry {
     name: string;
     mesh: string;
     fileType: string;
+    controllerType?: string;
+    properties?: Array<Record<string, any>>;
+}
+
+export interface ButtonState {
+    buttonPercent: number;
+    x?: number;
+    y?: number;
 }
 
 export interface SnapshotPayload {
@@ -54,7 +69,8 @@ export interface SnapshotPayload {
     r: number[];
     s?: number[];
     engagements?: EngagementPayload[];
-    properties?: any; 
+    properties?: any;
+    buttons?: Record<string, ButtonState>;
 }
 
 export interface Snapshot {
@@ -63,8 +79,9 @@ export interface Snapshot {
     time: number;
     id: string;
     scale?: number[] | null;
-    properties?: any; 
+    properties?: any;
     engagements?: EngagementPayload[];
+    buttons?: Record<string, ButtonState>;
 }
 
 export interface TrackedObjectEntry {
@@ -159,13 +176,38 @@ class DynamicObject {
             fileType = scaleOrFileType;
         }
         
-        let newObjectId = this.dynamicObjectId(uuidv4(), meshname);
-        this.objectIds.push(newObjectId);
+        const sceneId = this.core.sceneData.sceneId || '';
+        const seed = `${sceneId}::${name}::${meshname}`;
+        const deterministicId = uuidv5(seed, C3D_DYNAMIC_OBJECT_NAMESPACE);
         const finalFileType = fileType || "gltf";
+
+        const existing = this.objectIds.find(o => o.id === deterministicId);
+        if (existing) {
+            if (!existing.used) {
+                existing.used = true;
+                let manifestEntry = this.fullManifest.find(entry => entry.id === existing.id);
+                if (!manifestEntry) {
+                    manifestEntry = this.dynamicObjectManifestEntry(existing.id, name, meshname, finalFileType);
+                    this.fullManifest.push(manifestEntry);
+                }
+                if (!this.manifestEntries.some(entry => entry.id === existing.id)) {
+                    this.manifestEntries.push(manifestEntry);
+                }
+                this.addSnapshot(existing.id, position, rotation, scale, [{ "enabled": true }]);
+                if (this.core.isSessionActive && (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit)) {
+                    this.sendData();
+                }
+            }
+            console.warn(`DynamicObject.registerObject: "${name}" + "${meshname}" already registered in this scene; returning existing id.`);
+            return existing.id;
+        }
+
+        let newObjectId = this.dynamicObjectId(deterministicId, meshname);
+        this.objectIds.push(newObjectId);
         let dome = this.dynamicObjectManifestEntry(newObjectId.id, name, meshname, finalFileType);
         this.manifestEntries.push(dome);
         this.fullManifest.push(dome);
-        
+
         let props = [{ "enabled": true }];
         this.addSnapshot(newObjectId.id, position, rotation, scale, props);
 
@@ -285,11 +327,14 @@ class DynamicObject {
     private _buildManifest(): Record<string, ManifestPayloadEntry> {
         let manifest: Record<string, ManifestPayloadEntry> = {};
         for (let element of this.manifestEntries) {
-            manifest[element.id] = {
+            const entry: ManifestPayloadEntry = {
                 name: element.name,
                 mesh: element.mesh,
                 fileType: "gltf"
             };
+            if (element.controllerType) entry.controllerType = element.controllerType;
+            if (element.properties) entry.properties = element.properties;
+            manifest[element.id] = entry;
         }
         return manifest;
     }
@@ -308,25 +353,74 @@ class DynamicObject {
             }
             if (element.engagements && element.engagements.length) { entry['engagements'] = element.engagements; }
             if (element.properties) { entry['properties'] = element.properties; }
+            if (element.buttons) { entry['buttons'] = element.buttons; }
             data.push(entry);
         }
         return data;
     }
 
-    dynamicObjectSnapshot(position: number[], rotation: number[], objectId: string, scale?: number[] | null, properties?: any): Snapshot {
+    dynamicObjectSnapshot(position: number[], rotation: number[], objectId: string, scale?: number[] | null, properties?: any, buttons?: Record<string, ButtonState>): Snapshot {
         let ss: Snapshot = {
             position: position,
             rotation: rotation,
             time: this.core.getTimestamp(),
             id: objectId
         };
-        if (scale) {
-            ss.scale = scale;
-        }
-        if (properties) {
-            ss.properties = properties;
-        }
+        if (scale) { ss.scale = scale; }
+        if (properties) { ss.properties = properties; }
+        if (buttons) { ss.buttons = buttons; }
         return ss;
+    }
+
+    registerControllerObject(
+        name: string, meshname: string, customid: string,
+        position: number[], rotation: number[],
+        controllerType: string, handedness: 'left' | 'right'
+    ): string {
+        for (let i = 0; i < this.objectIds.length; i++) {
+            if (this.objectIds[i].id === customid) {
+                console.log("DynamicObject.registerControllerObject object id " + customid + " already registered");
+                return customid;
+            }
+        }
+        let registerId = this.dynamicObjectId(customid, meshname);
+        this.objectIds.push(registerId);
+
+        const dome: ManifestEntry = {
+            id: customid,
+            name,
+            mesh: meshname,
+            fileType: 'gltf',
+            controllerType,
+            properties: [{ controller: handedness }],
+        };
+        this.manifestEntries.push(dome);
+        this.fullManifest.push(dome);
+
+        this.addSnapshot(customid, position, rotation, null, [{ enabled: true }]);
+
+        if (this.core.isSessionActive && (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit)) {
+            this.sendData();
+        }
+        return customid;
+    }
+
+    addInputSnapshot(
+        objectId: string, position: number[], rotation: number[],
+        buttons?: Record<string, ButtonState> | null,
+        properties?: any
+    ): void {
+        const foundId = this.objectIds.some(e => objectId === e.id);
+        if (!foundId) {
+            console.warn("DynamicObject::addInputSnapshot cannot find objectId " + objectId);
+            return;
+        }
+        const snapshot = this.dynamicObjectSnapshot(position, rotation, objectId, null, properties, buttons ?? undefined);
+        this.snapshots.push(snapshot);
+
+        if (this.core.isSessionActive && (this.snapshots.length + this.manifestEntries.length >= this.core.config.dynamicDataLimit)) {
+            this.sendData();
+        }
     }
 
     dynamicObjectEngagementEvent(id: string | null, engagementName: string, engagementNumber: number): EngagementEvent {

@@ -51,7 +51,7 @@ class Sensors {
         }
 
         this.sensorCount++;
-        if (this.sensorCount >= this.core.config.sensorDataLimit) {
+        if (this.core.isSessionActive && this.sensorCount >= this.core.config.sensorDataLimit) {
             this.sendData();
         }
     }

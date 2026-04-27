@@ -160,7 +160,9 @@ class C3DThreeAdapter {
     /**
      * MUST be called once per frame in your developer render loop.
      */
-    public update(timestamp?: number, frame?: XRFrame): void { 
+    public update(timestamp?: number, frame?: XRFrame): void {
+        if (!this.c3d.core.isSessionActive) return;
+
         this._updateFPS();
         this.updateTrackedObjectTransforms();
 

@@ -46,8 +46,8 @@ class CustomEvents {
         }
 
         this.batchedCustomEvents = this.batchedCustomEvents.concat([data]);
-        
-        if (this.batchedCustomEvents.length >= this.core.config.customEventBatchSize) {
+
+        if (this.core.isSessionActive && this.batchedCustomEvents.length >= this.core.config.customEventBatchSize) {
             this.sendData();
         }
     }
