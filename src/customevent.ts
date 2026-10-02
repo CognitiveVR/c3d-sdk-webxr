@@ -48,7 +48,7 @@ class CustomEvents {
         this.batchedCustomEvents = this.batchedCustomEvents.concat([data]);
 
         if (this.core.isSessionActive && this.batchedCustomEvents.length >= this.core.config.customEventBatchSize) {
-            this.sendData();
+            this.sendData().catch(err => console.warn('CustomEvent.sendData failed', err));
         }
     }
 
@@ -60,6 +60,11 @@ class CustomEvents {
                 resolve(msg);
                 return;
             } else {
+                if (this.batchedCustomEvents.length === 0) {
+                    resolve('No data to send');
+                    return;
+                }
+
                 let payload: CustomEventPayload = {
                     userid: this.core.userId,
                     timestamp: parseInt(this.core.getTimestamp() as unknown as string, 10),
@@ -71,7 +76,7 @@ class CustomEvents {
                 this.jsonPart++;
                 
                 this.network.networkCall('events', payload)
-                    .then(res => (res === 200) ? resolve(res as number) : reject(res));
+                    .then(res => (res === 200) ? resolve(res as number) : reject(res), err => reject(err));
                 
                 this.batchedCustomEvents = [];
             }
