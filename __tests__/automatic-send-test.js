@@ -161,6 +161,26 @@ test('l1: concurrent endSession calls where one rejects leave no timer running',
     expect(sendData).not.toHaveBeenCalled();
 });
 
+test('l1b: the success path stops a timer restarted by a racing rejection', async () => {
+    const c3d = await startSession({ automaticSendInterval: 1 }, { mockSend: false });
+    const networkCall = stubStreamNetworks(c3d);
+    let delayed = true;
+    networkCall.mockImplementation(() => (delayed
+        ? new Promise((resolve) => setTimeout(() => resolve(200), 50))
+        : Promise.resolve(500)));
+    const first = c3d.endSession();
+    delayed = false;
+    const second = c3d.endSession();
+    const settled = Promise.allSettled([first, second]);
+    await jest.advanceTimersByTimeAsync(50);
+    const results = await settled;
+    expect(results.map((r) => r.status).sort()).toEqual(['fulfilled', 'rejected']);
+    expect(c3d.core.isSessionActive).toBe(false);
+    const sendData = jest.spyOn(c3d, 'sendData').mockResolvedValue(200);
+    await jest.advanceTimersByTimeAsync(60000);
+    expect(sendData).not.toHaveBeenCalled();
+});
+
 test('l2: a batch-size send with a rejecting network warns and leaves no unhandled rejection', async () => {
     const c3d = await startSession({ automaticSendInterval: 0, customEventBatchSize: 1 }, { mockSend: false });
     const networkCall = stubStreamNetworks(c3d);
