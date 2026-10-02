@@ -69,6 +69,19 @@ export function resolveControllerMesh(profiles: readonly string[], handedness: '
 const ANALOG_THROTTLE_MS = 100;
 const JOYSTICK_MIN_MAGNITUDE = 0.05;
 
+// Controller snapshot rate and movement thresholds match the Unity SDK; button changes bypass the gate.
+const CONTROLLER_SNAPSHOT_INTERVAL_MS = 100;
+const CONTROLLER_POSITION_THRESHOLD_METERS = 0.01;
+const CONTROLLER_ROTATION_THRESHOLD_DEGREES = 0.1;
+
+function hasMovedPastThreshold(from: { pos: number[]; rot: number[] }, pos: number[], rot: number[]): boolean {
+    const distance = Math.hypot(pos[0] - from.pos[0], pos[1] - from.pos[1], pos[2] - from.pos[2]);
+    if (distance > CONTROLLER_POSITION_THRESHOLD_METERS) return true;
+    const dot = from.rot[0] * rot[0] + from.rot[1] * rot[1] + from.rot[2] * rot[2] + from.rot[3] * rot[3];
+    const degrees = 2 * Math.acos(Math.min(1, Math.abs(dot))) * (180 / Math.PI);
+    return degrees > CONTROLLER_ROTATION_THRESHOLD_DEGREES;
+}
+
 class ControllerInputTracker {
     private c3d: C3DInstance;
     private fallbackController?: string;
@@ -80,6 +93,8 @@ class ControllerInputTracker {
     private lastButtons = new Map<string, Record<string, ButtonState>>();
     private lastAnalogTime = new Map<string, number>();
     private lastPoses = new Map<string, { pos: number[]; rot: number[] }>();
+    private lastWrittenPoses = new Map<string, { pos: number[]; rot: number[] }>();
+    private lastGateTime = new Map<string, number>();
 
     constructor(c3dInstance: C3DInstance, fallbackController?: string) {
         this.c3d = c3dInstance;
@@ -105,6 +120,8 @@ class ControllerInputTracker {
         this.lastButtons.clear();
         this.lastAnalogTime.clear();
         this.lastPoses.clear();
+        this.lastWrittenPoses.clear();
+        this.lastGateTime.clear();
     }
 
     private _onFrame(timestamp: number, frame: XRFrame): void {
@@ -185,6 +202,8 @@ class ControllerInputTracker {
                 );
                 this.registeredIds.add(id);
                 this.lastPoses.set(id, { pos, rot });
+                this.lastWrittenPoses.set(id, { pos, rot });
+                this.lastGateTime.set(id, timestamp);
                 continue;
             }
 
@@ -195,8 +214,26 @@ class ControllerInputTracker {
             this.lastPoses.set(id, { pos, rot });
 
             const buttons = this._readButtons(timestamp, id, src, handedness);
-            this.c3d.dynamicObject.addInputSnapshot(id, pos, rot, buttons ?? undefined);
+            if (buttons) {
+                this._writeControllerSnapshot(id, pos, rot, timestamp, buttons);
+                continue;
+            }
+
+            const lastGate = this.lastGateTime.get(id) ?? -Infinity;
+            if (timestamp - lastGate < CONTROLLER_SNAPSHOT_INTERVAL_MS) continue;
+            this.lastGateTime.set(id, timestamp);
+
+            const lastWritten = this.lastWrittenPoses.get(id);
+            if (!lastWritten || hasMovedPastThreshold(lastWritten, pos, rot)) {
+                this._writeControllerSnapshot(id, pos, rot, timestamp);
+            }
         }
+    }
+
+    private _writeControllerSnapshot(id: string, pos: number[], rot: number[], timestamp: number, buttons?: Record<string, ButtonState>): void {
+        this.c3d.dynamicObject.addInputSnapshot(id, pos, rot, buttons);
+        this.lastWrittenPoses.set(id, { pos, rot });
+        this.lastGateTime.set(id, timestamp);
     }
 
     private _readButtons(timestamp: number, id: string, src: XRInputSource, handedness: 'left' | 'right'): Record<string, ButtonState> | null {
