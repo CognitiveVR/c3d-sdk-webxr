@@ -408,6 +408,7 @@ class C3D {
           this.core.setSessionTimestamp = 0;
           this.core.setSessionId = '';
           this.core.setSessionStatus = false;
+          this._stopAutomaticSend();
           this.core.resetNewUserDeviceProperties();
 
           this.gaze.endSession();
@@ -418,7 +419,9 @@ class C3D {
           resolve(res);
         })
         .catch(err => {
-          this._startAutomaticSend();
+          if (this.core.isSessionActive) {
+            this._startAutomaticSend();
+          }
           reject(err);
         });
     });
@@ -460,7 +463,7 @@ class C3D {
   setScene(name: string): void {
     console.log(`CognitiveVRAnalytics::SetScene: ${name}`);
     if (this.core.sceneData.sceneId) {
-      this.sendData();
+      this.sendData().catch(err => console.warn('C3D.sendData failed', err));
       this.dynamicObject.refreshObjectManifest();
     }
 

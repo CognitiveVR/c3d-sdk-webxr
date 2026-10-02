@@ -52,7 +52,7 @@ class Sensors {
 
         this.sensorCount++;
         if (this.core.isSessionActive && this.sensorCount >= this.core.config.sensorDataLimit) {
-            this.sendData();
+            this.sendData().catch(err => console.warn('Sensor.sendData failed', err));
         }
     }
 

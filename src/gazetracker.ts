@@ -71,7 +71,7 @@ class GazeTracker {
         this.batchedGaze = this.batchedGaze.concat([data]);
 
         if (this.core.isSessionActive && this.batchedGaze.length >= this.core.config.gazeBatchSize) {
-            this.sendData();
+            this.sendData().catch(err => console.warn('GazeTracker.sendData failed', err));
         }
     }
 

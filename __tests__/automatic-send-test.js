@@ -144,3 +144,38 @@ test('l2: an idle session posts no empty events batch', async () => {
     await jest.advanceTimersByTimeAsync(30000);
     expect(networkCall.mock.calls.filter(([url]) => url === 'events')).toHaveLength(0);
 });
+
+test('l1: concurrent endSession calls where one rejects leave no timer running', async () => {
+    const c3d = await startSession({ automaticSendInterval: 1 }, { mockSend: false });
+    const networkCall = stubStreamNetworks(c3d);
+    let status = 200;
+    networkCall.mockImplementation(() => Promise.resolve(status));
+    const first = c3d.endSession();
+    status = 500;
+    const second = c3d.endSession();
+    const results = await Promise.allSettled([first, second]);
+    expect(results.map((r) => r.status).sort()).toEqual(['fulfilled', 'rejected']);
+    expect(c3d.core.isSessionActive).toBe(false);
+    const sendData = jest.spyOn(c3d, 'sendData').mockResolvedValue(200);
+    await jest.advanceTimersByTimeAsync(60000);
+    expect(sendData).not.toHaveBeenCalled();
+});
+
+test('l2: a batch-size send with a rejecting network warns and leaves no unhandled rejection', async () => {
+    const c3d = await startSession({ automaticSendInterval: 0, customEventBatchSize: 1 }, { mockSend: false });
+    const networkCall = stubStreamNetworks(c3d);
+    networkCall.mockRejectedValue(new Error('stalled'));
+    const unhandled = jest.fn();
+    process.on('unhandledRejection', unhandled);
+    try {
+        console.warn.mockClear();
+        c3d.customEvent.send('evt', [0, 0, 0]);
+        await jest.advanceTimersByTimeAsync(0);
+        expect(networkCall).toHaveBeenCalledTimes(1);
+        expect(console.warn).toHaveBeenCalledTimes(1);
+        expect(console.warn).toHaveBeenCalledWith('CustomEvent.sendData failed', expect.any(Error));
+        expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+        process.off('unhandledRejection', unhandled);
+    }
+});
