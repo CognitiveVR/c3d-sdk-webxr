@@ -6,17 +6,24 @@
  */
 const scene = { sceneName: 'BasicScene', sceneId: '93f486e4-0e22-4650-946a-e64ce527f915', versionNumber: '1' };
 
-async function startSession(config = {}) {
+function stubStreamNetworks(c3d, impl = jest.fn().mockResolvedValue(200)) {
+    for (const stream of [c3d.customEvent, c3d.gaze, c3d.sensor, c3d.dynamicObject]) {
+        stream.network.networkCall = impl;
+    }
+    return impl;
+}
+
+async function startSession(config = {}, { mockSend = true } = {}) {
     let C3D;
     jest.isolateModules(() => {
         C3D = require('../src/index').default;
     });
     const c3d = new C3D({ config: { APIKey: 'test-key', networkHost: 'data.c3ddev.com', allSceneData: [scene], ...config } });
     c3d.setScene(scene.sceneName);
-    c3d.network.networkCall = jest.fn().mockResolvedValue(200);
+    stubStreamNetworks(c3d);
     c3d.deviceIdPromise = null;
     await c3d.startSession(null);
-    jest.spyOn(c3d, 'sendData').mockResolvedValue(200);
+    if (mockSend) { jest.spyOn(c3d, 'sendData').mockResolvedValue(200); }
     return c3d;
 }
 
@@ -94,4 +101,46 @@ test('a rejected automatic send neither throws nor stops later ticks', async () 
     jest.advanceTimersByTime(1000);
     expect(c3d.sendData).toHaveBeenCalledTimes(2);
     expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('automatic send'), expect.anything());
+});
+
+test('h1a: a stream network rejection settles the send and later ticks still send', async () => {
+    const c3d = await startSession({ automaticSendInterval: 1 }, { mockSend: false });
+    const networkCall = stubStreamNetworks(c3d);
+    c3d.customEvent.send('evt', [0, 0, 0]);
+    networkCall.mockClear();
+    console.warn.mockClear();
+    networkCall.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(networkCall).toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledTimes(1);
+    networkCall.mockClear();
+    c3d.customEvent.send('evt2', [0, 0, 0]);
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(networkCall).toHaveBeenCalledWith('events', expect.anything());
+});
+
+test.each([Infinity, NaN])('l3: automaticSendInterval %p disables the timer', async (interval) => {
+    const c3d = await startSession({ automaticSendInterval: interval });
+    jest.advanceTimersByTime(60000);
+    expect(c3d.sendData).not.toHaveBeenCalled();
+});
+
+test('l4: a failed final send leaves the session active and the timer running', async () => {
+    const c3d = await startSession({ automaticSendInterval: 1 }, { mockSend: false });
+    const networkCall = stubStreamNetworks(c3d);
+    networkCall.mockResolvedValueOnce(500);
+    await expect(c3d.endSession()).rejects.toBeDefined();
+    expect(c3d.core.isSessionActive).toBe(true);
+    const sendData = jest.spyOn(c3d, 'sendData').mockResolvedValue(200);
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(sendData).toHaveBeenCalledTimes(1);
+});
+
+test('l2: an idle session posts no empty events batch', async () => {
+    const c3d = await startSession({ automaticSendInterval: 1 }, { mockSend: false });
+    const networkCall = stubStreamNetworks(c3d);
+    await jest.advanceTimersByTimeAsync(1000);
+    networkCall.mockClear();
+    await jest.advanceTimersByTimeAsync(30000);
+    expect(networkCall.mock.calls.filter(([url]) => url === 'events')).toHaveLength(0);
 });

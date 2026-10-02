@@ -80,7 +80,7 @@ class Sensors {
             this.jsonPart++;
 
             this.network.networkCall('sensors', payload)
-                .then(res => (res === 200) ? resolve(res as number) : reject(res));
+                .then(res => (res === 200) ? resolve(res as number) : reject(res), err => reject(err));
             
             this.sensorCount = 0;
             this.allSensors = [];

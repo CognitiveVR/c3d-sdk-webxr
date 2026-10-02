@@ -7,6 +7,8 @@ export interface QuestionSet {
     [key: string]: unknown;
 }
 
+const NETWORK_TIMEOUT_MS = 30_000;
+
 class Network {
     private core: typeof Core;
 
@@ -64,21 +66,35 @@ class Network {
             }
             // -----------------------------
 
+            const controller = new AbortController();
             const options = {
                 method: 'post',
                 headers: {
                     'Authorization': `APIKEY:DATA ${this.core.config.APIKey}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(content)
+                body: JSON.stringify(content),
+                signal: controller.signal
             };
 
             if (this.isOnline()) {
+                let timedOut = false;
+                const timeoutId = setTimeout(() => {
+                    timedOut = true;
+                    controller.abort();
+                }, NETWORK_TIMEOUT_MS);
+
                 fetch(path, options)
-                    .then(res => resolve(res.status))
+                    .then(res => {
+                        clearTimeout(timeoutId);
+                        resolve(res.status);
+                    })
                     .catch(err => {
+                        clearTimeout(timeoutId);
                         console.error('Network error:', err);
-                        reject(err);
+                        reject(timedOut
+                            ? new Error(`Network.networkCall timed out after ${NETWORK_TIMEOUT_MS} ms: ${path}`)
+                            : err);
                     });
             } else {
                 const message = 'Network.networkCall failed: please check internet connection.';

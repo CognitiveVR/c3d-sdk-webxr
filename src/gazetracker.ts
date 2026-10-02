@@ -115,7 +115,7 @@ class GazeTracker {
                     } else {
                         reject(res);
                     }
-                });
+                }, err => reject(err));
             this.batchedGaze = [];
         });
     }

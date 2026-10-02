@@ -316,7 +316,7 @@ class DynamicObject {
             this.jsonPart++;
 
             this.network.networkCall('dynamics', sendJson)
-                .then(res => (res === 200) ? resolve(200) : reject(res));
+                .then(res => (res === 200) ? resolve(200) : reject(res), err => reject(err));
             
             this.manifestEntries = [];
             this.snapshots = [];

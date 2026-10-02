@@ -45,6 +45,7 @@ interface C3DConstructorSettings {
 
 class C3D {
   private static readonly DEVICE_ID_WAIT_TIMEOUT_MS = 3000;
+  private static readonly MAX_TIMER_DELAY_MS = 2_147_483_647;
   public core: CognitiveVRAnalyticsCore;
   public xrSessionManager: XRSessionManagerType | null;
   public lastInputType: 'none' | 'hand' | 'controller';
@@ -343,7 +344,7 @@ class C3D {
   private _startAutomaticSend(): void {
     this._stopAutomaticSend();
     const seconds = this.core.config.automaticSendInterval;
-    if (!(seconds > 0)) { return; }
+    if (!(Number.isFinite(seconds) && seconds > 0)) { return; }
     this._automaticSendWarned = false;
     this._automaticSendTimer = setInterval(() => {
       if (this._automaticSendInFlight) { return; }
@@ -356,7 +357,7 @@ class C3D {
           }
         })
         .finally(() => { this._automaticSendInFlight = false; });
-    }, seconds * 1000);
+    }, Math.min(seconds * 1000, C3D.MAX_TIMER_DELAY_MS));
   }
 
   private _stopAutomaticSend(): void {
@@ -416,7 +417,10 @@ class C3D {
 
           resolve(res);
         })
-        .catch(err => reject(err));
+        .catch(err => {
+          this._startAutomaticSend();
+          reject(err);
+        });
     });
   }
 
