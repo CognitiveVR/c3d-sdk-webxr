@@ -22,13 +22,13 @@ Welcome!  This SDK allows you to integrate your JavaScript/ TypeScript/ WebXR Ap
 
 </div>
 
-## ✅ Requirement(s)
+## Requirements
 Node.js version 20 or higher. To check your current version:
 ```
 node --version
 ```
 
-## 🔧 Installation 
+## Installation 
 You can add Cognitive3D to your project in two ways.
 ### Option 1. Install from NPM
 Inside your project's terminal, run the following command
@@ -37,26 +37,26 @@ npm install @cognitive3d/analytics
 ```
 ### Option 2. Install from source code
 If you want the entire source code, whether that be to run tests, make modifications, you can clone this repository by
-#### A) Clone the repo
+#### 2.1 Clone the repo
 ```bash
 git clone https://github.com/CognitiveVR/c3d-sdk-webxr.git
 cd c3d-sdk-webxr
 ```
-#### B) Install the dependencies
+#### 2.2 Install the dependencies
 ```bash
 npm install
 ```
-#### C) Build the sdk
+#### 2.3 Build the sdk
 This will transpile the SDK src files into a `/lib` folder and generate type definitions into a `/types` folder. 
 ```bash
 npm run build
 ```
-#### D) Install the local sdk to your project 
+#### 2.4 Install the local sdk to your project 
 Navigate to your projects directory, and then run the following command
 ```bash
 npm install /pathTo/c3d-sdk-webxr
 ```
-## 📂 Project Structure 
+## Project Structure 
 Here's an overview of the key files and directories in the project:
 ```text
 c3d-sdk-webxr/
@@ -70,7 +70,7 @@ c3d-sdk-webxr/
 └── settings.js       # Configuration file for the SDK tests (API key, scene info).
 ```
 
-## 🚀 Usage
+## Usage
 
 The SDK is flexible and integrates seamlessly with various frameworks/ web engines such as **ThreeJS, Wonderland Engine, PlayCanvas, and more**.
 
@@ -86,17 +86,17 @@ It supports a wide range of development environments by providing multiple modul
 
 When you use an engine adapter (Three.js, Babylon.js, PlayCanvas, Wonderland), the adapter sets `c3d.app.engine` for you. If you use the **core SDK directly with no adapter** (plain WebXR/WebGL), the SDK now defaults `c3d.app.engine` to `"WebXR"` so your sessions are accepted by the analytics pipeline — its enrichment layer treats `c3d.app.engine` as a required property and drops sessions that omit it.
 
-As belt-and-suspenders, you can also set it yourself to better identify your integration (this overrides the default):
+You can also set the engine property yourself to better identify your integration (this will override the default):
 
 ```js
 c3d.setDeviceProperty('AppEngine', 'YourEngineName');
 c3d.setDeviceProperty('AppEngineVersion', '1.0.0');
 ```
 
-## 📚 Documentation 
+## Documentation 
 The **[Cognitive3D WebXR SDK documentation](http://docs.cognitive3d.com/webxr/get-started/)** explains how to integrate the SDK, track user experiences, export scenes, track dynamic objects, and more.
 
-## 🎮 Sample Projects
+## Sample Projects
 For more detailed examples and complete project integrations (Mattercraft, ThreeJS, Wonderland Engine, etc..), please see our **[sample applications repository](https://github.com/CognitiveVR/c3d-webxr-sample-apps)** 
 
 ## Coding Agent Skills
