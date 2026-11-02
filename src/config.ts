@@ -19,6 +19,8 @@ export interface Settings {
     dynamicDataLimit?: number;
     customEventBatchSize?: number;
     gazeBatchSize?: number;
+    /** Seconds between automatic sends; 0 or negative disables. */
+    automaticSendInterval?: number;
     GazeInterval?: number;
     /** @deprecated No longer has any effect; see GazeTracker.setHMDType. */
     HMDType?: string;
@@ -38,6 +40,7 @@ class Config {
     public dynamicDataLimit: number;
     public customEventBatchSize: number;
     public gazeBatchSize: number;
+    public automaticSendInterval: number;
     public GazeInterval: number;
     public allSceneData: SceneConfig[];
     /** @deprecated No longer has any effect; retained for backward compatibility. */
@@ -61,6 +64,7 @@ class Config {
         this.gazeTrackingSource = 'webxr';
         this.customEventBatchSize = 256;
         this.gazeBatchSize = 256;
+        this.automaticSendInterval = 10;
         this.GazeInterval = 0.1; 
         this.allSceneData = [];
     }
@@ -87,7 +91,7 @@ class Config {
         const keys: (keyof Settings)[] = [
             'SDKVersion', 'networkHost', 'APIKey', 'networkVersion',
             'sensorDataLimit', 'dynamicDataLimit', 'customEventBatchSize',
-            'gazeBatchSize', 'GazeInterval', 'HMDType', 'allSceneData', 'gazeTrackingSource',
+            'gazeBatchSize', 'automaticSendInterval', 'GazeInterval', 'HMDType', 'allSceneData', 'gazeTrackingSource',
             'fallbackController'
         ];
 

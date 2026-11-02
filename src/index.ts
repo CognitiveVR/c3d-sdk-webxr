@@ -45,6 +45,7 @@ interface C3DConstructorSettings {
 
 class C3D {
   private static readonly DEVICE_ID_WAIT_TIMEOUT_MS = 3000;
+  private static readonly MAX_TIMER_DELAY_MS = 2_147_483_647;
   public core: CognitiveVRAnalyticsCore;
   public xrSessionManager: XRSessionManagerType | null;
   public lastInputType: 'none' | 'hand' | 'controller';
@@ -63,6 +64,9 @@ class C3D {
   public renderer: any;    // Supports multiple engines (Three, Babylon, WLE) without shared interfaces
   public boundaryTracker: BoundaryTracker;
   private deviceIdPromise: Promise<void> | null = null;
+  private _automaticSendTimer: ReturnType<typeof setInterval> | null = null;
+  private _automaticSendInFlight = false;
+  private _automaticSendWarned = false;
   private _gazeRaycaster: (() => GazeHitData | null) | null;
 
   constructor(settings?: C3DConstructorSettings, renderer: any = null) { 
@@ -332,7 +336,35 @@ class C3D {
     this.core.getSessionTimestamp();
     this.core.getSessionId();
     this.customEvent.send('Session Start', [0, 0, 0]);
+    this._startAutomaticSend();
     return true;
+  }
+
+  // Matches the Unity SDK's 10 s AutomaticSendTimer; batches otherwise flush only by volume.
+  private _startAutomaticSend(): void {
+    this._stopAutomaticSend();
+    const seconds = this.core.config.automaticSendInterval;
+    if (!(Number.isFinite(seconds) && seconds > 0)) { return; }
+    this._automaticSendWarned = false;
+    this._automaticSendTimer = setInterval(() => {
+      if (this._automaticSendInFlight) { return; }
+      this._automaticSendInFlight = true;
+      this.sendData()
+        .catch((err) => {
+          if (!this._automaticSendWarned) {
+            this._automaticSendWarned = true;
+            console.warn('C3D: automatic send failed', err);
+          }
+        })
+        .finally(() => { this._automaticSendInFlight = false; });
+    }, Math.min(seconds * 1000, C3D.MAX_TIMER_DELAY_MS));
+  }
+
+  private _stopAutomaticSend(): void {
+    if (this._automaticSendTimer !== null) {
+      clearInterval(this._automaticSendTimer);
+      this._automaticSendTimer = null;
+    }
   }
   
   endSession(): Promise<number | string> {
@@ -341,6 +373,7 @@ class C3D {
         reject('session is not active');
         return;
       }
+      this._stopAutomaticSend();
       this.fpsTracker.stop();  
       this.adapterManagesFPS = false;
       this.profiler.stop();
@@ -375,6 +408,7 @@ class C3D {
           this.core.setSessionTimestamp = 0;
           this.core.setSessionId = '';
           this.core.setSessionStatus = false;
+          this._stopAutomaticSend();
           this.core.resetNewUserDeviceProperties();
 
           this.gaze.endSession();
@@ -384,7 +418,12 @@ class C3D {
 
           resolve(res);
         })
-        .catch(err => reject(err));
+        .catch(err => {
+          if (this.core.isSessionActive) {
+            this._startAutomaticSend();
+          }
+          reject(err);
+        });
     });
   }
 
@@ -424,7 +463,7 @@ class C3D {
   setScene(name: string): void {
     console.log(`CognitiveVRAnalytics::SetScene: ${name}`);
     if (this.core.sceneData.sceneId) {
-      this.sendData();
+      this.sendData().catch(err => console.warn('C3D.sendData failed', err));
       this.dynamicObject.refreshObjectManifest();
     }
 
