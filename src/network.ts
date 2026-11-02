@@ -7,6 +7,8 @@ export interface QuestionSet {
     [key: string]: unknown;
 }
 
+const NETWORK_TIMEOUT_MS = 30_000;
+
 class Network {
     private core: typeof Core;
 
@@ -64,7 +66,9 @@ class Network {
             }
             // -----------------------------
 
-            const options = {
+            // Runtimes without AbortController (old embedded WebViews) get no timeout.
+            const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const options: Record<string, unknown> = {
                 method: 'post',
                 headers: {
                     'Authorization': `APIKEY:DATA ${this.core.config.APIKey}`,
@@ -72,13 +76,30 @@ class Network {
                 },
                 body: JSON.stringify(content)
             };
+            if (controller) {
+                options.signal = controller.signal;
+            }
 
             if (this.isOnline()) {
+                let timedOut = false;
+                const timeoutId = controller
+                    ? setTimeout(() => {
+                        timedOut = true;
+                        controller.abort();
+                    }, NETWORK_TIMEOUT_MS)
+                    : undefined;
+
                 fetch(path, options)
-                    .then(res => resolve(res.status))
+                    .then(res => {
+                        clearTimeout(timeoutId);
+                        resolve(res.status);
+                    })
                     .catch(err => {
+                        clearTimeout(timeoutId);
                         console.error('Network error:', err);
-                        reject(err);
+                        reject(timedOut
+                            ? new Error(`Network.networkCall timed out after ${NETWORK_TIMEOUT_MS} ms: ${path}`)
+                            : err);
                     });
             } else {
                 const message = 'Network.networkCall failed: please check internet connection.';
