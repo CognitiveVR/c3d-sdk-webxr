@@ -22,6 +22,7 @@ async function startSession(config = {}, { mockSend = true } = {}) {
     c3d.setScene(scene.sceneName);
     stubStreamNetworks(c3d);
     c3d.deviceIdPromise = null;
+    jest.spyOn(c3d.fpsTracker, 'start').mockImplementation(() => {});
     await c3d.startSession(null);
     if (mockSend) { jest.spyOn(c3d, 'sendData').mockResolvedValue(200); }
     return c3d;
