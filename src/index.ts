@@ -343,6 +343,10 @@ class C3D {
   // Matches the Unity SDK's 10 s AutomaticSendTimer; batches otherwise flush only by volume.
   private _startAutomaticSend(): void {
     this._stopAutomaticSend();
+    if (isBrowser) {
+      document.addEventListener('visibilitychange', this._sendOnHide);
+      window.addEventListener('pagehide', this._sendOnHide);
+    }
     const seconds = this.core.config.automaticSendInterval;
     if (!(Number.isFinite(seconds) && seconds > 0)) { return; }
     this._automaticSendWarned = false;
@@ -361,11 +365,21 @@ class C3D {
   }
 
   private _stopAutomaticSend(): void {
+    if (isBrowser) {
+      document.removeEventListener('visibilitychange', this._sendOnHide);
+      window.removeEventListener('pagehide', this._sendOnHide);
+    }
     if (this._automaticSendTimer !== null) {
       clearInterval(this._automaticSendTimer);
       this._automaticSendTimer = null;
     }
   }
+
+  private _sendOnHide = (event: Event): void => {
+    if (event.type === 'pagehide' || document.visibilityState === 'hidden') {
+      this.sendData().catch(err => console.warn('C3D.sendData failed', err));
+    }
+  };
   
   endSession(): Promise<number | string> {
     return new Promise((resolve, reject) => {

@@ -85,6 +85,24 @@ test('endSession clears the timer', async () => {
     expect(c3d.sendData).toHaveBeenCalledTimes(1);
 });
 
+test('hiding or unloading the page sends all batches', async () => {
+    const c3d = await startSession();
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(c3d.sendData).not.toHaveBeenCalled();
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    delete document.visibilityState;
+    window.dispatchEvent(new Event('pagehide'));
+    expect(c3d.sendData).toHaveBeenCalledTimes(2);
+});
+
+test('endSession stops sending on page hide', async () => {
+    const c3d = await startSession();
+    await c3d.endSession();
+    window.dispatchEvent(new Event('pagehide'));
+    expect(c3d.sendData).toHaveBeenCalledTimes(1);
+});
+
 test('a second startSession does not double the timer', async () => {
     const c3d = await startSession({ automaticSendInterval: 1 });
     c3d.core.setSessionStatus = false;
