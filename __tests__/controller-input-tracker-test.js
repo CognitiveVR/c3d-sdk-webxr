@@ -9,7 +9,7 @@ import ControllerInputTracker from '../src/utils/ControllerInputTracker';
 
 const FRAME_MS = 16.7;
 
-function createRig() {
+function createRig({ hand = false } = {}) {
     const time = { now: 0 };
     const pose = { position: { x: 0, y: 0, z: 0 }, orientation: { x: 0, y: 0, z: 0, w: 1 } };
     const trigger = { value: 0, pressed: false };
@@ -37,6 +37,7 @@ function createRig() {
             axes: [0, 0, 0, 0],
         },
     };
+    if (hand) source.hand = new Map([['wrist', {}]]);
 
     let callback = null;
     const session = {
@@ -44,7 +45,7 @@ function createRig() {
         requestAnimationFrame: jest.fn(cb => { callback = cb; return 1; }),
         cancelAnimationFrame: jest.fn(),
     };
-    const frame = { getPose: jest.fn(() => ({ transform: pose })) };
+    const frame = { getPose: jest.fn(() => ({ transform: pose })), getJointPose: jest.fn(() => ({ transform: pose })) };
 
     const tracker = new ControllerInputTracker(c3d);
 
@@ -73,8 +74,8 @@ function createRig() {
     return rig;
 }
 
-test('a still controller registers once and writes no pose snapshots', () => {
-    const rig = createRig();
+test.each(['controller', 'hand'])('a still %s registers once and writes no pose snapshots', (input) => {
+    const rig = createRig({ hand: input === 'hand' });
     rig.start();
     rig.frames(120);
     expect(rig.c3d.dynamicObject.registerControllerObject).toHaveBeenCalledTimes(1);
@@ -97,8 +98,8 @@ test('a single 0.02 m move is written once, at the next gate boundary', () => {
     expect(rig.snapshotTimes[0]).toBeGreaterThanOrEqual(FRAME_MS * 36);
 });
 
-test('continuous movement is capped at roughly 10 snapshots per second', () => {
-    const rig = createRig();
+test.each(['controller', 'hand'])('continuous %s movement is capped at roughly 10 snapshots per second', (input) => {
+    const rig = createRig({ hand: input === 'hand' });
     rig.start();
     rig.settle();
     const frameCount = Math.round(1000 / FRAME_MS);

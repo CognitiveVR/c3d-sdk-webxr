@@ -133,7 +133,7 @@ class ControllerInputTracker {
 
         this._detectInputTypeChange(frame, refSpace);
         this._processControllers(timestamp, frame, refSpace);
-        this._processHands(frame, refSpace);
+        this._processHands(timestamp, frame, refSpace);
     }
 
     private _detectInputTypeChange(frame: XRFrame, refSpace: XRReferenceSpace): void {
@@ -219,14 +219,18 @@ class ControllerInputTracker {
                 continue;
             }
 
-            const lastGate = this.lastGateTime.get(id) ?? -Infinity;
-            if (timestamp - lastGate < CONTROLLER_SNAPSHOT_INTERVAL_MS) continue;
-            this.lastGateTime.set(id, timestamp);
+            this._writeGatedSnapshot(id, pos, rot, timestamp);
+        }
+    }
 
-            const lastWritten = this.lastWrittenPoses.get(id);
-            if (!lastWritten || hasMovedPastThreshold(lastWritten, pos, rot)) {
-                this._writeControllerSnapshot(id, pos, rot, timestamp);
-            }
+    private _writeGatedSnapshot(id: string, pos: number[], rot: number[], timestamp: number): void {
+        const lastGate = this.lastGateTime.get(id) ?? -Infinity;
+        if (timestamp - lastGate < CONTROLLER_SNAPSHOT_INTERVAL_MS) return;
+        this.lastGateTime.set(id, timestamp);
+
+        const lastWritten = this.lastWrittenPoses.get(id);
+        if (!lastWritten || hasMovedPastThreshold(lastWritten, pos, rot)) {
+            this._writeControllerSnapshot(id, pos, rot, timestamp);
         }
     }
 
@@ -302,7 +306,7 @@ class ControllerInputTracker {
         return changes;
     }
 
-    private _processHands(frame: XRFrame, refSpace: XRReferenceSpace): void {
+    private _processHands(timestamp: number, frame: XRFrame, refSpace: XRReferenceSpace): void {
         if (typeof (frame as any).getJointPose !== 'function') return;
         if (!this.xrSession) return;
 
@@ -324,10 +328,12 @@ class ControllerInputTracker {
                 const name = handedness === 'left' ? 'Left Hand' : 'Right Hand';
                 this.c3d.dynamicObject.registerControllerObject(name, meshname, id, pos, rot, Array.from(src.profiles ?? []), handedness);
                 this.registeredIds.add(id);
+                this.lastWrittenPoses.set(id, { pos, rot });
+                this.lastGateTime.set(id, timestamp);
                 continue;
             }
 
-            this.c3d.dynamicObject.addInputSnapshot(id, pos, rot);
+            this._writeGatedSnapshot(id, pos, rot, timestamp);
         }
     }
 
