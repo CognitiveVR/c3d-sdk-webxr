@@ -8,6 +8,8 @@ export interface QuestionSet {
 }
 
 const NETWORK_TIMEOUT_MS = 30_000;
+const KEEPALIVE_BUDGET_BYTES = 60_000;
+let keepaliveBytes = 0;
 
 class Network {
     private core: typeof Core;
@@ -68,13 +70,14 @@ class Network {
 
             // Runtimes without AbortController (old embedded WebViews) get no timeout.
             const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const body = JSON.stringify(content);
             const options: Record<string, unknown> = {
                 method: 'post',
                 headers: {
                     'Authorization': `APIKEY:DATA ${this.core.config.APIKey}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(content)
+                body
             };
             if (controller) {
                 options.signal = controller.signal;
@@ -88,14 +91,24 @@ class Network {
                         controller.abort();
                     }, NETWORK_TIMEOUT_MS)
                     : undefined;
+                const size = isBrowser ? new Blob([body]).size : Infinity;
+                const keepalive = keepaliveBytes + size <= KEEPALIVE_BUDGET_BYTES;
+                if (keepalive) {
+                    keepaliveBytes += size;
+                    options.keepalive = true;
+                }
+                const settle = () => {
+                    clearTimeout(timeoutId);
+                    if (keepalive) keepaliveBytes -= size;
+                };
 
                 fetch(path, options)
                     .then(res => {
-                        clearTimeout(timeoutId);
+                        settle();
                         resolve(res.status);
                     })
                     .catch(err => {
-                        clearTimeout(timeoutId);
+                        settle();
                         console.error('Network error:', err);
                         reject(timedOut
                             ? new Error(`Network.networkCall timed out after ${NETWORK_TIMEOUT_MS} ms: ${path}`)
