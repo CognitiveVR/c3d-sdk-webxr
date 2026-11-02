@@ -336,6 +336,15 @@ class C3D {
     this.core.getSessionTimestamp();
     this.core.getSessionId();
     this.customEvent.send('Session Start', [0, 0, 0]);
+    if (this.core.config.trackGPSLocation && isBrowser && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        if (!this.core.isSessionActive) { return; }
+        this.setSessionProperty({
+          'c3d.geo.origin.latitude': position.coords.latitude,
+          'c3d.geo.origin.longitude': position.coords.longitude,
+        });
+      }, (error) => console.warn('C3D: geolocation unavailable', error.message), { enableHighAccuracy: true });
+    }
     this._startAutomaticSend();
     return true;
   }

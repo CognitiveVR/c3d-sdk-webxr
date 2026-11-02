@@ -94,6 +94,7 @@ beforeEach(() => {
     const c3d = new C3DAnalytics(settings);
     c3d.core.setSessionStatus = false;
     c3d.core.resetNewUserDeviceProperties();
+    c3d.config('trackGPSLocation', false);
 });
 
 test('Captures raw device-identity signals at construction (desktop profile)', () => {
@@ -242,6 +243,29 @@ test('input_profiles accumulates across controller churn (union, not overwrite)'
     expect(typeof changeHandler).toBe('function');
     changeHandler({ session: { inputSources: [] } });
     expect(c3d.getDeviceProperties()['c3d.device.xr.input_profiles']).toBe('meta-quest-touch-plus');
+});
+
+test('Records the geolocation origin at session start when trackGPSLocation is enabled', async () => {
+    defineNav('geolocation', {
+        getCurrentPosition: jest.fn((success) => success({ coords: { latitude: 49.2827, longitude: -123.1207 } })),
+    });
+    const c3d = makeC3D();
+    c3d.customEvent.send = jest.fn();
+    c3d.config('trackGPSLocation', true);
+
+    await expect(c3d.startSession()).resolves.toBe(true);
+    expect(c3d.core.sessionProperties['c3d.geo.origin.latitude']).toBe(49.2827);
+    expect(c3d.core.sessionProperties['c3d.geo.origin.longitude']).toBe(-123.1207);
+});
+
+test('Does not request geolocation when trackGPSLocation is off', async () => {
+    const getCurrentPosition = jest.fn();
+    defineNav('geolocation', { getCurrentPosition });
+    const c3d = makeC3D();
+    c3d.customEvent.send = jest.fn();
+
+    await expect(c3d.startSession()).resolves.toBe(true);
+    expect(getCurrentPosition).not.toHaveBeenCalled();
 });
 
 test('Controller manifest carries raw input profiles, not a classified controllerType', () => {

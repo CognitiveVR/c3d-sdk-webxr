@@ -26,6 +26,7 @@ export interface Settings {
     HMDType?: string;
     gazeTrackingSource?: 'webxr' | 'engine';
     fallbackController?: string;
+    trackGPSLocation?: boolean;
     allSceneData?: SceneConfig[];
     [key: string]: unknown; // Allow flexibility
 }
@@ -47,6 +48,7 @@ class Config {
     public HMDType?: string;
     public gazeTrackingSource: 'webxr' | 'engine';
     public fallbackController?: string;
+    public trackGPSLocation: boolean;
     [key: string]: any; // Index signature for dynamic access in setter
 
     constructor() {
@@ -66,6 +68,7 @@ class Config {
         this.gazeBatchSize = 256;
         this.automaticSendInterval = 10;
         this.GazeInterval = 0.1; 
+        this.trackGPSLocation = false;
         this.allSceneData = [];
     }
 
@@ -92,7 +95,7 @@ class Config {
             'SDKVersion', 'networkHost', 'APIKey', 'networkVersion',
             'sensorDataLimit', 'dynamicDataLimit', 'customEventBatchSize',
             'gazeBatchSize', 'automaticSendInterval', 'GazeInterval', 'HMDType', 'allSceneData', 'gazeTrackingSource',
-            'fallbackController'
+            'fallbackController', 'trackGPSLocation'
         ];
 
         for (const key of keys) {
